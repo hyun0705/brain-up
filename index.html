@@ -5,17 +5,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>브레인 업 - 인지기능 검사</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 
 <body>
   <div class="container">
     <header class="topbar">
-      <div class="brand">브레인 업</div>
-      <div class="meta">
-        <div class="progress">검사 -/2 · 인지기능</div>
-        <div class="timer" id="timer">--:--</div>
-      </div>
+      <div class="brand" id="logo" style="cursor:pointer;">브레인 업</div>
+      <div class="progress">검사 -/4 · 인지기능</div>
     </header>
 
     <main id="app"></main>
@@ -27,7 +26,7 @@
     </footer>
   </div>
 
-  <script src="./app.js"></script>
+  <script type="module" src="./js/main.js"></script>
 </body>
 
 </html>

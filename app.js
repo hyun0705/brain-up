@@ -32,6 +32,28 @@
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // 카운트다운 함수
+  async function showCountdown() {
+    for (let i = 3; i >= 1; i--) {
+      app.innerHTML = `
+        <section class="card">
+          <div class="stimulusArea">
+            <div class="countdown">${i}</div>
+          </div>
+        </section>
+      `;
+      await sleep(800);
+    }
+    app.innerHTML = `
+      <section class="card">
+        <div class="stimulusArea">
+          <div class="countdown" style="font-size:48px;">시작!</div>
+        </div>
+      </section>
+    `;
+    await sleep(500);
+  }
+
   // ---------------------------
   // Storage
   // ---------------------------
@@ -118,7 +140,7 @@
     const ctx = canvas.getContext("2d");
     ctx.scale(2, 2);
 
-    ctx.fillStyle = "#1a1a2e";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
 
     for (let r = 0; r < size; r++) {
@@ -126,12 +148,12 @@
         const i = r * size + c;
         const x = pad + c * (cellPx + gapPx);
         const y = pad + r * (cellPx + gapPx);
-        ctx.fillStyle = cells[i] ? "#00d4ff" : "#2a2a4a";
+        ctx.fillStyle = cells[i] ? "#2563eb" : "#f1f5f9";
         ctx.fillRect(x, y, cellPx, cellPx);
       }
     }
 
-    ctx.strokeStyle = "#243057";
+    ctx.strokeStyle = "#e5e7eb";
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, w - 2, h - 2);
   }
@@ -692,7 +714,7 @@
       const feedback = $("#feedback");
       feedback.style.display = "block";
       feedback.innerHTML = correct ? "✅ 정답" : "❌ 오답";
-      feedback.style.color = correct ? "#2bd576" : "#ffd166";
+      feedback.style.color = correct ? "var(--good)" : "var(--warn)";
       setTimeout(() => {
         if (state.practiceTotal >= state.practiceTarget) {
           if (state.practiceCorrect / state.practiceTotal < 0.5) state.practiceTarget += 3;
@@ -723,7 +745,8 @@
         </div>
       </section>
     `;
-    $("#startTestBtn").onclick = () => {
+    $("#startTestBtn").onclick = async () => {
+      await showCountdown();
       state.phase = "test";
       state.trials = [];
       state.trialIndex = 0;
@@ -791,8 +814,8 @@
         <div class="pill">검사 2 · 주의·억제</div>
         <h1 class="title">Go / No-Go 검사</h1>
         <p class="desc">
-          <span style="color:#2bd576;font-size:28px;">●</span> <b>초록 원</b> → <span class="kbd">스페이스바</span><br/>
-          <span style="color:#ff6b6b;font-size:28px;">■</span> <b>빨간 사각형</b> → <b>누르지 않기</b>
+          <span style="color:#16a34a;font-size:28px;">●</span> <b>초록 원</b> → <span class="kbd">스페이스바</span><br/>
+          <span style="color:#dc2626;font-size:28px;">■</span> <b>빨간 사각형</b> → <b>누르지 않기</b>
         </p>
         <div class="notice">빠르게 반응하되, 빨간 사각형엔 참아야 해요!</div>
         <div class="controls" style="grid-template-columns:1fr;">
@@ -827,10 +850,10 @@
   function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
     return new Promise((resolve) => {
       const isGo = type === "go";
-      app.innerHTML = `<section class="card"><div class="pill">${isPractice ? `연습 ${currentNum}/${totalNum}` : '본 검사'}</div><div class="stimulusArea"><div style="font-size:48px;color:#a9b3da;">+</div></div></section>`;
+      app.innerHTML = `<section class="card"><div class="pill">${isPractice ? `연습 ${currentNum}/${totalNum}` : '본 검사'}</div><div class="stimulusArea"><div style="font-size:48px;color:var(--muted);">+</div></div></section>`;
       const fixationTime = 300 + Math.floor(state.rng() * 200);
       setTimeout(() => {
-        const stimulusHtml = isGo ? `<div style="width:160px;height:160px;background:#2bd576;border-radius:50%;"></div>` : `<div style="width:140px;height:140px;background:#ff6b6b;border-radius:12px;"></div>`;
+        const stimulusHtml = isGo ? `<div style="width:140px;height:140px;background:#16a34a;border-radius:50%;box-shadow:0 4px 20px rgba(22,163,74,0.25);"></div>` : `<div style="width:120px;height:120px;background:#dc2626;border-radius:12px;box-shadow:0 4px 20px rgba(220,38,38,0.25);"></div>`;
         app.innerHTML = `<section class="card"><div class="pill">${isPractice ? `연습 ${currentNum}/${totalNum}` : '본 검사'}</div><div class="stimulusArea">${stimulusHtml}</div><div class="notice" style="text-align:center;">${isGo ? '스페이스바!' : '누르지 마세요!'}</div></section>`;
         const stimulusStart = nowMs();
         let responded = false, responseRt = 0;
@@ -848,7 +871,7 @@
         const finishTrial = () => {
           const correct = isGo ? responded : !responded;
           if (isPractice) {
-            const feedbackHtml = correct ? `<div style="color:#2bd576;font-size:24px;font-weight:800;">✅ 정답!</div>` : `<div style="color:#ffd166;font-size:24px;font-weight:800;">❌ ${isGo ? '눌러야 해요!' : '참아야 해요!'}</div>`;
+            const feedbackHtml = correct ? `<div style="color:var(--good);font-size:24px;font-weight:800;">✅ 정답!</div>` : `<div style="color:var(--warn);font-size:24px;font-weight:800;">❌ ${isGo ? '눌러야 해요!' : '참아야 해요!'}</div>`;
             app.innerHTML = `<section class="card"><div class="pill">연습 ${currentNum}/${totalNum}</div><div class="stimulusArea">${feedbackHtml}</div></section>`;
             setTimeout(() => resolve({ correct, responded, rt: responseRt, type }), 500);
           } else resolve({ correct, responded, rt: responseRt, type });
@@ -862,7 +885,10 @@
   function renderGoNoGoReady() {
     timerEl.textContent = "00:10";
     app.innerHTML = `<section class="card"><div class="pill">연습 완료</div><h1 class="title">본 검사 시작</h1><p class="desc">준비되면 시작하세요.</p><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="startTestBtn">본 검사 시작</button></div></section>`;
-    $("#startTestBtn").onclick = () => runGoNoGoTest();
+    $("#startTestBtn").onclick = async () => {
+      await showCountdown();
+      runGoNoGoTest();
+    };
   }
 
   async function runGoNoGoTest() {
@@ -933,9 +959,9 @@
 
   async function showDigitSequence(digits) {
     for (let i = 0; i < digits.length; i++) {
-      app.innerHTML = `<section class="card"><div class="pill">숫자 기억</div><div class="stimulusArea"><div style="font-size:120px;font-weight:900;color:#00d4ff;">${digits[i]}</div></div></section>`;
+      app.innerHTML = `<section class="card"><div class="pill">숫자 기억</div><div class="stimulusArea"><div style="font-size:120px;font-weight:900;color:var(--accent);">${digits[i]}</div></div></section>`;
       await sleep(1000);
-      if (i < digits.length - 1) { app.innerHTML = `<section class="card"><div class="pill">숫자 기억</div><div class="stimulusArea"><div style="font-size:48px;color:#a9b3da;">·</div></div></section>`; await sleep(300); }
+      if (i < digits.length - 1) { app.innerHTML = `<section class="card"><div class="pill">숫자 기억</div><div class="stimulusArea"><div style="font-size:48px;color:var(--muted);">·</div></div></section>`; await sleep(300); }
     }
   }
 
@@ -945,29 +971,85 @@
       await showDigitSequence(digits);
       let userInput = [];
       const inputLength = digits.length;
-      const renderInputScreen = () => {
-        const modeText = mode === "forward" ? "정순" : "역순";
-        const inputDisplay = userInput.length > 0 ? userInput.map(d => `<span class="digitInput">${d}</span>`).join(' ') : '<span style="color:#a9b3da;">숫자를 입력하세요</span>';
-        app.innerHTML = `<section class="card"><div class="pill">${isPractice ? `연습 ${currentNum}/${totalNum}` : '본 검사'} · ${modeText}</div><div style="text-align:center;margin:20px 0;"><div style="font-size:14px;color:#a9b3da;margin-bottom:8px;">${digits.length}자리</div><div style="font-size:32px;font-weight:700;min-height:50px;">${inputDisplay}</div></div><div class="digitPad">${[1,2,3,4,5,6,7,8,9,0].map(n=>`<button class="digitBtn" data-digit="${n}">${n}</button>`).join('')}</div><div class="controls" style="margin-top:12px;"><button class="big" id="clearBtn" ${userInput.length===0?'disabled':''}>지우기</button><button class="big" id="submitBtn" ${userInput.length!==inputLength?'disabled':''}>확인</button></div></section>`;
-        document.querySelectorAll('.digitBtn').forEach(btn => { btn.onclick = () => { if (userInput.length < inputLength) { userInput.push(parseInt(btn.dataset.digit)); renderInputScreen(); } }; });
-        const clearBtn = $("#clearBtn"); if (clearBtn) clearBtn.onclick = () => { userInput.pop(); renderInputScreen(); };
-        const submitBtn = $("#submitBtn"); if (submitBtn) submitBtn.onclick = () => finishTrial();
+      
+      const modeText = mode === "forward" ? "정순" : "역순";
+      
+      // 초기 화면 구성 (한 번만 그림)
+      app.innerHTML = `
+        <section class="card">
+          <div class="pill">${isPractice ? `연습 ${currentNum}/${totalNum}` : '본 검사'} · ${modeText}</div>
+          <div style="text-align:center;margin:20px 0;">
+            <div style="font-size:14px;color:var(--muted);margin-bottom:8px;">${digits.length}자리</div>
+            <div id="inputDisplay" style="font-size:32px;font-weight:700;min-height:50px;"></div>
+          </div>
+          <div class="digitPad">
+            ${[1,2,3,4,5,6,7,8,9,0].map(n=>`<button class="digitBtn" data-digit="${n}">${n}</button>`).join('')}
+          </div>
+          <div class="controls" style="margin-top:12px;">
+            <button class="big" id="clearBtn" disabled>지우기</button>
+            <button class="big" id="submitBtn" disabled>확인</button>
+          </div>
+        </section>
+      `;
+      
+      const inputDisplay = $("#inputDisplay");
+      const clearBtn = $("#clearBtn");
+      const submitBtn = $("#submitBtn");
+      
+      // 입력 표시 업데이트 함수 (DOM 부분 업데이트만)
+      const updateDisplay = () => {
+        if (userInput.length > 0) {
+          inputDisplay.innerHTML = userInput.map(d => `<span class="digitInput">${d}</span>`).join(' ');
+        } else {
+          inputDisplay.innerHTML = '<span style="color:var(--muted);">숫자를 입력하세요</span>';
+        }
+        clearBtn.disabled = userInput.length === 0;
+        submitBtn.disabled = userInput.length !== inputLength;
       };
+      
+      updateDisplay();
+      
+      // 숫자 버튼 이벤트
+      document.querySelectorAll('.digitBtn').forEach(btn => {
+        btn.onclick = () => {
+          if (userInput.length < inputLength) {
+            userInput.push(parseInt(btn.dataset.digit));
+            updateDisplay();
+          }
+        };
+      });
+      
+      clearBtn.onclick = () => {
+        userInput.pop();
+        updateDisplay();
+      };
+      
+      submitBtn.onclick = () => finishTrial();
+      
+      // 키보드 입력
       const keyHandler = (e) => {
-        if (e.key >= '0' && e.key <= '9' && userInput.length < inputLength) { userInput.push(parseInt(e.key)); renderInputScreen(); }
-        else if (e.key === 'Backspace' && userInput.length > 0) { userInput.pop(); renderInputScreen(); }
-        else if (e.key === 'Enter' && userInput.length === inputLength) finishTrial();
+        if (e.key >= '0' && e.key <= '9' && userInput.length < inputLength) {
+          userInput.push(parseInt(e.key));
+          updateDisplay();
+        } else if (e.key === 'Backspace' && userInput.length > 0) {
+          userInput.pop();
+          updateDisplay();
+        } else if (e.key === 'Enter' && userInput.length === inputLength) {
+          finishTrial();
+        }
       };
       window.addEventListener('keydown', keyHandler);
+      
       const finishTrial = () => {
         window.removeEventListener('keydown', keyHandler);
         const correct = userInput.length === expectedAnswer.length && userInput.every((d, i) => d === expectedAnswer[i]);
         if (isPractice) {
-          app.innerHTML = `<section class="card"><div class="pill">연습 ${currentNum}/${totalNum}</div><div class="stimulusArea">${correct ? `<div style="color:#2bd576;font-size:24px;font-weight:800;">✅ 정답!</div>` : `<div style="color:#ffd166;font-size:24px;font-weight:800;">❌ 정답: ${expectedAnswer.join(' ')}</div>`}</div></section>`;
+          app.innerHTML = `<section class="card"><div class="pill">연습 ${currentNum}/${totalNum}</div><div class="stimulusArea">${correct ? `<div style="color:var(--good);font-size:24px;font-weight:800;">✅ 정답!</div>` : `<div style="color:var(--warn);font-size:24px;font-weight:800;">❌ 정답: ${expectedAnswer.join(' ')}</div>`}</div></section>`;
           setTimeout(() => resolve({ correct, userInput, expectedAnswer, digits, mode }), 1000);
-        } else resolve({ correct, userInput, expectedAnswer, digits, mode });
+        } else {
+          resolve({ correct, userInput, expectedAnswer, digits, mode });
+        }
       };
-      renderInputScreen();
     });
   }
 
@@ -1106,9 +1188,9 @@
           <section class="card">
             <div class="pill">${isPractice ? `연습 ${currentNum}/${totalNum}` : `본 검사 ${currentNum}/6`}</div>
             <div class="notice" style="text-align:center;margin-bottom:16px;">
-              ${numRequired - userClicks.length}개 더 클릭하세요
+              <span id="remainCount">${numRequired - userClicks.length}</span>개 더 클릭하세요
             </div>
-            ${renderSpatialGrid(gridSize, userClicks, [], null)}
+            <div id="gridContainer">${renderSpatialGrid(gridSize, userClicks, [], null)}</div>
             <div class="controls" style="margin-top:16px;">
               <button class="big" id="clearBtn" ${userClicks.length === 0 ? 'disabled' : ''}>다시 선택</button>
               <button class="big" id="submitBtn" ${userClicks.length !== numRequired ? 'disabled' : ''}>확인</button>
@@ -1116,18 +1198,37 @@
           </section>
         `;
         
+        attachGridEvents();
+      };
+      
+      const updateGrid = () => {
+        const gridContainer = $("#gridContainer");
+        const remainCount = $("#remainCount");
+        const clearBtn = $("#clearBtn");
+        const submitBtn = $("#submitBtn");
+        
+        if (gridContainer) {
+          gridContainer.innerHTML = renderSpatialGrid(gridSize, userClicks, [], null);
+          attachGridEvents();
+        }
+        if (remainCount) remainCount.textContent = numRequired - userClicks.length;
+        if (clearBtn) clearBtn.disabled = userClicks.length === 0;
+        if (submitBtn) submitBtn.disabled = userClicks.length !== numRequired;
+      };
+      
+      const attachGridEvents = () => {
         document.querySelectorAll('.spatialCell').forEach(cell => {
           cell.onclick = () => {
             const idx = parseInt(cell.dataset.idx);
             if (!userClicks.includes(idx) && userClicks.length < numRequired) {
               userClicks.push(idx);
-              renderClickableGrid();
+              updateGrid();
             }
           };
         });
         
         const clearBtn = $("#clearBtn");
-        if (clearBtn) clearBtn.onclick = () => { userClicks = []; renderClickableGrid(); };
+        if (clearBtn) clearBtn.onclick = () => { userClicks = []; updateGrid(); };
         
         const submitBtn = $("#submitBtn");
         if (submitBtn) submitBtn.onclick = () => finishTrial();
@@ -1144,8 +1245,8 @@
         
         if (isPractice) {
           const feedbackHtml = correct
-            ? `<div style="color:#2bd576;font-size:24px;font-weight:800;">✅ 정답!</div>`
-            : `<div style="color:#ffd166;font-size:24px;font-weight:800;">❌ ${correctClicks}/${targets.length}개 맞춤</div>`;
+            ? `<div style="color:var(--good);font-size:24px;font-weight:800;">✅ 정답!</div>`
+            : `<div style="color:var(--warn);font-size:24px;font-weight:800;">❌ ${correctClicks}/${targets.length}개 맞춤</div>`;
           
           app.innerHTML = `
             <section class="card">
@@ -1273,10 +1374,10 @@
     };
     
     const datasets = [
-      { name: '처리속도', color: '#00d4ff', data: normalize(patternHist, 'raw', 50) },
-      { name: '주의·억제', color: '#2bd576', data: normalize(gonogoHist, 'raw', 100) },
-      { name: '숫자기억', color: '#ffd166', data: normalize(digitspanHist, 'totalSpan', 14) },
-      { name: '위치기억', color: '#ff6b6b', data: normalize(spatialHist, 'raw', 100) },
+      { name: '처리속도', color: '#2563eb', data: normalize(patternHist, 'raw', 50) },
+      { name: '주의·억제', color: '#16a34a', data: normalize(gonogoHist, 'raw', 100) },
+      { name: '숫자기억', color: '#ea580c', data: normalize(digitspanHist, 'totalSpan', 14) },
+      { name: '위치기억', color: '#dc2626', data: normalize(spatialHist, 'raw', 100) },
     ];
     
     // 최대 데이터 개수
@@ -1292,11 +1393,11 @@
     }
     
     // 배경
-    ctx.fillStyle = '#0b1020';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
     
     // 그리드 선
-    ctx.strokeStyle = '#243057';
+    ctx.strokeStyle = '#e0e4eb';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
       const y = pad.top + (chartH / 4) * i;
@@ -1306,14 +1407,14 @@
       ctx.stroke();
       
       // Y축 레이블
-      ctx.fillStyle = '#a9b3da';
+      ctx.fillStyle = '#6b7280';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'right';
       ctx.fillText(String(100 - i * 25), pad.left - 8, y + 4);
     }
     
     // X축 레이블
-    ctx.fillStyle = '#a9b3da';
+    ctx.fillStyle = '#6b7280';
     ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
     for (let i = 0; i < maxLen; i++) {
@@ -1356,10 +1457,10 @@
   function renderChartLegend() {
     return `
       <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
-        <span style="font-size:12px;"><span style="color:#00d4ff;">●</span> 처리속도</span>
-        <span style="font-size:12px;"><span style="color:#2bd576;">●</span> 주의·억제</span>
-        <span style="font-size:12px;"><span style="color:#ffd166;">●</span> 숫자기억</span>
-        <span style="font-size:12px;"><span style="color:#ff6b6b;">●</span> 위치기억</span>
+        <span style="font-size:12px;"><span style="color:#2563eb;">●</span> 처리속도</span>
+        <span style="font-size:12px;"><span style="color:#16a34a;">●</span> 주의·억제</span>
+        <span style="font-size:12px;"><span style="color:#ea580c;">●</span> 숫자기억</span>
+        <span style="font-size:12px;"><span style="color:#dc2626;">●</span> 위치기억</span>
       </div>
     `;
   }
@@ -1441,19 +1542,19 @@
         <!-- 영역별 해석 -->
         <div class="interpretSection">
           <div class="interpretItem">
-            <span class="interpIcon" style="color:#00d4ff;">●</span>
+            <span class="interpIcon" style="color:#2563eb;">●</span>
             <span class="interpText">${pInterp}</span>
           </div>
           <div class="interpretItem">
-            <span class="interpIcon" style="color:#2bd576;">●</span>
+            <span class="interpIcon" style="color:#16a34a;">●</span>
             <span class="interpText">${gInterp}</span>
           </div>
           <div class="interpretItem">
-            <span class="interpIcon" style="color:#ffd166;">●</span>
+            <span class="interpIcon" style="color:#ea580c;">●</span>
             <span class="interpText">${dInterp}</span>
           </div>
           <div class="interpretItem">
-            <span class="interpIcon" style="color:#ff6b6b;">●</span>
+            <span class="interpIcon" style="color:#dc2626;">●</span>
             <span class="interpText">${sInterp}</span>
           </div>
         </div>
@@ -1462,10 +1563,6 @@
           <div class="label" style="margin-bottom:8px;">변화 추이 (최근 10회)</div>
           <canvas id="historyChart" style="width:100%;height:180px;"></canvas>
           ${renderChartLegend()}
-        </div>
-
-        <div class="notice" style="margin-top:14px;">
-          💡 ${reassurance}
         </div>
 
         <div class="controls" style="margin-top:14px;">
