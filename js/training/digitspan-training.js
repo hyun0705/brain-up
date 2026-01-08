@@ -1,10 +1,11 @@
 // training/digitspan-training.js
 import { $, sleep, clamp } from '../core/utils.js';
 import { state } from '../core/state.js';
-import { LS_KEYS, loadHistory, getAnonId, getDateKey, hasTrainedToday, getStreak } from '../core/storage.js';
+import { LS_KEYS, loadHistory, getAnonId, getDateKey, hasTrainedToday, getStreak, markGuestTrainingDone } from '../core/storage.js';
 import { playCorrect, playWrong, playComplete, playTick, playClick } from '../core/sound.js';
 import { renderHome } from '../ui/home.js';
 import { renderPastResults } from '../ui/intro.js';
+import { isLoggedIn, saveResults } from '../core/api.js';
 
 // re-export for other modules
 export { hasTrainedToday, getStreak };
@@ -148,28 +149,22 @@ function renderTrainingIntro() {
 }
 
 async function showDigitSequence(digits) {
+  // 먼저 카드 틀을 한 번만 그림
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">관리 ${state.trainingIndex + 1}/${state.trainingTotal}</div>
+      <div class="stimulusArea">
+        <div id="digitDisplay" style="font-size:120px;font-weight:900;color:var(--accent);"></div>
+      </div>
+    </section>
+  `;
+  
+  const display = $("#digitDisplay");
+  
   for (let i = 0; i < digits.length; i++) {
     playTick();
-    app.innerHTML = `
-      <section class="card">
-        <div class="pill">관리 ${state.trainingIndex + 1}/${state.trainingTotal}</div>
-        <div class="stimulusArea">
-          <div style="font-size:120px;font-weight:900;color:var(--accent);">${digits[i]}</div>
-        </div>
-      </section>
-    `;
-    await sleep(1000);
-    if (i < digits.length - 1) {
-      app.innerHTML = `
-        <section class="card">
-          <div class="pill">관리 ${state.trainingIndex + 1}/${state.trainingTotal}</div>
-          <div class="stimulusArea">
-            <div style="font-size:48px;color:var(--muted);">·</div>
-          </div>
-        </section>
-      `;
-      await sleep(300);
-    }
+    display.textContent = digits[i];
+    await sleep(800);
   }
 }
 
@@ -306,6 +301,23 @@ function finishTraining() {
   const history = loadHistory(LS_KEYS.digitspanTrainingHistory);
   history.push(record);
   saveTrainingHistory(history);
+  
+  // 서버에 결과 저장
+  if (isLoggedIn()) {
+    const summary = {
+      type: 'training',
+      span: state.trainingSpan,
+      total: state.trainingTotal,
+      correct: state.trainingCorrect,
+      accuracy: state.trainingCorrect / state.trainingTotal
+    };
+    saveResults('training', summary).catch(e => console.error('훈련 결과 저장 실패:', e));
+  }
+  
+  // 비로그인이면 1회 체험 완료 기록
+  if (!isLoggedIn()) {
+    markGuestTrainingDone();
+  }
   
   const streak = getStreak();
   

@@ -2,7 +2,7 @@
 import { renderMainIntro } from './ui/intro.js';
 import { renderHome } from './ui/home.js';
 import { $ } from './core/utils.js';
-import { resetState } from './core/state.js';
+import { resetState, saveTestProgress } from './core/state.js';
 import { getUserProfile } from './core/storage.js';
 import { LS_KEYS, loadHistory } from './core/storage.js';
 import { needsOnboarding, startOnboarding } from './ui/onboarding.js';
@@ -19,7 +19,7 @@ function boot() {
   const hasHistory = loadHistory(LS_KEYS.patternHistory).length > 0;
   
   // 온보딩 완료했으면 항상 홈으로
-  // (검사 기록 없어도 홈에서 검사 시작 가능)
+  // (진행 중인 검사가 있으면 홈에서 이어하기 표시)
   if (profile && profile.onboardingComplete) {
     renderHome();
   } else if (hasHistory) {
@@ -29,6 +29,18 @@ function boot() {
     renderMainIntro();
   }
 }
+
+// 페이지 이탈 시 진행 상태 저장
+window.addEventListener('beforeunload', () => {
+  saveTestProgress();
+});
+
+// 페이지 숨김 시에도 저장 (모바일 대응)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    saveTestProgress();
+  }
+});
 
 boot();
 

@@ -1,10 +1,11 @@
 // tests/gonogo.js
 import { $, clamp, nowMs, formatMMSS, showCountdown, sleep, TEST_DURATION_MS } from '../core/utils.js';
-import { state, detachKeyHandler } from '../core/state.js';
+import { state, detachKeyHandler, saveTestProgress } from '../core/state.js';
 import { LS_KEYS, loadHistory, saveHistory, loadBaseline, tryUpdateBaseline } from '../core/storage.js';
 import { computeIndexFromBaseline } from '../core/scoring.js';
 import { startDigitSpanTest } from './digitspan.js';
 import { playCorrect, playWrong, playStart, playComplete, playClick } from '../core/sound.js';
+import { isLoggedIn, saveResults } from '../core/api.js';
 
 const app = $("#app");
 
@@ -43,15 +44,24 @@ export function startGoNoGoTest() {
   renderGoNoGoIntro();
 }
 
+// 모바일 감지
+function isMobile() {
+  return window.innerWidth <= 768 || 'ontouchstart' in window;
+}
+
 function renderGoNoGoIntro() {
   document.querySelector(".progress").textContent = "검사 2/4 · 주의·억제";
+  
+  const inputMethod = isMobile() 
+    ? `<span class="kbd">화면 터치</span>` 
+    : `<span class="kbd">스페이스바</span>`;
   
   app.innerHTML = `
     <section class="card">
       <div class="pill">검사 2 · 주의·억제</div>
       <h1 class="title">Go / No-Go 검사</h1>
       <p class="desc">
-        <span style="color:#16a34a;font-size:28px;">●</span> <b>초록 원</b> → <span class="kbd">스페이스바</span><br/>
+        <span style="color:#16a34a;font-size:28px;">●</span> <b>초록 원</b> → ${inputMethod}<br/>
         <span style="color:#dc2626;font-size:28px;">■</span> <b>빨간 사각형</b> → <span class="kbd">누르지 않기</span>
       </p>
       <div class="notice">빠르게 반응하되, 빨간 사각형엔 참아야 해요!</div>
@@ -87,6 +97,7 @@ async function runGoNoGoPractice() {
 function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
   return new Promise((resolve) => {
     const isGo = type === "go";
+    const mobile = isMobile();
     const pillLabel = isPractice ? `연습 ${currentNum}/${totalNum}` : '본 검사';
     const timerHtml = !isPractice ? `<div class="inTestTimer" id="inTestTimer">${formatMMSS(state.testEndMs - nowMs())}</div>` : '';
     app.innerHTML = `<section class="card"><div class="pillRow"><div class="pill">${pillLabel}</div>${timerHtml}</div><div class="stimulusArea"><div style="font-size:48px;color:var(--muted);">+</div></div></section>`;
@@ -95,34 +106,74 @@ function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
       const stimulusHtml = isGo 
         ? `<div style="width:140px;height:140px;background:#16a34a;border-radius:50%;box-shadow:0 4px 20px rgba(22,163,74,0.25);"></div>` 
         : `<div style="width:120px;height:120px;background:#dc2626;border-radius:12px;box-shadow:0 4px 20px rgba(220,38,38,0.25);"></div>`;
-      app.innerHTML = `<section class="card"><div class="pillRow"><div class="pill">${pillLabel}</div>${timerHtml}</div><div class="stimulusArea">${stimulusHtml}</div><div class="notice" style="text-align:center;">${isGo ? '스페이스바!' : '누르지 마세요!'}</div></section>`;
+      
+      // 모바일용 터치 버튼
+      const touchBtnHtml = mobile 
+        ? `<button class="gonogoTouchBtn" id="touchBtn">터치!</button>` 
+        : '';
+      const hintText = isGo 
+        ? (mobile ? '터치!' : '스페이스바!') 
+        : '누르지 마세요!';
+      
+      app.innerHTML = `<section class="card"><div class="pillRow"><div class="pill">${pillLabel}</div>${timerHtml}</div><div class="stimulusArea" id="stimArea">${stimulusHtml}</div><div class="notice" style="text-align:center;">${hintText}</div>${touchBtnHtml}</section>`;
+      
       const stimulusStart = nowMs();
       let responded = false, responseRt = 0;
-      const handleKey = (e) => {
-        if (e.code === "Space" && !responded) {
-          e.preventDefault();
+      
+      const handleResponse = () => {
+        if (!responded) {
           responded = true;
           responseRt = nowMs() - stimulusStart;
           cleanup();
           finishTrial();
         }
       };
+      
+      const handleKey = (e) => {
+        if (e.code === "Space") {
+          e.preventDefault();
+          handleResponse();
+        }
+      };
+      
+      const handleTouch = (e) => {
+        e.preventDefault();
+        handleResponse();
+      };
+      
       const cleanup = () => { 
-        window.removeEventListener("keydown", handleKey); 
+        window.removeEventListener("keydown", handleKey);
+        const touchBtn = $("#touchBtn");
+        if (touchBtn) touchBtn.removeEventListener("touchstart", handleTouch);
+        const stimArea = $("#stimArea");
+        if (stimArea) stimArea.removeEventListener("touchstart", handleTouch);
         if (state.gonogoTimeout) { clearTimeout(state.gonogoTimeout); state.gonogoTimeout = null; } 
       };
+      
       const finishTrial = () => {
-      const correct = isGo ? responded : !responded;
-      if (isPractice) {
-      if (correct) playCorrect(); else playWrong();
-            const feedbackHtml = correct
+        const correct = isGo ? responded : !responded;
+        if (isPractice) {
+          if (correct) playCorrect(); else playWrong();
+          const feedbackHtml = correct
             ? `<div style="color:var(--good);font-size:24px;font-weight:800;">✅ 정답!</div>` 
             : `<div style="color:var(--warn);font-size:24px;font-weight:800;">❌ ${isGo ? '눌러야 해요!' : '참아야 해요!'}</div>`;
           app.innerHTML = `<section class="card"><div class="pill">연습 ${currentNum}/${totalNum}</div><div class="stimulusArea">${feedbackHtml}</div></section>`;
           setTimeout(() => resolve({ correct, responded, rt: responseRt, type }), 500);
         } else resolve({ correct, responded, rt: responseRt, type });
       };
+      
+      // 키보드 이벤트
       window.addEventListener("keydown", handleKey);
+      
+      // 터치 이벤트 (모바일)
+      if (mobile) {
+        const touchBtn = $("#touchBtn");
+        if (touchBtn) touchBtn.addEventListener("touchstart", handleTouch, { passive: false });
+        // 자극 영역 터치도 허용
+        const stimArea = $("#stimArea");
+        if (stimArea) stimArea.addEventListener("touchstart", handleTouch, { passive: false });
+      }
+      
       state.gonogoTimeout = setTimeout(() => { if (!responded) { cleanup(); finishTrial(); } }, 1000);
     }, fixationTime);
   });
@@ -170,6 +221,13 @@ function finishGoNoGoTest() {
   saveHistory(LS_KEYS.gonogoHistory, history);
   const baseline = tryUpdateBaseline(history, LS_KEYS.gonogoBaseline) || loadBaseline(LS_KEYS.gonogoBaseline);
   state.gonogoResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  saveTestProgress(); // 진행 상태 저장
+  
+  // 서버에 결과 저장
+  if (isLoggedIn()) {
+    saveResults('gonogo', summary).catch(e => console.error('결과 저장 실패:', e));
+  }
+  
   playComplete();
   renderGoNoGoDone();
 }
@@ -188,4 +246,18 @@ function renderGoNoGoDone() {
     </section>
   `;
   $("#nextTest").onclick = () => { playClick(); startDigitSpanTest(); };
+}
+
+// 검사 이어하기
+export function resumeGoNoGoTest() {
+  document.querySelector(".progress").textContent = "검사 2/4 · 주의·억제";
+  
+  // 이미 완료된 경우 다음 검사로
+  if (state.gonogoResult) {
+    startDigitSpanTest();
+    return;
+  }
+  
+  // 연습/준비 상태면 인트로부터
+  renderGoNoGoIntro();
 }

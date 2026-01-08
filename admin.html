@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>브레인 업 - 관리자</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #111827;
+    }
+    .header-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .logout {
+      padding: 8px 16px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .login-card {
+      max-width: 400px;
+      margin: 100px auto;
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .login-card h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+    .login-card p {
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .login-card input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+    .login-card button {
+      width: 100%;
+      padding: 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .stat-card .label {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 800;
+      color: #111827;
+    }
+    .stat-card.highlight {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+    .stat-card.highlight .label,
+    .stat-card.highlight .value {
+      color: white;
+    }
+    .stat-card.clickable {
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .stat-card.clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f3f4f6;
+      font-weight: 700;
+      color: #111827;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table th, .table td {
+      padding: 12px 20px;
+      text-align: left;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .table th {
+      background: #f9fafb;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    .table td {
+      font-size: 14px;
+      color: #374151;
+    }
+    .table tr:hover {
+      background: #f9fafb;
+    }
+    .table tr {
+      cursor: pointer;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge.kakao {
+      background: #fee500;
+      color: #000;
+    }
+    .badge.email {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+    .empty {
+      padding: 40px;
+      text-align: center;
+      color: #9ca3af;
+    }
+    .btn {
+      padding: 8px 16px;
+      background: #f3f4f6;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #374151;
+    }
+    .btn:hover {
+      background: #e5e7eb;
+    }
+    .btn.danger {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    .btn.danger:hover {
+      background: #fee2e2;
+    }
+    .btn.primary {
+      background: #2563eb;
+      color: white;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+    .modal-section {
+      margin-bottom: 20px;
+    }
+    .modal-section h3 {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .modal-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .modal-info-item {
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .modal-info-item .label {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .modal-info-item .value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .test-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .test-item {
+      padding: 10px 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .test-item .date {
+      color: #6b7280;
+      font-size: 12px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+    }
+    .tab.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: white;
+    }
+    .tab:hover:not(.active) {
+      background: #f9fafb;
+    }
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-badge.pending {
+      background: #fef3c7;
+      color: #d97706;
+    }
+    .status-badge.confirmed {
+      background: #d1fae5;
+      color: #059669;
+    }
+    .status-badge.rejected {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .action-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .action-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .action-btn.confirm {
+      background: #d1fae5;
+      color: #059669;
+    }
+    .action-btn.confirm:hover {
+      background: #a7f3d0;
+    }
+    .action-btn.reject {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .action-btn.reject:hover {
+      background: #fecaca;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app"></div>
+
+  <script>
+    const API_URL = 'https://brainup-api.stardog0705.workers.dev';
+    const ADMIN_PASSWORD = 'brainup2026!';
+    
+    let isLoggedIn = sessionStorage.getItem('admin_logged_in') === 'true';
+    let currentTab = 'users';
+    let paymentFilter = 'pending'; // 'all' 또는 'pending'
+    
+    async function fetchStats() {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/stats`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        return await res.json();
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+    
+    async function fetchActiveToday() {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/active-today`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        return await res.json();
+      } catch (e) {
+        console.error(e);
+        return { activeToday: 0 };
+      }
+    }
+    
+    async function fetchUsers() {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/users-with-subscription`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        return data.users || [];
+      } catch (e) {
+        console.error(e);
+        return [];
+      }
+    }
+    
+    async function fetchUserDetail(userId) {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/user/${userId}`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        return await res.json();
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+    
+    async function deleteUser(userId) {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/user/${userId}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        return await res.json();
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+    
+    function renderLogin() {
+      document.getElementById('app').innerHTML = `
+        <div class="login-card">
+          <h1>관리자 로그인</h1>
+          <p>관리자 비밀번호를 입력하세요.</p>
+          <input type="password" id="passwordInput" placeholder="비밀번호" onkeypress="if(event.key==='Enter')handleLogin()" />
+          <button onclick="handleLogin()">로그인</button>
+        </div>
+      `;
+    }
+    
+    function handleLogin() {
+      const pw = document.getElementById('passwordInput').value;
+      if (pw === ADMIN_PASSWORD) {
+        sessionStorage.setItem('admin_logged_in', 'true');
+        isLoggedIn = true;
+        renderDashboard();
+      } else {
+        alert('비밀번호가 틀렸습니다.');
+      }
+    }
+    
+    function handleLogout() {
+      sessionStorage.removeItem('admin_logged_in');
+      isLoggedIn = false;
+      renderLogin();
+    }
+    
+    async function renderDashboard() {
+      document.getElementById('app').innerHTML = `
+        <div class="header">
+          <h1>📊 브레인 업 관리자</h1>
+          <div class="header-btns">
+            <button class="logout" onclick="handleLogout()">로그아웃</button>
+          </div>
+        </div>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><div class="label">로딩 중...</div></div>
+        </div>
+        <div class="tabs">
+          <button class="tab active" id="tabUsers">사용자</button>
+          <button class="tab" id="tabPayments">결제 관리</button>
+          <button class="tab" id="tabNotices">공지사항</button>
+          <button class="btn" onclick="refreshCurrentTab()" style="margin-left:auto;">
+            <i class="fa-solid fa-refresh"></i> 새로고침
+          </button>
+        </div>
+        
+        <div class="card" id="usersCard">
+          <div class="card-header">
+            <span>사용자 목록</span>
+            <span style="font-size:13px;color:#6b7280;font-weight:400;">클릭하면 상세 정보</span>
+          </div>
+          <div id="userTable">
+            <div class="empty">로딩 중...</div>
+          </div>
+        </div>
+        
+        <div class="card" id="paymentsCard" style="display:none;">
+          <div class="card-header">
+            <span>결제 내역</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn" id="filterPending" onclick="setPaymentFilter('pending')" style="background:#fef3c7;color:#d97706;font-size:12px;padding:6px 12px;">대기 중만</button>
+              <button class="btn" id="filterAll" onclick="setPaymentFilter('all')" style="font-size:12px;padding:6px 12px;">전체 보기</button>
+            </div>
+          </div>
+          <div id="paymentTable">
+            <div class="empty">로딩 중...</div>
+          </div>
+        </div>
+        
+        <div class="card" id="noticesCard" style="display:none;">
+          <div class="card-header">
+            <span>공지사항 관리</span>
+            <button class="btn primary" onclick="showNoticeForm()">
+              <i class="fa-solid fa-plus"></i> 새 공지
+            </button>
+          </div>
+          <div id="noticeTable">
+            <div class="empty">로딩 중...</div>
+          </div>
+        </div>
+      `;
+      
+      // 통계 로드
+      const [stats, active] = await Promise.all([fetchStats(), fetchActiveToday()]);
+      if (stats) {
+        document.getElementById('statsGrid').innerHTML = `
+          <div class="stat-card clickable" onclick="showAllUsers()">
+            <div class="label">총 가입자</div>
+            <div class="value">${stats.totalUsers || 0}</div>
+          </div>
+          <div class="stat-card clickable" onclick="showTodaySignups()">
+            <div class="label">오늘 가입</div>
+            <div class="value">${stats.todaySignups || 0}</div>
+          </div>
+          <div class="stat-card highlight clickable" onclick="showActiveToday()">
+            <div class="label">오늘 로그인</div>
+            <div class="value">${active.activeToday || 0}</div>
+          </div>
+        `;
+      }
+      
+      // 탭 이벤트
+      document.getElementById('tabUsers').onclick = () => switchTab('users');
+      document.getElementById('tabPayments').onclick = () => switchTab('payments');
+      document.getElementById('tabNotices').onclick = () => switchTab('notices');
+      
+      // 사용자 목록 로드
+      const users = await fetchUsers();
+      renderUserTable(users);
+    }
+    
+    let isModalLoading = false;
+    
+    async function showUserDetail(userId) {
+      // 이미 로딩 중이면 무시
+      if (isModalLoading) return;
+      
+      // 이미 모달이 열려있으면 닫기
+      closeModal();
+      
+      isModalLoading = true;
+      
+      const data = await fetchUserDetail(userId);
+      isModalLoading = false;
+      
+      if (!data || !data.user) {
+        alert('사용자 정보를 불러올 수 없습니다.');
+        return;
+      }
+      
+      const u = data.user;
+      const tests = data.tests || [];
+      const sessions = data.sessions || [];
+      const payments = data.payments || [];
+      
+      // 가입 방식
+      const signupMethod = u.kakao_id ? '<span class="badge kakao">카카오</span>' : '<span class="badge email">이메일</span>';
+      
+      // 구독 정보 계산
+      const activePayment = payments.find(p => p.status === 'confirmed' && new Date(p.expires_at) > new Date());
+      const pendingPayment = payments.find(p => p.status === 'pending');
+      
+      let subscriptionInfo = { plan: '없음', period: '-', status: '무료' };
+      if (activePayment) {
+        subscriptionInfo = {
+          plan: activePayment.plan === 'yearly' ? '연간 구독' : '월간 구독',
+          period: `${new Date(activePayment.confirmed_at).toLocaleDateString('ko-KR')} ~ ${new Date(activePayment.expires_at).toLocaleDateString('ko-KR')}`,
+          status: '구독 중'
+        };
+      } else if (pendingPayment) {
+        subscriptionInfo = {
+          plan: pendingPayment.plan === 'yearly' ? '연간 구독' : '월간 구독',
+          period: '승인 대기 중',
+          status: '승인 대기'
+        };
+      }
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>${u.name || '이름 없음'} 상세 정보</h2>
+          
+          <div class="modal-section">
+            <h3>기본 정보</h3>
+            <div class="modal-info">
+              <div class="modal-info-item">
+                <div class="label">ID</div>
+                <div class="value">${u.id}</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="label">이메일</div>
+                <div class="value">${u.email || '-'}</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="label">가입 방식</div>
+                <div class="value">${signupMethod}</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="label">가입일</div>
+                <div class="value">${new Date(u.created_at).toLocaleString('ko-KR')}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-section">
+            <h3>구독 정보</h3>
+            <div class="modal-info">
+              <div class="modal-info-item">
+                <div class="label">플랜</div>
+                <div class="value">${subscriptionInfo.plan}</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="label">상태</div>
+                <div class="value">${subscriptionInfo.status === '구독 중' ? '<span class="status-badge confirmed">구독 중</span>' : subscriptionInfo.status === '승인 대기' ? '<span class="status-badge pending">승인 대기</span>' : '<span class="status-badge" style="background:#f3f4f6;color:#6b7280;">무료</span>'}</div>
+              </div>
+              <div class="modal-info-item" style="grid-column: span 2;">
+                <div class="label">구독 기간</div>
+                <div class="value">${subscriptionInfo.period}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-section">
+            <h3>검사 기록 (${tests.length}건)</h3>
+            <div class="test-list">
+              ${tests.length === 0 ? '<div class="empty" style="padding:20px;">검사 기록이 없습니다.</div>' : 
+                tests.map(t => `
+                  <div class="test-item">
+                    <strong>${t.test_type}</strong>
+                    <div class="date">${new Date(t.created_at).toLocaleString('ko-KR')}</div>
+                  </div>
+                `).join('')}
+            </div>
+          </div>
+          
+          <div class="modal-section">
+            <h3>최근 세션 (${sessions.length}건)</h3>
+            <div class="test-list">
+              ${sessions.length === 0 ? '<div class="empty" style="padding:20px;">세션 기록이 없습니다.</div>' : 
+                sessions.map(s => `
+                  <div class="test-item">
+                    <div class="date">${new Date(s.created_at).toLocaleString('ko-KR')} 로그인</div>
+                  </div>
+                `).join('')}
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button class="btn danger" onclick="confirmDeleteUser(${u.id}, '${u.name || '이름 없음'}')">
+              <i class="fa-solid fa-trash"></i> 사용자 삭제
+            </button>
+            <button class="btn" onclick="closeModal()">닫기</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+      };
+    }
+    
+    function closeModal() {
+      const modal = document.querySelector('.modal-overlay');
+      if (modal) modal.remove();
+    }
+    
+    async function confirmDeleteUser(userId, userName) {
+      if (confirm(`정말 "${userName}" 사용자를 삭제할까요?\n\n모든 검사 기록과 세션이 삭제됩니다.`)) {
+        const result = await deleteUser(userId);
+        if (result && result.success) {
+          alert('사용자가 삭제되었습니다.');
+          closeModal();
+          renderDashboard();
+        } else {
+          alert('삭제 실패');
+        }
+      }
+    }
+    
+    // 탭 전환
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tabUsers').classList.toggle('active', tab === 'users');
+      document.getElementById('tabPayments').classList.toggle('active', tab === 'payments');
+      document.getElementById('tabNotices').classList.toggle('active', tab === 'notices');
+      document.getElementById('usersCard').style.display = tab === 'users' ? 'block' : 'none';
+      document.getElementById('paymentsCard').style.display = tab === 'payments' ? 'block' : 'none';
+      document.getElementById('noticesCard').style.display = tab === 'notices' ? 'block' : 'none';
+      
+      if (tab === 'payments') {
+        loadPayments();
+      }
+      if (tab === 'notices') {
+        loadNotices();
+      }
+    }
+    
+    // 현재 탭 새로고침
+    async function refreshCurrentTab() {
+      if (currentTab === 'users') {
+        const tableEl = document.getElementById('userTable');
+        tableEl.innerHTML = '<div class="empty">로딩 중...</div>';
+        const users = await fetchUsers();
+        renderUserTable(users);
+      } else if (currentTab === 'payments') {
+        loadPayments();
+      } else if (currentTab === 'notices') {
+        loadNotices();
+      }
+    }
+    
+    // 공지사항 목록 로드
+    async function loadNotices() {
+      const tableEl = document.getElementById('noticeTable');
+      tableEl.innerHTML = '<div class="empty">로딩 중...</div>';
+      
+      try {
+        const res = await fetch(`${API_URL}/api/admin/notices`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        const notices = data.notices || [];
+        
+        if (notices.length === 0) {
+          tableEl.innerHTML = '<div class="empty">등록된 공지사항이 없습니다.</div>';
+          return;
+        }
+        
+        tableEl.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>제목</th>
+                <th>상태</th>
+                <th>작성일</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${notices.map(n => `
+                <tr>
+                  <td>${n.id}</td>
+                  <td>${n.title}</td>
+                  <td>${n.is_active ? '<span class="status-badge confirmed">활성</span>' : '<span class="status-badge" style="background:#f3f4f6;color:#6b7280;">비활성</span>'}</td>
+                  <td>${new Date(n.created_at).toLocaleDateString('ko-KR')}</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="action-btn confirm" onclick="event.stopPropagation(); editNotice(${n.id})">수정</button>
+                      <button class="action-btn reject" onclick="event.stopPropagation(); deleteNotice(${n.id})">삭제</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (e) {
+        tableEl.innerHTML = '<div class="empty">로딩 실패</div>';
+      }
+    }
+    
+    // 공지 데이터 저장
+    let noticesData = [];
+    
+    // 공지 목록 로드 (데이터 저장용)
+    async function fetchNoticesData() {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/notices`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        noticesData = data.notices || [];
+        return noticesData;
+      } catch (e) {
+        return [];
+      }
+    }
+    
+    // 새 공지 작성 폼
+    function showNoticeForm() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>새 공지사항 작성</h2>
+          <div class="modal-section">
+            <div style="margin-bottom:12px;">
+              <label style="display:block;font-size:14px;color:#374151;margin-bottom:6px;">제목</label>
+              <input type="text" id="noticeTitle" placeholder="공지 제목" style="width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:14px;color:#374151;margin-bottom:6px;">내용</label>
+              <textarea id="noticeContent" placeholder="공지 내용" rows="6" style="width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;resize:vertical;"></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn" onclick="closeModal()">취소</button>
+            <button class="btn primary" onclick="saveNotice()">저장</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+    }
+    
+    // 공지 저장
+    async function saveNotice() {
+      const title = document.getElementById('noticeTitle').value.trim();
+      const content = document.getElementById('noticeContent').value.trim();
+      
+      if (!title || !content) {
+        alert('제목과 내용을 입력해주세요.');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_URL}/api/admin/notices`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': ADMIN_PASSWORD
+          },
+          body: JSON.stringify({ title, content })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('공지사항이 등록되었습니다.');
+          closeModal();
+          loadNotices();
+        } else {
+          alert('등록 실패: ' + (data.error || '알 수 없는 오류'));
+        }
+      } catch (e) {
+        alert('오류: ' + e.message);
+      }
+    }
+    
+    // 공지 수정 폼
+    async function editNotice(id) {
+      if (noticesData.length === 0) {
+        await fetchNoticesData();
+      }
+      const notice = noticesData.find(n => n.id === id);
+      if (!notice) {
+        alert('공지사항을 찾을 수 없습니다.');
+        return;
+      }
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>공지사항 수정</h2>
+          <div class="modal-section">
+            <div style="margin-bottom:12px;">
+              <label style="display:block;font-size:14px;color:#374151;margin-bottom:6px;">제목</label>
+              <input type="text" id="editNoticeTitle" value="${notice.title}" style="width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;" />
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="display:block;font-size:14px;color:#374151;margin-bottom:6px;">내용</label>
+              <textarea id="editNoticeContent" rows="6" style="width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;resize:vertical;">${notice.content}</textarea>
+            </div>
+            <div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#374151;cursor:pointer;">
+                <input type="checkbox" id="editNoticeActive" ${notice.is_active ? 'checked' : ''} style="width:18px;height:18px;" />
+                활성화 (사용자에게 표시)
+              </label>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn" onclick="closeModal()">취소</button>
+            <button class="btn primary" onclick="updateNotice(${id})">저장</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+    }
+    
+    // 공지 업데이트
+    async function updateNotice(id) {
+      const title = document.getElementById('editNoticeTitle').value.trim();
+      const content = document.getElementById('editNoticeContent').value.trim();
+      const is_active = document.getElementById('editNoticeActive').checked ? 1 : 0;
+      
+      if (!title || !content) {
+        alert('제목과 내용을 입력해주세요.');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_URL}/api/admin/notices`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': ADMIN_PASSWORD
+          },
+          body: JSON.stringify({ id, title, content, is_active })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('공지사항이 수정되었습니다.');
+          closeModal();
+          noticesData = [];
+          loadNotices();
+        } else {
+          alert('수정 실패: ' + (data.error || '알 수 없는 오류'));
+        }
+      } catch (e) {
+        alert('오류: ' + e.message);
+      }
+    }
+    
+    // 공지 삭제
+    async function deleteNotice(id) {
+      if (!confirm('이 공지사항을 삭제할까요?')) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/api/admin/notice/${id}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('삭제되었습니다.');
+          loadNotices();
+        } else {
+          alert('삭제 실패: ' + (data.error || '알 수 없는 오류'));
+        }
+      } catch (e) {
+        alert('오류: ' + e.message);
+      }
+    }
+    
+    function getSubscriptionBadge(user) {
+      if (!user.subscription_status) {
+        return '<span class="status-badge" style="background:#f3f4f6;color:#6b7280;">무료</span>';
+      }
+      if (user.subscription_status === 'confirmed') {
+        const plan = user.subscription_plan === 'yearly' ? '연간' : '월간';
+        const expiry = user.subscription_expires ? new Date(user.subscription_expires).toLocaleDateString('ko-KR') : '';
+        return `<span class="status-badge confirmed">${plan} (~${expiry})</span>`;
+      }
+      if (user.subscription_status === 'pending') {
+        return '<span class="status-badge pending">승인대기</span>';
+      }
+      return '<span class="status-badge" style="background:#f3f4f6;color:#6b7280;">무료</span>';
+    }
+    
+    function renderUserTable(users) {
+      const tableEl = document.getElementById('userTable');
+      if (users.length === 0) {
+        tableEl.innerHTML = '<div class="empty">가입한 사용자가 없습니다.</div>';
+      } else {
+        tableEl.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>이름</th>
+                <th>이메일</th>
+                <th>가입 방식</th>
+                <th>구독</th>
+                <th>가입일</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${users.map(u => `
+                <tr onclick="showUserDetail(${u.id})">
+                  <td>${u.id}</td>
+                  <td>${u.name || '-'}</td>
+                  <td>${u.email || '-'}</td>
+                  <td>${u.kakao_id ? '<span class="badge kakao">카카오</span>' : '<span class="badge email">이메일</span>'}</td>
+                  <td>${getSubscriptionBadge(u)}</td>
+                  <td>${new Date(u.created_at).toLocaleDateString('ko-KR')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+    }
+    
+    // 결제 필터 설정
+    function setPaymentFilter(filter) {
+      paymentFilter = filter;
+      // 버튼 스타일 업데이트
+      const pendingBtn = document.getElementById('filterPending');
+      const allBtn = document.getElementById('filterAll');
+      if (filter === 'pending') {
+        pendingBtn.style.background = '#fef3c7';
+        pendingBtn.style.color = '#d97706';
+        allBtn.style.background = '#f3f4f6';
+        allBtn.style.color = '#374151';
+      } else {
+        pendingBtn.style.background = '#f3f4f6';
+        pendingBtn.style.color = '#374151';
+        allBtn.style.background = '#2563eb';
+        allBtn.style.color = 'white';
+      }
+      loadPayments();
+    }
+    
+    // 결제 목록 로드
+    async function loadPayments() {
+      const tableEl = document.getElementById('paymentTable');
+      tableEl.innerHTML = '<div class="empty">로딩 중...</div>';
+      
+      try {
+        const res = await fetch(`${API_URL}/api/admin/payments`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        let payments = data.payments || [];
+        
+        // 필터 적용
+        if (paymentFilter === 'pending') {
+          payments = payments.filter(p => p.status === 'pending');
+        }
+        
+        if (payments.length === 0) {
+          tableEl.innerHTML = `<div class="empty">${paymentFilter === 'pending' ? '승인 대기 중인 결제가 없습니다.' : '결제 내역이 없습니다.'}</div>`;
+          return;
+        }
+        
+        tableEl.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>이름</th>
+                <th>플랜</th>
+                <th>금액</th>
+                <th>상태</th>
+                <th>요청일</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${payments.map(p => `
+                <tr onclick="showUserDetail(${p.user_id})" style="cursor:pointer;">
+                  <td>${p.user_id}</td>
+                  <td>${p.user_name || '-'}</td>
+                  <td>${p.plan === 'yearly' ? '연 구독' : '월 구독'}</td>
+                  <td>${Number(p.amount).toLocaleString()}원</td>
+                  <td><span class="status-badge ${p.status}">${getStatusText(p.status)}</span></td>
+                  <td>${new Date(p.created_at).toLocaleString('ko-KR')}</td>
+                  <td>
+                    ${p.status === 'pending' ? `
+                      <div class="action-btns">
+                        <button class="action-btn confirm" onclick="event.stopPropagation(); confirmPayment(${p.id})">승인</button>
+                        <button class="action-btn reject" onclick="event.stopPropagation(); rejectPayment(${p.id})">거절</button>
+                      </div>
+                    ` : '-'}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (e) {
+        tableEl.innerHTML = '<div class="empty">로딩 실패</div>';
+      }
+    }
+    
+    function getStatusText(status) {
+      if (status === 'pending') return '대기 중';
+      if (status === 'confirmed') return '승인됨';
+      if (status === 'rejected') return '거절됨';
+      return status;
+    }
+    
+    // 결제 승인
+    async function confirmPayment(paymentId) {
+      if (!confirm('이 결제를 승인할까요?')) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/api/admin/payment/confirm`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Key': ADMIN_PASSWORD 
+          },
+          body: JSON.stringify({ paymentId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('승인되었습니다.');
+          loadPayments();
+        } else {
+          alert('실패: ' + (data.error || '알 수 없는 오류'));
+        }
+      } catch (e) {
+        alert('오류: ' + e.message);
+      }
+    }
+    
+    // 결제 거절
+    async function rejectPayment(paymentId) {
+      if (!confirm('이 결제를 거절할까요?')) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/api/admin/payment/reject`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Key': ADMIN_PASSWORD 
+          },
+          body: JSON.stringify({ paymentId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('거절되었습니다.');
+          loadPayments();
+        } else {
+          alert('실패: ' + (data.error || '알 수 없는 오류'));
+        }
+      } catch (e) {
+        alert('오류: ' + e.message);
+      }
+    }
+    
+    // 총 가입자 클릭
+    function showAllUsers() {
+      showListModal('총 가입자', fetchUsers, 'users');
+    }
+    
+    // 오늘 활성 클릭
+    async function showActiveToday() {
+      showListModal('오늘 활성 사용자', async () => {
+        const res = await fetch(`${API_URL}/api/admin/active-today-list`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        return data.users || [];
+      }, 'users');
+    }
+    
+    // 오늘 가입 클릭
+    async function showTodaySignups() {
+      showListModal('오늘 가입자', async () => {
+        const res = await fetch(`${API_URL}/api/admin/today-signups`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        return data.users || [];
+      }, 'users');
+    }
+    
+    // 총 검사 클릭
+    async function showAllTests() {
+      showListModal('전체 검사 기록', async () => {
+        const res = await fetch(`${API_URL}/api/admin/all-tests`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        return data.tests || [];
+      }, 'tests');
+    }
+    
+    // 리스트 모달 표시
+    async function showListModal(title, fetchFn, type) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>${title}</h2>
+          <div class="test-list" style="max-height:400px;">
+            <div class="empty">로딩 중...</div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn" onclick="closeModal()">닫기</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+      
+      const data = await fetchFn();
+      const listEl = modal.querySelector('.test-list');
+      
+      if (data.length === 0) {
+        listEl.innerHTML = '<div class="empty">데이터가 없습니다.</div>';
+        return;
+      }
+      
+      if (type === 'users') {
+        listEl.innerHTML = data.map(u => `
+          <div class="test-item" style="cursor:pointer;" onclick="closeModal(); showUserDetail(${u.id})">
+            <strong>${u.name || '이름 없음'}</strong>
+            <span style="color:#6b7280;margin-left:8px;">${u.email || '-'}</span>
+            <div class="date">${new Date(u.created_at).toLocaleString('ko-KR')}</div>
+          </div>
+        `).join('');
+      } else if (type === 'tests') {
+        listEl.innerHTML = data.map(t => `
+          <div class="test-item">
+            <strong>${t.test_type}</strong>
+            <span style="color:#6b7280;margin-left:8px;">by ${t.user_name || '알 수 없음'}</span>
+            <div class="date">${new Date(t.created_at).toLocaleString('ko-KR')}</div>
+          </div>
+        `).join('');
+      }
+    }
+    
+    // 초기화
+    if (isLoggedIn) {
+      renderDashboard();
+    } else {
+      renderLogin();
+    }
+  </script>
+</body>
+</html>

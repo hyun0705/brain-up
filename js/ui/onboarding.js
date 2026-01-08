@@ -63,9 +63,54 @@ function renderOnboardingStep1() {
   $("#nextBtn").onclick = () => { playClick(); renderOnboardingStep2(); };
 }
 
+// 모바일 감지
+function isMobile() {
+  return window.innerWidth <= 768 || 'ontouchstart' in window;
+}
+
 // Step 2: 프로필 입력
 function renderOnboardingStep2() {
   document.querySelector(".progress").textContent = "프로필 설정";
+  
+  const today = new Date();
+  const thisYear = today.getFullYear();
+  const maxBirthYear = thisYear - 19; // 만 19세 이상
+  
+  // 모바일: 네이티브 date picker, PC: 드롭다운 3개
+  const mobile = isMobile();
+  
+  let birthInputHtml = '';
+  if (mobile) {
+    const maxDate = new Date(maxBirthYear, today.getMonth(), today.getDate());
+    const maxDateStr = maxDate.toISOString().split('T')[0];
+    birthInputHtml = `
+      <input type="date" id="birthDate" class="formInput dateInput" 
+        min="1920-01-01" max="${maxDateStr}">
+    `;
+  } else {
+    // 연도 옵션
+    let yearOptions = '<option value="">연도</option>';
+    for (let y = maxBirthYear; y >= 1920; y--) {
+      yearOptions += `<option value="${y}">${y}년</option>`;
+    }
+    // 월 옵션
+    let monthOptions = '<option value="">월</option>';
+    for (let m = 1; m <= 12; m++) {
+      monthOptions += `<option value="${m}">${m}월</option>`;
+    }
+    // 일 옵션
+    let dayOptions = '<option value="">일</option>';
+    for (let d = 1; d <= 31; d++) {
+      dayOptions += `<option value="${d}">${d}일</option>`;
+    }
+    birthInputHtml = `
+      <div class="selectRow">
+        <select id="yearSelect" class="formSelect">${yearOptions}</select>
+        <select id="monthSelect" class="formSelect">${monthOptions}</select>
+        <select id="daySelect" class="formSelect">${dayOptions}</select>
+      </div>
+    `;
+  }
   
   app.innerHTML = `
     <section class="card onboardingCard">
@@ -79,13 +124,8 @@ function renderOnboardingStep2() {
       </p>
       
       <div class="formGroup">
-        <label class="formLabel">연령대</label>
-        <div class="formOptions" id="ageOptions">
-          <button class="formOption" data-value="40대">40대</button>
-          <button class="formOption" data-value="50대">50대</button>
-          <button class="formOption" data-value="60대">60대</button>
-          <button class="formOption" data-value="70대 이상">70대 이상</button>
-        </div>
+        <label class="formLabel">생년월일</label>
+        ${birthInputHtml}
       </div>
       
       <div class="formGroup">
@@ -111,23 +151,36 @@ function renderOnboardingStep2() {
     </section>
   `;
   
-  let selectedAge = null;
   let selectedGender = null;
   
-  const updateNextBtn = () => {
-    $("#nextBtn").disabled = !(selectedAge && selectedGender);
+  const getBirthData = () => {
+    if (mobile) {
+      const val = $("#birthDate").value;
+      if (!val) return null;
+      const d = new Date(val);
+      return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+    } else {
+      const year = parseInt($("#yearSelect").value);
+      const month = parseInt($("#monthSelect").value);
+      const day = parseInt($("#daySelect").value);
+      if (!year || !month || !day) return null;
+      return { year, month, day };
+    }
   };
   
-  // 연령대 선택
-  document.querySelectorAll('#ageOptions .formOption').forEach(btn => {
-    btn.onclick = () => {
-      playClick();
-      document.querySelectorAll('#ageOptions .formOption').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedAge = btn.dataset.value;
-      updateNextBtn();
-    };
-  });
+  const updateNextBtn = () => {
+    const birth = getBirthData();
+    $("#nextBtn").disabled = !(birth && selectedGender);
+  };
+  
+  // 입력 변경 이벤트
+  if (mobile) {
+    $("#birthDate").onchange = updateNextBtn;
+  } else {
+    $("#yearSelect").onchange = updateNextBtn;
+    $("#monthSelect").onchange = updateNextBtn;
+    $("#daySelect").onchange = updateNextBtn;
+  }
   
   // 성별 선택
   document.querySelectorAll('#genderOptions .formOption').forEach(btn => {
@@ -141,15 +194,35 @@ function renderOnboardingStep2() {
   });
   
   $("#nextBtn").onclick = () => {
+    const birth = getBirthData();
+    
+    // 나이 계산
+    let age = today.getFullYear() - birth.year;
+    const monthDiff = today.getMonth() + 1 - birth.month;
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.day)) {
+      age--;
+    }
+    
+    // 만 19세 미만 체크
+    if (age < 19) {
+      alert('본 서비스는 만 19세 이상 성인을 대상으로 합니다.');
+      return;
+    }
+    
     playClick();
-    // 임시 저장
-    window._onboardingData = { age: selectedAge, gender: selectedGender };
+    window._onboardingData = { 
+      birthYear: birth.year, 
+      birthMonth: birth.month,
+      birthDay: birth.day,
+      age, 
+      gender: selectedGender 
+    };
     renderOnboardingStep3();
   };
   
   $("#skipBtn").onclick = () => {
     playClick();
-    window._onboardingData = { age: null, gender: null };
+    window._onboardingData = { birthYear: null, birthMonth: null, birthDay: null, age: null, gender: null };
     renderOnboardingStep3();
   };
 }
@@ -218,6 +291,9 @@ function renderOnboardingStep3() {
     // 프로필 저장
     const data = window._onboardingData || {};
     const profile = {
+      birthYear: data.birthYear,
+      birthMonth: data.birthMonth,
+      birthDay: data.birthDay,
       age: data.age,
       gender: data.gender,
       reminderTime: selectedTime,

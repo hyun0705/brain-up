@@ -1,10 +1,11 @@
 // tests/spatial.js
 import { $, sleep } from '../core/utils.js';
-import { state } from '../core/state.js';
+import { state, clearTestProgress } from '../core/state.js';
 import { LS_KEYS, loadHistory, saveHistory, loadBaseline, tryUpdateBaseline } from '../core/storage.js';
 import { computeIndexFromBaseline } from '../core/scoring.js';
 import { renderFinalResult } from '../ui/result.js';
 import { playCorrect, playWrong, playComplete, playClick } from '../core/sound.js';
+import { isLoggedIn, saveResults } from '../core/api.js';
 
 const app = $("#app");
 
@@ -19,8 +20,10 @@ function generateSpatialTrial(rng, gridSize, numTargets) {
 }
 
 function renderSpatialGrid(gridSize, highlightedCells, clickableCells, onCellClick) {
-  const cellSize = 70;
-  const gap = 8;
+  // 모바일 대응: 화면 너비에 따라 셀 크기 조정
+  const isMobile = window.innerWidth <= 480;
+  const cellSize = isMobile ? 50 : 70;
+  const gap = isMobile ? 6 : 8;
   const totalSize = gridSize * cellSize + (gridSize - 1) * gap;
   
   let html = `<div class="spatialGrid" style="display:grid;grid-template-columns:repeat(${gridSize},${cellSize}px);gap:${gap}px;width:${totalSize}px;">`;
@@ -228,6 +231,12 @@ function finishSpatialTest() {
   
   const baseline = tryUpdateBaseline(history, LS_KEYS.spatialBaseline) || loadBaseline(LS_KEYS.spatialBaseline);
   state.spatialResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  clearTestProgress(); // 모든 검사 완료 - 진행 상태 삭제
+  
+  // 서버에 결과 저장
+  if (isLoggedIn()) {
+    saveResults('spatial', summary).catch(e => console.error('결과 저장 실패:', e));
+  }
   
   playComplete();
   renderFinalResult();

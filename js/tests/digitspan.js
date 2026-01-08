@@ -1,10 +1,11 @@
 // tests/digitspan.js
 import { $, sleep } from '../core/utils.js';
-import { state } from '../core/state.js';
+import { state, saveTestProgress } from '../core/state.js';
 import { LS_KEYS, loadHistory, saveHistory, loadBaseline, tryUpdateBaseline } from '../core/storage.js';
 import { computeIndexFromBaseline } from '../core/scoring.js';
 import { startSpatialTest } from './spatial.js';
 import { playCorrect, playWrong, playComplete, playTick, playClick } from '../core/sound.js';
+import { isLoggedIn, saveResults } from '../core/api.js';
 
 const app = $("#app");
 
@@ -59,14 +60,22 @@ async function runDigitSpanPractice() {
 }
 
 async function showDigitSequence(digits) {
+  // 먼저 카드 틀을 한 번만 그림
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">숫자 기억</div>
+      <div class="stimulusArea">
+        <div id="digitDisplay" style="font-size:120px;font-weight:900;color:var(--accent);"></div>
+      </div>
+    </section>
+  `;
+  
+  const display = $("#digitDisplay");
+  
   for (let i = 0; i < digits.length; i++) {
     playTick();
-    app.innerHTML = `<section class="card"><div class="pill">숫자 기억</div><div class="stimulusArea"><div style="font-size:120px;font-weight:900;color:var(--accent);">${digits[i]}</div></div></section>`;
-    await sleep(1000);
-    if (i < digits.length - 1) { 
-      app.innerHTML = `<section class="card"><div class="pill">숫자 기억</div><div class="stimulusArea"><div style="font-size:48px;color:var(--muted);">·</div></div></section>`; 
-      await sleep(300); 
-    }
+    display.textContent = digits[i];
+    await sleep(800);
   }
 }
 
@@ -230,6 +239,12 @@ function finishDigitSpanTest() {
   
   const baseline = tryUpdateBaseline(history, LS_KEYS.digitspanBaseline) || loadBaseline(LS_KEYS.digitspanBaseline);
   state.digitspanResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  saveTestProgress(); // 진행 상태 저장
+  
+  // 서버에 결과 저장
+  if (isLoggedIn()) {
+    saveResults('digitspan', summary).catch(e => console.error('결과 저장 실패:', e));
+  }
   
   playComplete();
   renderDigitSpanDone();
@@ -249,4 +264,18 @@ function renderDigitSpanDone() {
     </section>
   `;
   $("#nextTest").onclick = () => { playClick(); startSpatialTest(); };
+}
+
+// 검사 이어하기
+export function resumeDigitSpanTest() {
+  document.querySelector(".progress").textContent = "검사 3/4 · 숫자기억";
+  
+  // 이미 완료된 경우 다음 검사로
+  if (state.digitspanResult) {
+    startSpatialTest();
+    return;
+  }
+  
+  // 인트로부터 시작
+  renderDigitSpanIntro();
 }

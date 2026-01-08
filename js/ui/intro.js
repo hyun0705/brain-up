@@ -115,7 +115,7 @@ export function renderMainIntro() {
   if (profile && profile.birthYear && profile.birthMonth) {
     profileSection = `
       <div class="notice" style="margin-top:10px;">
-        <b>내 정보</b>: ${profile.birthYear}년 ${profile.birthMonth}월생 (만 ${profile.age}세) · ${profile.gender === 'male' ? '남성' : '여성'}
+        <b>내 정보</b>: ${profile.birthYear}년 ${profile.birthMonth}월생 (${profile.age}) · ${profile.gender === 'male' ? '남성' : '여성'}
         <button class="linkBtn" id="editProfile" style="margin-left:8px;">수정</button>
       </div>
     `;
@@ -196,22 +196,52 @@ export function renderProfileInput() {
   document.querySelector(".progress").textContent = "검사 -/4 · 정보 입력";
   
   const profile = getUserProfile();
-  const currentYear = profile?.birthYear || '';
-  const currentMonth = profile?.birthMonth || '';
   const currentGender = profile?.gender || '';
-
-  // 연도 옵션 생성 (2007년까지 - 만 19세 이상)
-  const thisYear = new Date().getFullYear(); // 2026년
-  const maxBirthYear = thisYear - 19; // 2007년
-  let yearOptions = '<option value="">연도</option>';
-  for (let y = maxBirthYear; y >= 1920; y--) {
-    yearOptions += `<option value="${y}" ${currentYear === y ? 'selected' : ''}>${y}년</option>`;
-  }
+  const today = new Date();
+  const thisYear = today.getFullYear();
+  const maxBirthYear = thisYear - 19;
   
-  // 월 옵션
-  let monthOptions = '<option value="">월</option>';
-  for (let m = 1; m <= 12; m++) {
-    monthOptions += `<option value="${m}" ${currentMonth === m ? 'selected' : ''}>${m}월</option>`;
+  // 모바일 감지
+  const mobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+  
+  let birthInputHtml = '';
+  if (mobile) {
+    let currentDateValue = '';
+    if (profile?.birthYear && profile?.birthMonth && profile?.birthDay) {
+      currentDateValue = `${profile.birthYear}-${String(profile.birthMonth).padStart(2,'0')}-${String(profile.birthDay).padStart(2,'0')}`;
+    }
+    const maxDate = new Date(maxBirthYear, today.getMonth(), today.getDate());
+    const maxDateStr = maxDate.toISOString().split('T')[0];
+    birthInputHtml = `
+      <input type="date" id="birthDate" class="formInput dateInput" 
+        value="${currentDateValue}" min="1920-01-01" max="${maxDateStr}">
+    `;
+  } else {
+    // 연도 옵션
+    let yearOptions = '<option value="">연도</option>';
+    for (let y = maxBirthYear; y >= 1920; y--) {
+      const selected = profile?.birthYear === y ? 'selected' : '';
+      yearOptions += `<option value="${y}" ${selected}>${y}년</option>`;
+    }
+    // 월 옵션
+    let monthOptions = '<option value="">월</option>';
+    for (let m = 1; m <= 12; m++) {
+      const selected = profile?.birthMonth === m ? 'selected' : '';
+      monthOptions += `<option value="${m}" ${selected}>${m}월</option>`;
+    }
+    // 일 옵션
+    let dayOptions = '<option value="">일</option>';
+    for (let d = 1; d <= 31; d++) {
+      const selected = profile?.birthDay === d ? 'selected' : '';
+      dayOptions += `<option value="${d}" ${selected}>${d}일</option>`;
+    }
+    birthInputHtml = `
+      <div class="selectRow">
+        <select id="yearSelect" class="formSelect">${yearOptions}</select>
+        <select id="monthSelect" class="formSelect">${monthOptions}</select>
+        <select id="daySelect" class="formSelect">${dayOptions}</select>
+      </div>
+    `;
   }
 
   app.innerHTML = `
@@ -224,11 +254,8 @@ export function renderProfileInput() {
       </p>
       
       <div class="formGroup">
-        <label class="formLabel">생년월</label>
-        <div class="selectGroup">
-          <select id="yearSelect" class="formSelect">${yearOptions}</select>
-          <select id="monthSelect" class="formSelect">${monthOptions}</select>
-        </div>
+        <label class="formLabel">생년월일</label>
+        ${birthInputHtml}
       </div>
       
       <div class="formGroup">
@@ -252,23 +279,33 @@ export function renderProfileInput() {
     </section>
   `;
 
+  const getBirthData = () => {
+    if (mobile) {
+      const val = $("#birthDate").value;
+      if (!val) return null;
+      const d = new Date(val);
+      return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+    } else {
+      const year = parseInt($("#yearSelect").value);
+      const month = parseInt($("#monthSelect").value);
+      const day = parseInt($("#daySelect").value);
+      if (!year || !month || !day) return null;
+      return { year, month, day };
+    }
+  };
+
   $("#backBtn").onclick = () => {
     playClick();
     renderMainIntro();
   };
 
   $("#saveProfile").onclick = () => {
-    const birthYear = parseInt($("#yearSelect").value);
-    const birthMonth = parseInt($("#monthSelect").value);
+    const birth = getBirthData();
     const genderInput = document.querySelector('input[name="gender"]:checked');
     const gender = genderInput?.value;
 
-    if (!birthYear) {
-      alert('생년을 선택해주세요.');
-      return;
-    }
-    if (!birthMonth) {
-      alert('생월을 선택해주세요.');
+    if (!birth) {
+      alert('생년월일을 입력해주세요.');
       return;
     }
     if (!gender) {
@@ -277,9 +314,9 @@ export function renderProfileInput() {
     }
 
     // 나이 계산
-    const today = new Date();
-    let age = today.getFullYear() - birthYear;
-    if (today.getMonth() + 1 < birthMonth) {
+    let age = today.getFullYear() - birth.year;
+    const monthDiff = today.getMonth() + 1 - birth.month;
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.day)) {
       age--;
     }
 
@@ -290,7 +327,14 @@ export function renderProfileInput() {
     }
 
     playClick();
-    saveUserProfile({ birthYear, birthMonth, age, gender, updatedAt: Date.now() });
+    saveUserProfile({ 
+      birthYear: birth.year, 
+      birthMonth: birth.month, 
+      birthDay: birth.day, 
+      age, 
+      gender, 
+      updatedAt: Date.now() 
+    });
     startPatternTest();
   };
 }
@@ -341,7 +385,7 @@ export function renderPastResults(initialOffset = null) {
   
   let profileInfo = '';
   if (profile && profile.age) {
-    profileInfo = `<span style="color:var(--muted);font-size:14px;"> · 만 ${profile.age}세 ${profile.gender === 'male' ? '남성' : '여성'}</span>`;
+    profileInfo = `<span style="color:var(--muted);font-size:14px;"> · ${profile.age} ${profile.gender === 'male' ? '남성' : profile.gender === 'female' ? '여성' : ''}</span>`;
   }
 
   // 결과 카드 (데이터 있을 때만)
@@ -436,10 +480,6 @@ export function renderPastResults(initialOffset = null) {
           <i class="fa-solid fa-circle-check" style="color:var(--good);"></i>
           이번 주 검사를 완료했어요. 다음 주에 다시 검사할 수 있어요.
         </div>
-      ` : isThisWeek && !hasTestedThisWeek() ? `
-        <div class="controls" style="margin-top:12px;grid-template-columns:1fr;">
-          <button class="big primary" id="startNew">새 검사 시작</button>
-        </div>
       ` : ''}
 
     </section>
@@ -471,7 +511,7 @@ export function renderPastResults(initialOffset = null) {
     home();
   };
   
-  if (isThisWeek && !hasTestedThisWeek() && $("#startNew")) {
+  if (false && $("#startNew")) {
     $("#startNew").onclick = () => {
       playClick();
       resetState();

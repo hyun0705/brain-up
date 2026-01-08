@@ -169,9 +169,10 @@ export function getThisWeekTestResults() {
   };
 }
 
-// ========== 무료체험 관련 ==========
+// ========== 무료체험 및 구독 관련 ==========
 
 const TRIAL_DAYS = 14;
+const SUBSCRIPTION_KEY = "bc_subscription_v1";
 
 // 체험 시작일 가져오기 (없으면 오늘로 설정)
 export function getTrialStartDate() {
@@ -197,13 +198,129 @@ export function isTrialExpired() {
   return getTrialDaysLeft() <= 0;
 }
 
-// 구독 상태 (나중에 실제 결제 연동 시 수정)
-export function isSubscribed() {
-  // TODO: 실제 결제 연동 시 구현
-  return false;
+// 구독 상태 로컬 저장 (캐시)
+export function saveSubscriptionCache(subscription) {
+  localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify({
+    ...subscription,
+    cachedAt: Date.now()
+  }));
 }
 
-// 프리미엄 기능 접근 가능 여부
+// 구독 상태 캐시 가져오기
+export function getSubscriptionCache() {
+  try {
+    return JSON.parse(localStorage.getItem(SUBSCRIPTION_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+// 구독 상태 삭제 (로그아웃 시)
+export function clearSubscription() {
+  localStorage.removeItem(SUBSCRIPTION_KEY);
+}
+
+// 구독 여부 (캐시 확인 - 동기)
+export function isSubscribedSync() {
+  const sub = getSubscriptionCache();
+  if (!sub || !sub.expiresAt) return false;
+  return new Date(sub.expiresAt) > new Date();
+}
+
+// 프리미엄 기능 접근 가능 여부 (동기 - 캐시 기반)
 export function canAccessPremium() {
-  return !isTrialExpired() || isSubscribed();
+  return !isTrialExpired() || isSubscribedSync();
+}
+
+// 서버에서 구독 상태 확인 및 캐시 업데이트 (비동기)
+export async function refreshSubscription() {
+  try {
+    const token = localStorage.getItem('brainup_token');
+    if (!token) {
+      clearSubscription();
+      return null;
+    }
+    
+    const response = await fetch('https://brainup-api.stardog0705.workers.dev/api/subscription', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.subscribed && data.subscription) {
+      saveSubscriptionCache(data.subscription);
+      return data.subscription;
+    } else {
+      clearSubscription();
+      return null;
+    }
+  } catch (e) {
+    console.error('구독 상태 확인 실패:', e);
+    return null;
+  }
+}
+
+// ========== 검사 진행 상태 저장/복원 ==========
+
+const SESSION_STATE_KEY = "bc_session_state_v1";
+
+// 진행 중인 검사 상태 저장
+export function saveSessionState(sessionState) {
+  localStorage.setItem(SESSION_STATE_KEY, JSON.stringify({
+    ...sessionState,
+    savedAt: Date.now()
+  }));
+}
+
+// 진행 중인 검사 상태 복원
+export function loadSessionState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_STATE_KEY) || "null");
+    if (!saved) return null;
+    
+    // 10분 이상 지났으면 무효
+    const tenMinutes = 10 * 60 * 1000;
+    if (Date.now() - saved.savedAt > tenMinutes) {
+      clearSessionState();
+      return null;
+    }
+    
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+// 진행 상태 삭제
+export function clearSessionState() {
+  localStorage.removeItem(SESSION_STATE_KEY);
+}
+
+// ========== 비로그인 1회 체험 ==========
+
+const GUEST_TEST_KEY = "bc_guest_test_done_v1";
+const GUEST_TRAINING_KEY = "bc_guest_training_done_v1";
+
+// 비로그인 검사 1회 완료 여부
+export function hasGuestTestedOnce() {
+  return localStorage.getItem(GUEST_TEST_KEY) === "true";
+}
+
+// 비로그인 검사 완료 기록
+export function markGuestTestDone() {
+  localStorage.setItem(GUEST_TEST_KEY, "true");
+}
+
+// 비로그인 관리 1회 완료 여부
+export function hasGuestTrainedOnce() {
+  return localStorage.getItem(GUEST_TRAINING_KEY) === "true";
+}
+
+// 비로그인 관리 완료 기록
+export function markGuestTrainingDone() {
+  localStorage.setItem(GUEST_TRAINING_KEY, "true");
 }

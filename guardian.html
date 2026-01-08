@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="ko">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
@@ -28,75 +27,165 @@
     
     body {
       font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      background: #f0f9ff;
+      background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
       min-height: 100vh;
       color: var(--text);
     }
     
-    .guardian-container {
+    .container {
       max-width: 420px;
       margin: 0 auto;
-      padding: 20px 16px 100px;
+      padding: 20px 16px 40px;
       min-height: 100vh;
     }
     
-    .guardian-header {
+    .header {
       text-align: center;
       padding: 20px 0 24px;
     }
     
-    .guardian-logo {
+    .logo {
       font-size: 18px;
       font-weight: 800;
       color: var(--accent);
     }
     
-    .status-summary {
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    .loading i {
+      font-size: 48px;
+      color: var(--accent);
+      animation: spin 1s linear infinite;
+    }
+    
+    .loading p {
+      margin-top: 16px;
+      color: var(--muted);
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    @keyframes fireGlow {
+      0%, 100% { 
+        filter: drop-shadow(0 0 2px rgba(234,88,12,0.4));
+        transform: scale(1);
+      }
+      50% { 
+        filter: drop-shadow(0 0 6px rgba(234,88,12,0.6));
+        transform: scale(1.1);
+      }
+    }
+    
+    .error-card {
       background: var(--card);
       border-radius: 24px;
-      padding: 28px 24px;
+      padding: 48px 28px;
       text-align: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    
+    .error-icon { 
+      font-size: 56px; 
+      color: var(--muted); 
+      margin-bottom: 20px;
+      opacity: 0.6;
+    }
+    
+    .error-title { 
+      font-size: 20px; 
+      font-weight: 800; 
+      color: var(--text); 
+      margin-bottom: 10px; 
+    }
+    
+    .error-desc { 
+      font-size: 15px; 
+      color: var(--muted); 
+      line-height: 1.7; 
+    }
+    
+    /* 프로필 카드 */
+    .profile-card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
       margin-bottom: 16px;
     }
     
+    .profile-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    
+    .profile-avatar i {
+      font-size: 32px;
+      color: white;
+    }
+    
+    .profile-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    
+    .profile-info {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    
+    /* 상태 배지 */
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 24px;
+      padding: 10px 20px;
       border-radius: 50px;
-      font-size: 17px;
-      font-weight: 800;
-      margin-bottom: 14px;
-      animation: fadeInUp 0.4s ease;
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 16px;
     }
     
-    .status-badge.stable { 
-      background: var(--good-light); 
+    .status-badge.good {
+      background: var(--good-light);
       color: #059669;
     }
-    .status-badge.caution { 
-      background: var(--warn-light); 
+    
+    .status-badge.warn {
+      background: var(--warn-light);
       color: #b45309;
     }
-    .status-badge.alert { 
-      background: var(--danger-light); 
+    
+    .status-badge.danger {
+      background: var(--danger-light);
       color: #dc2626;
     }
     
-    .status-change {
-      font-size: 15px;
-      color: var(--muted);
-      line-height: 1.6;
-      animation: fadeIn 0.5s ease 0.2s both;
-    }
-    
-    .action-section {
+    /* 액션 섹션 */
+    .action-card {
       background: var(--card);
       border-radius: 24px;
       padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
       margin-bottom: 16px;
     }
     
@@ -106,31 +195,6 @@
       line-height: 1.7;
       text-align: center;
       margin-bottom: 20px;
-    }
-    
-    .memo-display {
-      background: var(--accent-light);
-      border: 1px solid #bfdbfe;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
-      animation: fadeIn 0.3s ease;
-    }
-    
-    .memo-display-label {
-      font-size: 12px;
-      color: var(--accent);
-      font-weight: 700;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .memo-display-text {
-      font-size: 14px;
-      color: var(--text);
-      line-height: 1.6;
-      white-space: pre-wrap;
     }
     
     .action-btn {
@@ -151,20 +215,11 @@
     }
     
     .action-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(59,130,246,0.3);
+      opacity: 0.9;
     }
     
-    .action-btn:active {
-      transform: translateY(0);
-    }
-    
-    .action-btn.caution { 
-      background: var(--warn);
-    }
-    .action-btn.alert { 
-      background: var(--danger);
-    }
+    .action-btn.warn { background: var(--warn); }
+    .action-btn.danger { background: var(--danger); }
     
     .action-hint {
       font-size: 13px;
@@ -173,11 +228,93 @@
       margin-top: 14px;
     }
     
-    .week-section {
+    /* 메모 표시 */
+    .memo-display {
+      background: var(--accent-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .memo-display-label {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .memo-display-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
+      font-weight: 600;
+    }
+    
+    .link-btn:hover {
+      text-decoration: underline;
+    }
+    
+    /* 통계 카드 */
+    .stats-card {
       background: var(--card);
       border-radius: 24px;
       padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      margin-bottom: 16px;
+    }
+    
+    .stats-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: 16px 8px;
+      background: var(--bg);
+      border-radius: 16px;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    
+    /* 주간 카드 */
+    .week-card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
       margin-bottom: 16px;
     }
     
@@ -185,7 +322,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     
     .week-title {
@@ -203,119 +340,7 @@
       border-radius: 20px;
     }
     
-    .week-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-    }
-    
-    .week-day { text-align: center; }
-    
-    .week-day-name {
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-    
-    .week-day-cell {
-      width: 38px;
-      height: 38px;
-      margin: 0 auto;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-weight: 600;
-    }
-    
-    .week-day-cell:hover {
-      transform: scale(1.1);
-    }
-    
-    .week-day-cell.done { 
-      background: var(--good-light); 
-      color: var(--good);
-    }
-    .week-day-cell.missed { 
-      background: var(--warn-light); 
-      color: #b45309;
-    }
-    .week-day-cell.future { 
-      background: var(--bg); 
-      color: var(--muted);
-    }
-    .week-day-cell.today { 
-      border: 2px solid var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
-    }
-    
-    .streak-info {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-      font-size: 14px;
-      color: var(--text);
-      font-weight: 600;
-    }
-    
-    .streak-info i { 
-      color: #ea580c;
-      animation: fireGlow 1.5s ease infinite;
-    }
-    
-    .locked-section {
-      background: var(--card);
-      border-radius: 24px;
-      padding: 20px 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04);
-      margin-bottom: 16px;
-    }
-    
-    .locked-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 0;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .locked-item:hover {
-      padding-left: 8px;
-    }
-    
-    .locked-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .locked-item:first-child { padding-top: 0; }
-    
-    .locked-label { font-size: 14px; color: var(--muted); }
-    
-    .locked-badge {
-      font-size: 12px;
-      color: #b45309;
-      background: var(--warn-light);
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-weight: 600;
-    }
-    
-    .guardian-footer {
-      text-align: center;
-      padding: 24px 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.7;
-    }
-    
-    /* 주 선택 네비게이션 */
+    /* 주 네비게이션 */
     .week-nav {
       display: flex;
       align-items: center;
@@ -356,7 +381,7 @@
       text-align: center;
     }
     
-    .week-nav-label .this-week-badge {
+    .this-week-badge {
       display: inline-block;
       font-size: 11px;
       background: var(--accent);
@@ -364,6 +389,305 @@
       padding: 3px 10px;
       border-radius: 10px;
       margin-top: 6px;
+    }
+    
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    
+    .week-day {
+      text-align: center;
+    }
+    
+    .week-day-name {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    .week-day-cell {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .week-day-cell:hover {
+      transform: scale(1.1);
+    }
+    
+    .week-day-cell.done {
+      background: var(--good-light);
+      color: var(--good);
+    }
+    
+    .week-day-cell.missed {
+      background: var(--warn-light);
+      color: #b45309;
+    }
+    
+    .week-day-cell.future {
+      background: var(--bg);
+      color: var(--muted);
+    }
+    
+    .week-day-cell.today {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+    }
+    
+    .streak-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    .streak-info i {
+      color: #ea580c;
+      animation: fireGlow 1.5s ease infinite;
+    }
+    
+    /* 상태 카드 */
+    .status-card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      margin-bottom: 16px;
+    }
+    
+    .status-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border-radius: 12px;
+    }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    
+    .status-item-label {
+      flex: 1;
+      font-size: 14px;
+      color: var(--text);
+    }
+    
+    .status-item-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    /* 최근 활동 */
+    .activity-card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      margin-bottom: 16px;
+    }
+    
+    .activity-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: var(--bg);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .activity-item:hover {
+      background: var(--border);
+    }
+    
+    .activity-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    .activity-icon.pattern {
+      background: #fef3c7;
+      color: #f59e0b;
+    }
+    
+    .activity-icon.gonogo {
+      background: #dbeafe;
+      color: #3b82f6;
+    }
+    
+    .activity-icon.digit {
+      background: #d1fae5;
+      color: #10b981;
+    }
+    
+    .activity-icon.training {
+      background: #fce7f3;
+      color: #db2777;
+    }
+    
+    .activity-info {
+      flex: 1;
+    }
+    
+    .activity-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .activity-date {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    
+    .activity-score {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--good);
+    }
+    
+    .empty-activity {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    
+    /* 안내 카드 */
+    .info-card {
+      background: var(--accent-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .info-card p {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    .info-card i {
+      color: var(--accent);
+      margin-right: 8px;
+    }
+    
+    /* 자녀 확인 중 */
+    .watching-card {
+      background: #f0fdf4;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .watching-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .watching-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--good);
+      animation: pulse 2s infinite;
+    }
+    
+    .watching-label {
+      font-size: 13px;
+      color: #15803d;
+      font-weight: 600;
+    }
+    
+    .watching-text {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    
+    /* 푸터 */
+    .footer {
+      text-align: center;
+      padding: 24px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    
+    /* 링크 복사 버튼 */
+    .copy-link-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+    
+    .copy-link-btn:hover {
+      background: var(--border);
     }
     
     /* 모달 */
@@ -382,16 +706,9 @@
       transition: all 0.3s ease;
     }
     
-    .modal-overlay.active { 
-      opacity: 1; 
-      visibility: visible;
-    }
-    
-    .modal-overlay.active .modal-content,
-    .modal-overlay.active .day-modal-content,
-    .modal-overlay.active .premium-modal-content {
-      transform: translateY(0) scale(1);
+    .modal-overlay.active {
       opacity: 1;
+      visibility: visible;
     }
     
     .modal-content {
@@ -400,9 +717,12 @@
       padding: 28px;
       max-width: 360px;
       width: 100%;
-      transform: translateY(20px) scale(0.95);
-      opacity: 0;
-      transition: all 0.3s ease;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+    
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
     }
     
     .modal-title {
@@ -411,6 +731,22 @@
       color: var(--text);
       margin-bottom: 20px;
       text-align: center;
+    }
+    
+    .modal-text {
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.6;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .modal-date {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 10px;
     }
     
     .memo-textarea {
@@ -423,16 +759,17 @@
       font-family: inherit;
       resize: none;
       margin-bottom: 20px;
-      transition: border-color 0.2s ease;
     }
     
-    .memo-textarea:focus { 
-      outline: none; 
+    .memo-textarea:focus {
+      outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
     }
     
-    .modal-btns { display: flex; gap: 12px; }
+    .modal-btns {
+      display: flex;
+      gap: 12px;
+    }
     
     .modal-btn {
       flex: 1;
@@ -442,283 +779,102 @@
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
     
     .modal-btn:hover {
       transform: translateY(-2px);
     }
     
-    .modal-btn.cancel { 
-      background: var(--bg); 
+    .modal-btn.cancel {
+      background: var(--bg);
       color: var(--muted);
     }
-    .modal-btn.primary { 
-      background: var(--accent); 
-      color: white;
-    }
     
-    .day-modal-content {
-      background: var(--card);
-      border-radius: 24px;
-      padding: 28px;
-      max-width: 320px;
-      width: 100%;
-      text-align: center;
-      transform: translateY(20px) scale(0.95);
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-    
-    .day-modal-date { 
-      font-size: 14px; 
-      color: var(--accent); 
-      font-weight: 600;
-      margin-bottom: 10px; 
-    }
-    .day-modal-text { 
-      font-size: 17px; 
-      color: var(--text); 
-      line-height: 1.6; 
-      margin-bottom: 20px;
-      font-weight: 500;
-    }
-    
-    .day-modal-close {
-      background: var(--bg);
-      border: none;
-      padding: 14px 32px;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .day-modal-close:hover {
-      background: var(--border);
-    }
-    
-    .premium-modal-content {
-      background: var(--card);
-      border-radius: 24px;
-      padding: 32px 28px;
-      max-width: 340px;
-      width: 100%;
-      text-align: center;
-      transform: translateY(20px) scale(0.95);
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-    
-    .premium-modal-icon { 
-      font-size: 48px; 
-      margin-bottom: 20px;
-      animation: bounce 1s ease infinite;
-    }
-    .premium-modal-title { 
-      font-size: 18px; 
-      font-weight: 800; 
-      color: var(--text); 
-      margin-bottom: 12px; 
-    }
-    .premium-modal-desc { 
-      font-size: 15px; 
-      color: var(--muted); 
-      line-height: 1.7; 
-      margin-bottom: 24px; 
-    }
-    
-    .premium-modal-btn {
-      width: 100%;
-      padding: 16px;
+    .modal-btn.primary {
       background: var(--accent);
       color: white;
+    }
+    
+    .modal-close {
+      width: 100%;
+      padding: 14px;
+      background: var(--bg);
       border: none;
       border-radius: 14px;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 600;
+      color: var(--text);
       cursor: pointer;
-      margin-bottom: 12px;
-      transition: all 0.2s ease;
     }
     
-    .premium-modal-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(59,130,246,0.3);
+    /* 메모 히스토리 */
+    .memo-history-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
     }
     
-    .premium-modal-close {
+    .memo-history-item:last-child {
+      border-bottom: none;
+    }
+    
+    .memo-history-content {
+      flex: 1;
+    }
+    
+    .memo-history-date {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    
+    .memo-history-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    
+    .memo-delete-btn {
       background: none;
       border: none;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 18px;
       cursor: pointer;
-      padding: 12px;
-      transition: color 0.2s ease;
+      padding: 4px;
     }
     
-    .premium-modal-close:hover {
-      color: var(--text);
-    }
-    
-    .error-card {
-      background: var(--card);
-      border-radius: 24px;
-      padding: 48px 28px;
-      text-align: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-    }
-    
-    .error-icon { 
-      font-size: 56px; 
-      color: var(--muted); 
-      margin-bottom: 20px;
-      opacity: 0.6;
-    }
-    .error-title { 
-      font-size: 20px; 
-      font-weight: 800; 
-      color: var(--text); 
-      margin-bottom: 10px; 
-    }
-    .error-desc { 
-      font-size: 15px; 
-      color: var(--muted); 
-      line-height: 1.7; 
-    }
-    
-    .dev-tools {
-      margin-top: 24px;
-      padding: 16px;
-      background: #fef2f2;
-      border: 2px dashed #fca5a5;
-      border-radius: 16px;
-    }
-    
-    .dev-tools-title { 
-      font-size: 12px; 
-      font-weight: 700; 
-      color: #dc2626; 
-      margin-bottom: 12px; 
-    }
-    
-    .dev-btn {
-      width: 100%;
-      padding: 14px;
-      background: var(--danger);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .dev-btn:hover {
-      transform: translateY(-2px);
-    }
-    
-    .linkBtn {
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-size: 14px;
-      cursor: pointer;
-      padding: 0;
-      font-weight: 600;
-      transition: color 0.2s ease;
-    }
-    
-    .linkBtn:hover {
-      color: #2563eb;
-      text-decoration: underline;
-    }
-    
-    /* 애니메이션 */
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.95); }
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    @keyframes fadeInUp {
-      from { 
-        opacity: 0; 
-        transform: translateY(10px); 
-      }
-      to { 
-        opacity: 1; 
-        transform: translateY(0); 
-      }
-    }
-    
-    @keyframes fireGlow {
-      0%, 100% { 
-        filter: drop-shadow(0 0 2px rgba(234,88,12,0.4));
-        transform: scale(1);
-      }
-      50% { 
-        filter: drop-shadow(0 0 6px rgba(234,88,12,0.6));
-        transform: scale(1.1);
-      }
-    }
-    
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-    
-    /* 스크롤바 스타일 */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--muted);
+    .memo-delete-btn:hover {
+      color: var(--danger);
     }
   </style>
 </head>
-
 <body>
-  <div class="guardian-container">
-    <header class="guardian-header">
-      <div class="guardian-logo">브레인 업</div>
+  <div class="container">
+    <header class="header">
+      <div class="logo">브레인 업</div>
     </header>
-
-    <main id="guardian-app"></main>
-
-    <footer class="guardian-footer">
-      부모님의 관리 습관을 함께 지켜봐요<br/>
-      브레인 업 · 가족 케어 서비스
-    </footer>
     
-    <div class="dev-tools" id="devTools">
-      <div class="dev-tools-title">⚠️ 개발자 테스트용 (배포 전 제거)</div>
-      <button class="dev-btn" id="devUnlockBtn">유료 전환 테스트</button>
-    </div>
+    <main id="app">
+      <div class="loading">
+        <i class="fa-solid fa-spinner"></i>
+        <p>불러오는 중...</p>
+      </div>
+    </main>
+    
+    <footer class="footer">
+      부모님의 뇌 건강을 함께 지켜봐요<br/>
+      브레인 업 · 가족 케어
+    </footer>
   </div>
-
+  
   <!-- 메모 모달 -->
   <div class="modal-overlay" id="memoModal">
     <div class="modal-content">
-      <div class="modal-title">📝 이번 주 관찰 메모</div>
+      <div class="modal-title" id="memoModalTitle">📝 관찰 메모</div>
       <textarea class="memo-textarea" id="memoText" placeholder="부모님 상태에 대해 메모해두세요."></textarea>
       <div class="modal-btns">
         <button class="modal-btn cancel" id="memoCancel">취소</button>
@@ -726,514 +882,343 @@
       </div>
     </div>
   </div>
-
+  
   <!-- 날짜 모달 -->
   <div class="modal-overlay" id="dayModal">
-    <div class="day-modal-content">
-      <div class="day-modal-date" id="dayModalDate"></div>
-      <div class="day-modal-text" id="dayModalText"></div>
-      <button class="day-modal-close" id="dayModalClose">확인</button>
+    <div class="modal-content">
+      <div class="modal-date" id="dayModalDate"></div>
+      <div class="modal-text" id="dayModalText"></div>
+      <button class="modal-close" id="dayModalClose">확인</button>
     </div>
   </div>
-
-  <!-- 유료 안내 모달 -->
-  <div class="modal-overlay" id="premiumModal">
-    <div class="premium-modal-content">
-      <div class="premium-modal-icon">🔒</div>
-      <h2 class="premium-modal-title">구독이 필요한 기능이에요</h2>
-      <p class="premium-modal-desc">
-        장기 변화 추이를 확인하려면<br/>
-        부모님 화면에서 구독이 필요해요.
-      </p>
-      <button class="premium-modal-btn" id="requestSubscribeBtn">부모님께 구독 요청 보내기</button>
-      <button class="premium-modal-close" id="closePremiumModal">닫기</button>
+  
+  <!-- 활동 상세 모달 -->
+  <div class="modal-overlay" id="activityModal">
+    <div class="modal-content">
+      <div class="modal-title" id="activityModalTitle"></div>
+      <div id="activityModalContent"></div>
+      <button class="modal-close" id="activityModalClose">확인</button>
     </div>
   </div>
-
+  
   <!-- 메모 히스토리 모달 -->
   <div class="modal-overlay" id="memoHistoryModal">
     <div class="modal-content" style="max-height:80vh;overflow-y:auto;">
       <div class="modal-title">📝 이전 메모 기록</div>
-      <div id="memoHistoryList" style="max-height:50vh;overflow-y:auto;"></div>
-      <div class="modal-btns" style="margin-top:16px;">
-        <button class="modal-btn cancel" id="closeMemoHistory" style="flex:1;">닫기</button>
-      </div>
+      <div id="memoHistoryList"></div>
+      <button class="modal-close" id="memoHistoryClose" style="margin-top:16px;">닫기</button>
     </div>
   </div>
-
+  
   <script>
-    // 상수
-    var GUARDIAN_TOKENS_KEY = 'guardian_tokens_v1';
-    var MEMO_KEY = 'guardian_memo_v1';
-    var TRAINING_HISTORY_KEY = 'bc_digitspan_training_history_v1';
+    const API_URL = 'https://brainup-api.stardog0705.workers.dev';
+    const MEMO_KEY = 'guardian_memo_v2';
+    const app = document.getElementById('app');
     
-    // 현재 선택된 주 오프셋 (0 = 이번 주, -1 = 지난 주, -2 = 2주 전...)
-    var selectedWeekOffset = 0;
-
-    // 유틸
+    let guardianData = null;
+    let selectedWeekOffset = 0;
+    
+    // URL에서 토큰 가져오기
     function getTokenFromUrl() {
-      var params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(window.location.search);
       return params.get('token');
     }
-
-    function loadGuardianTokens() {
-      try {
-        return JSON.parse(localStorage.getItem(GUARDIAN_TOKENS_KEY) || '{}');
-      } catch (e) {
-        return {};
-      }
+    
+    // 날짜 포맷 (UTC를 한국 시간으로 변환)
+    function formatDate(dateStr) {
+      const utcDate = new Date(dateStr + 'Z'); // UTC로 파싱
+      const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+      const month = koreaDate.getUTCMonth() + 1;
+      const day = koreaDate.getUTCDate();
+      const hours = koreaDate.getUTCHours();
+      const mins = String(koreaDate.getUTCMinutes()).padStart(2, '0');
+      return `${month}월 ${day}일 ${hours}:${mins}`;
     }
-
-    function saveGuardianTokens(tokens) {
-      localStorage.setItem(GUARDIAN_TOKENS_KEY, JSON.stringify(tokens));
+    
+    function formatDateShort(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getMonth() + 1}월 ${d.getDate()}일`;
     }
-
-    function resolveGuardianToken(token) {
-      if (!token) return null;
-      var tokens = loadGuardianTokens();
-      var entry = tokens[token];
-      return entry ? entry.anonId : null;
-    }
-
-    function isGuardianTokenPaid(token) {
-      if (!token) return false;
-      var tokens = loadGuardianTokens();
-      var entry = tokens[token];
-      return !!(entry && entry.isPaid);
-    }
-
-    function setGuardianTokenPaid(token, isPaid) {
-      if (!token) return false;
-      var tokens = loadGuardianTokens();
-      var entry = tokens[token];
-      if (!entry) return false;
-      entry.isPaid = isPaid;
-      entry.paidAt = isPaid ? Date.now() : null;
-      saveGuardianTokens(tokens);
-      return true;
-    }
-
+    
+    // 오늘 날짜 키 (로컬 시간 기준)
     function getDateKey(date) {
       if (!date) date = new Date();
-      var y = date.getFullYear();
-      var m = String(date.getMonth() + 1).padStart(2, '0');
-      var d = String(date.getDate()).padStart(2, '0');
-      return y + '-' + m + '-' + d;
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
-
-    function loadTrainingHistory() {
-      try {
-        return JSON.parse(localStorage.getItem(TRAINING_HISTORY_KEY) || '[]');
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function loadMemo(token) {
-      try {
-        var memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
-        var tokenMemos = memos[token];
-        
-        if (tokenMemos && !Array.isArray(tokenMemos)) {
-          tokenMemos = [{ text: String(tokenMemos), date: Date.now() }];
-          memos[token] = tokenMemos;
-          localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-        }
-        
-        if (!tokenMemos || tokenMemos.length === 0) return null;
-        return tokenMemos[tokenMemos.length - 1];
-      } catch (e) {
-        console.log('loadMemo error:', e);
-        return null;
-      }
-    }
-
-    function loadMemoHistory(token) {
-      try {
-        var memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
-        var tokenMemos = memos[token];
-        
-        if (tokenMemos && !Array.isArray(tokenMemos)) {
-          tokenMemos = [{ text: String(tokenMemos), date: Date.now() }];
-          memos[token] = tokenMemos;
-          localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-        }
-        
-        return tokenMemos || [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function saveMemo(token, text) {
-      try {
-        var memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
-        if (!memos[token]) memos[token] = [];
-        memos[token].push({
-          text: text,
-          date: Date.now()
-        });
-        localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-      } catch (e) {}
-    }
-
-    function deleteMemo(token, index) {
-      try {
-        var memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
-        if (memos[token] && Array.isArray(memos[token])) {
-          memos[token].splice(index, 1);
-          localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-        }
-      } catch (e) {}
-    }
-
-    function renderMemoHistoryModal(token) {
-      var history = loadMemoHistory(token);
-      var listHtml = '';
-      
-      var pastMemos = history.slice(0, -1).reverse();
-      
-      for (var i = 0; i < pastMemos.length; i++) {
-        var m = pastMemos[i];
-        var d = new Date(m.date);
-        var dateStr = (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
-        var originalIndex = history.length - 2 - i;
-        
-        listHtml += '<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;">' +
-          '<div style="flex:1;">' +
-          '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">' + dateStr + '</div>' +
-          '<div style="font-size:14px;color:var(--text);line-height:1.5;white-space:pre-wrap;">' + m.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' +
-          '</div>' +
-          '<button class="memo-delete-btn" data-index="' + originalIndex + '" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;">&times;</button>' +
-          '</div>';
-      }
-      
-      if (pastMemos.length === 0) {
-        listHtml = '<div style="text-align:center;color:var(--muted);padding:20px;">이전 메모가 없어요</div>';
-      }
-      
-      document.getElementById('memoHistoryList').innerHTML = listHtml;
-      document.getElementById('memoHistoryModal').classList.add('active');
-      
-      var deleteBtns = document.querySelectorAll('.memo-delete-btn');
-      for (var j = 0; j < deleteBtns.length; j++) {
-        deleteBtns[j].addEventListener('click', function() {
-          var idx = parseInt(this.getAttribute('data-index'));
-          if (confirm('이 메모를 삭제할까요?')) {
-            deleteMemo(token, idx);
-            renderMemoHistoryModal(token);
-            var remaining = loadMemoHistory(token);
-            if (remaining.length <= 1) {
-              document.getElementById('memoHistoryModal').classList.remove('active');
-              renderGuardianView();
-            }
-          }
-        });
-      }
-    }
-
-    // 특정 주의 날짜 배열 가져오기 (offset: 0=이번주, -1=지난주...)
-    function getWeekDates(offset) {
-      if (!offset) offset = 0;
-      var today = new Date();
-      var dayOfWeek = today.getDay();
-      var sunday = new Date(today);
+    
+    // 특정 주 날짜들
+    function getWeekDates(offset = 0) {
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const sunday = new Date(today);
       sunday.setDate(today.getDate() - dayOfWeek + (offset * 7));
       
-      var dates = [];
-      for (var i = 0; i < 7; i++) {
-        var d = new Date(sunday);
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(sunday);
         d.setDate(sunday.getDate() + i);
         dates.push(getDateKey(d));
       }
       return dates;
     }
-
-    function getThisWeekDates() {
-      return getWeekDates(0);
-    }
-
-    function getLastWeekDates() {
-      return getWeekDates(-1);
-    }
-
-    // 주 라벨 생성 (예: "1월 5일 ~ 11일")
+    
+    // 주 라벨
     function getWeekLabel(offset) {
-      var dates = getWeekDates(offset);
-      var startDate = new Date(dates[0]);
-      var endDate = new Date(dates[6]);
+      const dates = getWeekDates(offset);
+      const start = new Date(dates[0]);
+      const end = new Date(dates[6]);
       
-      var startMonth = startDate.getMonth() + 1;
-      var startDay = startDate.getDate();
-      var endMonth = endDate.getMonth() + 1;
-      var endDay = endDate.getDate();
-      
-      if (startMonth === endMonth) {
-        return startMonth + '월 ' + startDay + '일 ~ ' + endDay + '일';
-      } else {
-        return startMonth + '월 ' + startDay + '일 ~ ' + endMonth + '월 ' + endDay + '일';
+      if (start.getMonth() === end.getMonth()) {
+        return `${start.getMonth() + 1}월 ${start.getDate()}일 ~ ${end.getDate()}일`;
       }
+      return `${start.getMonth() + 1}월 ${start.getDate()}일 ~ ${end.getMonth() + 1}월 ${end.getDate()}일`;
     }
-
-    // 가장 오래된 기록이 있는 주 오프셋 계산
-    function getOldestWeekOffset() {
-      var history = loadTrainingHistory();
-      if (history.length === 0) return 0;
-      
-      // 가장 오래된 기록 찾기
-      var oldestDate = null;
-      for (var i = 0; i < history.length; i++) {
-        var d = new Date(history[i].date_key);
-        if (!oldestDate || d < oldestDate) {
-          oldestDate = d;
-        }
-      }
-      
-      if (!oldestDate) return 0;
-      
-      // 오늘 기준 몇 주 전인지 계산
-      var today = new Date();
-      var diffTime = today - oldestDate;
-      var diffWeeks = Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000));
-      
-      return -diffWeeks - 1; // 최소 한 주 전까지 더 볼 수 있게
+    
+    // 검사 타입 이름
+    function getTestName(type) {
+      const names = {
+        'pattern': '패턴 기억력',
+        'gonogo': '반응 억제력', 
+        'digitspan': '숫자 기억력',
+        'training': '일일 관리'
+      };
+      return names[type] || type;
     }
-
-    function getWeekTrainingCount(history, weekDates) {
-      var trainedDates = {};
-      for (var i = 0; i < history.length; i++) {
-        trainedDates[history[i].date_key] = true;
-      }
-      var count = 0;
-      for (var j = 0; j < weekDates.length; j++) {
-        if (trainedDates[weekDates[j]]) count++;
-      }
-      return count;
+    
+    // 검사 타입 아이콘
+    function getTestIconClass(type) {
+      if (type === 'pattern') return 'pattern';
+      if (type === 'gonogo') return 'gonogo';
+      if (type === 'training') return 'training';
+      return 'digit';
     }
-
-    function getStreak(history) {
-      if (history.length === 0) return 0;
-      var dateSet = {};
-      for (var i = 0; i < history.length; i++) {
-        dateSet[history[i].date_key] = true;
-      }
-      var streak = 0;
-      var today = new Date();
-      
-      for (var j = 0; j < 100; j++) {
-        var checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - j);
-        var checkKey = getDateKey(checkDate);
-        if (dateSet[checkKey]) {
-          streak++;
-        } else {
-          break;
-        }
-      }
-      return streak;
+    
+    function getTestIcon(type) {
+      const icons = {
+        'pattern': 'fa-th',
+        'gonogo': 'fa-hand',
+        'digitspan': 'fa-calculator',
+        'training': 'fa-brain'
+      };
+      return icons[type] || 'fa-clipboard-check';
     }
-
-    function getStatus(thisWeekCount, lastWeekCount) {
-      var today = new Date();
-      var dayOfWeek = today.getDay();
-      var daysPassed = dayOfWeek === 0 ? 7 : dayOfWeek;
-      var expectedMin = Math.max(1, Math.floor(daysPassed * 0.5));
-      
-      if (thisWeekCount === 0 && daysPassed >= 3) {
-        return 'alert';
+    
+    // 상태 계산
+    function getStatus(stats) {
+      if (stats.thisWeekCount === 0) {
+        return { class: 'danger', text: '🔴 확인 필요', desc: '이번 주 아직 참여 기록이 없어요' };
       }
-      if (lastWeekCount > 0 && thisWeekCount < lastWeekCount - 2) {
-        return 'caution';
+      if (stats.thisWeekCount < stats.lastWeekCount - 2) {
+        return { class: 'warn', text: '🟡 주의', desc: '지난주보다 참여가 줄었어요' };
       }
-      if (thisWeekCount < expectedMin && daysPassed >= 3) {
-        return 'caution';
+      if (stats.thisWeekCount >= 3) {
+        return { class: 'good', text: '🟢 안정', desc: '꾸준히 참여하고 계세요' };
       }
-      return 'stable';
+      return { class: 'good', text: '🟢 양호', desc: '참여하고 계세요' };
     }
-
-    function getChangeText(thisWeekCount, lastWeekCount) {
-      var diff = thisWeekCount - lastWeekCount;
-      
-      if (lastWeekCount === 0 && thisWeekCount === 0) {
-        return '아직 참여 기록이 없어요';
-      }
-      if (lastWeekCount === 0) {
-        return '이번 주부터 참여하고 있어요';
-      }
-      if (diff >= 2) {
-        return '지난주보다 더 자주 참여하고 있어요';
-      }
-      if (diff > 0) {
-        return '지난주보다 조금 더 참여했어요';
-      }
-      if (diff === 0) {
-        return '지난주와 비슷해요';
-      }
-      if (diff >= -2) {
-        return '지난주보다 참여가 조금 줄었어요';
-      }
-      return '지난주보다 참여가 많이 줄었어요';
-    }
-
+    
     function getActionMessage(status) {
-      if (status === 'stable') {
+      if (status.class === 'good') {
         return '이번 주는 안심해도 괜찮아요.<br/>특이사항이 있으면 메모해두세요.';
       }
-      if (status === 'caution') {
+      if (status.class === 'warn') {
         return '참여 빈도에 기복이 보여요.<br/>관찰 내용을 기록해두세요.';
       }
-      return '직접 확인이 필요한 신호가 있어요.<br/>관찰 내용을 남겨두세요.';
+      return '직접 확인이 필요한 신호가 있어요.<br/>안부 전화를 드려보세요.';
     }
-
-    function formatDate(dateKey) {
-      var parts = dateKey.split('-');
-      return parseInt(parts[1]) + '월 ' + parseInt(parts[2]) + '일';
-    }
-
-    // 특정 주의 상태 계산 함수
-    function getWeeklyStatusForOffset(offset) {
-      var patternHistory = [];
-      var gonogoHistory = [];
-      var digitspanHistory = [];
-      
+    
+    // 메모 관련
+    function loadMemos(token) {
       try {
-        patternHistory = JSON.parse(localStorage.getItem('bc_pattern_history_v1') || '[]');
-        gonogoHistory = JSON.parse(localStorage.getItem('bc_gonogo_history_v1') || '[]');
-        digitspanHistory = JSON.parse(localStorage.getItem('bc_digitspan_history_v1') || '[]');
-      } catch (e) {}
-      
-      var weekDates = getWeekDates(offset);
-      var weekStart = new Date(weekDates[0]);
-      var weekEnd = new Date(weekDates[6]);
+        const memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
+        return memos[token] || [];
+      } catch {
+        return [];
+      }
+    }
+    
+    function saveMemo(token, text) {
+      try {
+        const memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
+        if (!memos[token]) memos[token] = [];
+        memos[token].push({ text, date: Date.now() });
+        localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+      } catch {}
+    }
+    
+    function deleteMemo(token, index) {
+      try {
+        const memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
+        if (memos[token]) {
+          memos[token].splice(index, 1);
+          localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+        }
+      } catch {}
+    }
+    
+    function updateMemo(token, index, text) {
+      try {
+        const memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
+        if (memos[token] && memos[token][index]) {
+          memos[token][index].text = text;
+          memos[token][index].date = Date.now();
+          localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+        }
+      } catch {}
+    }
+    
+    let editingMemoIndex = null;
+    
+    function openEditMemoModal(index, text) {
+      editingMemoIndex = index;
+      document.getElementById('memoText').value = text;
+      document.getElementById('memoModalTitle').textContent = '📝 메모 수정';
+      document.getElementById('memoModal').classList.add('active');
+    }
+    
+    function getLatestMemo(token) {
+      const memos = loadMemos(token);
+      return memos.length > 0 ? memos[memos.length - 1] : null;
+    }
+    
+    // 주간 상태 계산
+    function getWeeklyStatus(results, offset) {
+      const weekDates = getWeekDates(offset);
+      const weekStart = new Date(weekDates[0]);
+      const weekEnd = new Date(weekDates[6]);
       weekEnd.setHours(23, 59, 59, 999);
       
-      var filterWeek = function(arr) {
-        return arr.filter(function(item) {
-          var d = new Date(item.ended_at);
-          return d >= weekStart && d <= weekEnd;
-        });
-      };
+      const weekResults = results.filter(r => {
+        const d = new Date(r.date);
+        return d >= weekStart && d <= weekEnd;
+      });
       
-      var weekPattern = filterWeek(patternHistory);
-      var weekGonogo = filterWeek(gonogoHistory);
-      var weekDigitspan = filterWeek(digitspanHistory);
-      
-      // 반응 속도
-      var speedStatus = { label: '데이터 없음', color: 'var(--muted)' };
-      if (weekPattern.length > 0) {
-        var avgRt = weekPattern.reduce(function(sum, p) { return sum + (p.summary.meanRtMs || 0); }, 0) / weekPattern.length;
-        var avgAcc = weekPattern.reduce(function(sum, p) { return sum + (p.summary.accuracy || 0); }, 0) / weekPattern.length;
-        
-        if (avgAcc >= 0.85 && avgRt < 1500) {
-          speedStatus = { label: '안정적', color: 'var(--good)' };
-        } else if (avgAcc >= 0.7) {
-          speedStatus = { label: '양호', color: 'var(--good)' };
-        } else {
-          speedStatus = { label: '변동 있음', color: '#f59e0b' };
-        }
+      // 처리속도 (pattern)
+      const patternResults = weekResults.filter(r => r.testType === 'pattern');
+      let speedStatus = { label: '데이터 없음', color: 'var(--muted)' };
+      if (patternResults.length > 0) {
+        const avgAcc = patternResults.reduce((sum, r) => sum + (r.summary?.accuracy || 0), 0) / patternResults.length;
+        if (avgAcc >= 0.85) speedStatus = { label: '안정적', color: 'var(--good)' };
+        else if (avgAcc >= 0.7) speedStatus = { label: '양호', color: 'var(--good)' };
+        else speedStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      // 집중력
-      var focusStatus = { label: '데이터 없음', color: 'var(--muted)' };
-      if (weekGonogo.length > 0) {
-        var avgGoAcc = weekGonogo.reduce(function(sum, g) { return sum + (g.summary.goAcc || 0); }, 0) / weekGonogo.length;
-        var avgNogoAcc = weekGonogo.reduce(function(sum, g) { return sum + (g.summary.nogoAcc || 0); }, 0) / weekGonogo.length;
-        var combined = (avgGoAcc + avgNogoAcc) / 2;
-        
-        if (combined >= 0.85) {
-          focusStatus = { label: '양호', color: 'var(--good)' };
-        } else if (combined >= 0.7) {
-          focusStatus = { label: '보통', color: 'var(--good)' };
-        } else {
-          focusStatus = { label: '변동 있음', color: '#f59e0b' };
-        }
+      // 주의·억제 (gonogo)
+      const gonogoResults = weekResults.filter(r => r.testType === 'gonogo');
+      let inhibitStatus = { label: '데이터 없음', color: 'var(--muted)' };
+      if (gonogoResults.length > 0) {
+        const avgAcc = gonogoResults.reduce((sum, r) => {
+          const goAcc = r.summary?.goAcc || 0;
+          const nogoAcc = r.summary?.nogoAcc || 0;
+          return sum + (goAcc + nogoAcc) / 2;
+        }, 0) / gonogoResults.length;
+        if (avgAcc >= 0.85) inhibitStatus = { label: '양호', color: 'var(--good)' };
+        else if (avgAcc >= 0.7) inhibitStatus = { label: '보통', color: 'var(--good)' };
+        else inhibitStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      // 기억 유지
-      var memoryStatus = { label: '데이터 없음', color: 'var(--muted)' };
-      if (weekDigitspan.length > 0) {
-        var avgSpan = weekDigitspan.reduce(function(sum, d) { return sum + (d.summary.totalSpan || 0); }, 0) / weekDigitspan.length;
-        
-        if (avgSpan >= 10) {
-          memoryStatus = { label: '유지 중', color: 'var(--good)' };
-        } else if (avgSpan >= 7) {
-          memoryStatus = { label: '양호', color: 'var(--good)' };
-        } else if (avgSpan >= 5) {
-          memoryStatus = { label: '보통', color: '#f59e0b' };
-        } else {
-          memoryStatus = { label: '변동 있음', color: '#f59e0b' };
-        }
+      // 작업기억 (digitspan)
+      const digitResults = weekResults.filter(r => r.testType === 'digitspan');
+      let workingMemStatus = { label: '데이터 없음', color: 'var(--muted)' };
+      if (digitResults.length > 0) {
+        const avgSpan = digitResults.reduce((sum, r) => sum + (r.summary?.totalSpan || 0), 0) / digitResults.length;
+        if (avgSpan >= 10) workingMemStatus = { label: '유지 중', color: 'var(--good)' };
+        else if (avgSpan >= 7) workingMemStatus = { label: '양호', color: 'var(--good)' };
+        else if (avgSpan >= 5) workingMemStatus = { label: '보통', color: 'var(--warn)' };
+        else workingMemStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      return {
-        speed: speedStatus,
-        focus: focusStatus,
-        memory: memoryStatus
-      };
+      // 공간기억 (spatial)
+      const spatialResults = weekResults.filter(r => r.testType === 'spatial');
+      let spatialMemStatus = { label: '데이터 없음', color: 'var(--muted)' };
+      if (spatialResults.length > 0) {
+        const avgSpan = spatialResults.reduce((sum, r) => sum + (r.summary?.maxSpan || 0), 0) / spatialResults.length;
+        if (avgSpan >= 7) spatialMemStatus = { label: '유지 중', color: 'var(--good)' };
+        else if (avgSpan >= 5) spatialMemStatus = { label: '양호', color: 'var(--good)' };
+        else if (avgSpan >= 4) spatialMemStatus = { label: '보통', color: 'var(--warn)' };
+        else spatialMemStatus = { label: '변동 있음', color: 'var(--warn)' };
+      }
+      
+      return { speed: speedStatus, inhibit: inhibitStatus, workingMem: workingMemStatus, spatialMem: spatialMemStatus };
     }
-
+    
     // 메인 렌더링
-    function renderGuardianView() {
-      var app = document.getElementById('guardian-app');
-      var token = getTokenFromUrl();
+    async function render() {
+      const token = getTokenFromUrl();
       
       if (!token) {
-        app.innerHTML = '<div class="error-card">' +
-          '<div class="error-icon"><i class="fa-solid fa-link-slash"></i></div>' +
-          '<h2 class="error-title">잘못된 접근이에요</h2>' +
-          '<p class="error-desc">올바른 공유 링크로 접속해주세요.</p>' +
-          '</div>';
-        document.getElementById('devTools').style.display = 'none';
+        app.innerHTML = `
+          <div class="error-card">
+            <div class="error-icon"><i class="fa-solid fa-link-slash"></i></div>
+            <h2 class="error-title">잘못된 접근이에요</h2>
+            <p class="error-desc">올바른 공유 링크로 접속해주세요.</p>
+          </div>
+        `;
         return;
       }
-
-      var anonId = resolveGuardianToken(token);
-      if (!anonId) {
-        app.innerHTML = '<div class="error-card">' +
-          '<div class="error-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>' +
-          '<h2 class="error-title">링크를 찾을 수 없어요</h2>' +
-          '<p class="error-desc">부모님께 새 링크를 요청해보세요.</p>' +
-          '</div>';
-        document.getElementById('devTools').style.display = 'none';
-        return;
-      }
-
-      var isPaid = isGuardianTokenPaid(token);
-      var history = loadTrainingHistory();
-      var thisWeekDates = getThisWeekDates();
-      var lastWeekDates = getLastWeekDates();
-      var thisWeekCount = getWeekTrainingCount(history, thisWeekDates);
-      var lastWeekCount = getWeekTrainingCount(history, lastWeekDates);
-      var streak = getStreak(history);
-      var memo = loadMemo(token);
       
-      var trainedDates = {};
-      for (var i = 0; i < history.length; i++) {
-        trainedDates[history[i].date_key] = true;
-      }
-      var today = getDateKey();
-      
-      var status = getStatus(thisWeekCount, lastWeekCount);
-      var changeText = getChangeText(thisWeekCount, lastWeekCount);
-      var actionMessage = getActionMessage(status);
-      
-      var statusLabels = {
-        stable: '🟢 안정',
-        caution: '🟡 주의',
-        alert: '🔴 확인 필요'
-      };
-
-      var dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-      
-      var weekHtml = '';
-      for (var j = 0; j < thisWeekDates.length; j++) {
-        var dateKey = thisWeekDates[j];
-        var isDone = trainedDates[dateKey];
-        var isFuture = dateKey > today;
-        var isToday = dateKey === today;
+      try {
+        const response = await fetch(`${API_URL}/api/guardian/data?token=${token}`);
+        const data = await response.json();
         
-        var cellClass = 'week-day-cell';
-        var icon = '';
+        if (!response.ok) {
+          throw new Error(data.error || '데이터를 불러올 수 없습니다.');
+        }
+        
+        guardianData = data;
+        renderData();
+      } catch (e) {
+        app.innerHTML = `
+          <div class="error-card">
+            <div class="error-icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
+            <h2 class="error-title">오류가 발생했어요</h2>
+            <p class="error-desc">${e.message}</p>
+          </div>
+        `;
+      }
+    }
+    
+    // 데이터 렌더링
+    function renderData() {
+      const token = getTokenFromUrl();
+      const { user, trainings, tests, stats } = guardianData;
+      const status = getStatus(stats);
+      const actionMessage = getActionMessage(status);
+      
+      // 참여한 날짜 Set (훈련 기준) - UTC를 한국시간으로 변환
+      const participatedDates = new Set();
+      (trainings || []).forEach(r => {
+        // DB에서 온 UTC 시간을 한국 시간으로 변환
+        const utcDate = new Date(r.date + 'Z'); // UTC로 파싱
+        const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+        const dateKey = koreaDate.toISOString().split('T')[0];
+        participatedDates.add(dateKey);
+      });
+      
+      // 선택된 주
+      const weekDates = getWeekDates(selectedWeekOffset);
+      const today = getDateKey();
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      const isThisWeek = selectedWeekOffset === 0;
+      
+      // 선택된 주 참여 일수
+      let weekDays = 0;
+      weekDates.forEach(d => {
+        if (participatedDates.has(d)) weekDays++;
+      });
+      
+      // 주간 그리드 HTML
+      let weekHtml = '';
+      weekDates.forEach((dateKey, i) => {
+        const isDone = participatedDates.has(dateKey);
+        const isFuture = dateKey > today;
+        const isToday = dateKey === today;
+        
+        let cellClass = 'week-day-cell';
+        let icon = '';
         
         if (isDone) {
           cellClass += ' done';
@@ -1246,399 +1231,488 @@
           icon = '✖';
         }
         
-        if (isToday) {
-          cellClass += ' today';
-        }
+        if (isToday) cellClass += ' today';
         
-        weekHtml += '<div class="week-day">' +
-          '<div class="week-day-name">' + dayNames[j] + '</div>' +
-          '<div class="' + cellClass + '" data-date="' + dateKey + '" data-done="' + (isDone ? 'true' : 'false') + '" data-future="' + (isFuture ? 'true' : 'false') + '">' + icon + '</div>' +
-          '</div>';
-      }
-
-      // 메모 표시 영역
-      var memoDisplayHtml = '';
-      var latestMemo = loadMemo(token);
-      var memoHistory = loadMemoHistory(token);
-      
-      if (latestMemo) {
-        var memoDate = new Date(latestMemo.date);
-        var memoDateStr = (memoDate.getMonth() + 1) + '월 ' + memoDate.getDate() + '일';
-        
-        memoDisplayHtml = '<div class="memo-display">' +
-          '<div class="memo-display-label">📝 ' + memoDateStr + ' 메모</div>' +
-          '<div class="memo-display-text">' + latestMemo.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' +
-          '</div>';
-        
-        if (memoHistory.length > 1) {
-          memoDisplayHtml += '<button class="linkBtn" id="viewMemoHistory" style="font-size:13px;color:var(--accent);margin-bottom:12px;">이전 메모 ' + (memoHistory.length - 1) + '개 보기</button>';
-        }
-      }
-
-      var buttonText = latestMemo ? '새 메모 작성하기' : '관찰 메모 남기기';
-
-      var html = '<div class="status-summary">' +
-        '<div class="status-badge ' + status + '">' + statusLabels[status] + '</div>' +
-        '<div class="status-change">' + changeText + '</div>' +
-        '</div>';
-      
-      // 메모 섹션
-      html += '<div class="action-section">' +
-        '<div class="action-message">' + actionMessage + '</div>' +
-        memoDisplayHtml +
-        '<button class="action-btn ' + status + '" id="actionBtn">' +
-        '<i class="fa-solid fa-pen"></i> ' + buttonText +
-        '</button>' +
-        '<div class="action-hint">부모님께 전화나 문자로 안부를 전해보세요</div>' +
-        '</div>';
-      
-      // 유료/무료 분기
-      if (isPaid) {
-        // 선택된 주의 데이터
-        var selectedWeekDates = getWeekDates(selectedWeekOffset);
-        var selectedWeekCount = getWeekTrainingCount(history, selectedWeekDates);
-        var oldestOffset = getOldestWeekOffset();
-        var isThisWeek = selectedWeekOffset === 0;
-        
-        // 주간 리포트 문구
-        var summaryText = '';
-        if (isThisWeek) {
-          if (selectedWeekCount >= 5) {
-            summaryText = '부모님은 이번 주도<br/>꾸준히 관리하고 계세요. 안심하셔도 돼요.';
-          } else if (selectedWeekCount >= 3) {
-            summaryText = '부모님이 이번 주도<br/>꾸준히 참여하고 계세요.';
-          } else if (selectedWeekCount >= 1) {
-            summaryText = '이번 주는 참여가 조금 뜸해요.<br/>안부 연락을 드려보는 건 어떨까요?';
-          } else {
-            summaryText = '이번 주는 아직 참여 기록이 없어요.<br/>부모님 상태를 확인해보세요.';
-          }
-        } else {
-          if (selectedWeekCount >= 5) {
-            summaryText = '이 주에는 꾸준히 참여하셨어요.';
-          } else if (selectedWeekCount >= 3) {
-            summaryText = '이 주에는 적당히 참여하셨어요.';
-          } else if (selectedWeekCount >= 1) {
-            summaryText = '이 주에는 참여가 적었어요.';
-          } else {
-            summaryText = '이 주에는 참여 기록이 없어요.';
-          }
-        }
-        
-        html += '<div class="locked-section">' +
-          '<div class="week-header" style="margin-bottom:16px;">' +
-          '<div class="week-title">📋 주간 리포트</div>' +
-          '</div>';
-        
-        // 주 선택 네비게이션
-        html += '<div class="week-nav">' +
-          '<button class="week-nav-btn" id="prevWeekBtn"' + (selectedWeekOffset <= oldestOffset ? ' disabled' : '') + '>' +
-          '<i class="fa-solid fa-chevron-left"></i>' +
-          '</button>' +
-          '<div class="week-nav-label">' + getWeekLabel(selectedWeekOffset) + 
-          (isThisWeek ? '<br/><span class="this-week-badge">이번 주</span>' : '') +
-          '</div>' +
-          '<button class="week-nav-btn" id="nextWeekBtn"' + (selectedWeekOffset >= 0 ? ' disabled' : '') + '>' +
-          '<i class="fa-solid fa-chevron-right"></i>' +
-          '</button>' +
-          '</div>';
-        
-        html += '<div style="text-align:center;font-size:15px;color:var(--text);line-height:1.7;margin-bottom:20px;">' +
-          summaryText +
-          '</div>' +
-          '<div style="border-top:1px solid var(--border);padding-top:16px;">' +
-          '<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">관리 기록</div>' +
-          '<div style="font-size:14px;color:var(--text);margin-bottom:12px;">' + (isThisWeek ? '이번 주' : '해당 주') + ' <strong>' + selectedWeekCount + '일</strong> 참여</div>' +
-          '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">';
-        
-        var dayNames2 = ['일', '월', '화', '수', '목', '금', '토'];
-        for (var di = 0; di < selectedWeekDates.length; di++) {
-          var dk = selectedWeekDates[di];
-          var done = trainedDates[dk];
-          var fut = dk > today;
-          var ico = done ? '✔' : (fut ? '–' : '✖');
-          var cellClass = 'week-day-cell' + (done ? ' done' : (fut ? ' future' : ' missed'));
-          if (dk === today) cellClass += ' today';
-          html += '<div class="week-day">' +
-            '<div class="week-day-name">' + dayNames2[di] + '</div>' +
-            '<div class="' + cellClass + '" data-date="' + dk + '" data-done="' + (done ? 'true' : 'false') + '" data-future="' + (fut ? 'true' : 'false') + '" style="width:32px;height:32px;">' + ico + '</div>' +
-            '</div>';
-        }
-        
-        html += '</div>';
-        
-        if (isThisWeek && streak > 0) {
-          html += '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:14px;color:var(--text);">' +
-            '<i class="fa-solid fa-fire" style="color:#ea580c;"></i>' +
-            '<span>' + streak + '일 연속 참여 중</span>' +
-            '</div>';
-        }
-        
-        html += '</div>' +
-          '<div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px;">' +
-          '<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">' + (isThisWeek ? '이번 주' : '해당 주') + ' 상태</div>' +
-          '<div style="display:flex;flex-direction:column;gap:8px;">';
-        
-        // 선택된 주의 상태
-        var weeklyStatus = getWeeklyStatusForOffset(selectedWeekOffset);
-        
-        html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;">' +
-          '<span style="width:8px;height:8px;border-radius:50%;background:' + weeklyStatus.speed.color + ';"></span>' +
-          '<span style="flex:1;font-size:14px;color:var(--text);">반응 속도</span>' +
-          '<span style="font-size:14px;font-weight:600;color:' + weeklyStatus.speed.color + ';">' + weeklyStatus.speed.label + '</span>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;">' +
-          '<span style="width:8px;height:8px;border-radius:50%;background:' + weeklyStatus.focus.color + ';"></span>' +
-          '<span style="flex:1;font-size:14px;color:var(--text);">집중력</span>' +
-          '<span style="font-size:14px;font-weight:600;color:' + weeklyStatus.focus.color + ';">' + weeklyStatus.focus.label + '</span>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:10px;">' +
-          '<span style="width:8px;height:8px;border-radius:50%;background:' + weeklyStatus.memory.color + ';"></span>' +
-          '<span style="flex:1;font-size:14px;color:var(--text);">기억 유지</span>' +
-          '<span style="font-size:14px;font-weight:600;color:' + weeklyStatus.memory.color + ';">' + weeklyStatus.memory.label + '</span>' +
-          '</div>' +
-          '</div>' +
-          '</div></div>';
-        
-        // 자녀 참여감 문구 (이번 주일 때만)
-        if (isThisWeek) {
-          var nextSunday = new Date();
-          nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()));
-          var nextReportDate = (nextSunday.getMonth() + 1) + '월 ' + nextSunday.getDate() + '일';
-          
-          html += '<div style="background:#f0fdf4;border-radius:12px;padding:16px;">' +
-            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
-            '<span style="width:8px;height:8px;border-radius:50%;background:var(--good);animation:pulse 2s infinite;"></span>' +
-            '<span style="font-size:13px;color:#15803d;font-weight:600;">자녀 확인 중</span>' +
-            '</div>' +
-            '<div style="font-size:13px;color:var(--muted);line-height:1.6;">' +
-            '다음 리포트: <strong style="color:var(--text);">' + nextReportDate + '</strong><br/>' +
-            '변화가 생기면 다음 리포트에서 확인할 수 있어요.' +
-            '</div>' +
-            '</div>';
-        }
-        
-      } else {
-        // 무료: 이번 주 참여 + 잠금 표시
-        html += '<div class="week-section">' +
-          '<div class="week-header">' +
-          '<div class="week-title">이번 주 참여</div>' +
-          '<div class="week-count">' + thisWeekCount + '일 참여</div>' +
-          '</div>' +
-          '<div class="week-grid">' + weekHtml + '</div>';
-        
-        if (streak > 0) {
-          html += '<div class="streak-info">' +
-            '<i class="fa-solid fa-fire"></i>' +
-            '<span>' + streak + '일 연속 참여 중</span>' +
-            '</div>';
-        }
-        
-        html += '</div>';
-        
-        html += '<div class="locked-section">' +
-          '<div class="locked-item" data-action="trend">' +
-          '<span class="locked-label">최근 4주 변화 추이 보기</span>' +
-          '<span class="locked-badge">🔒</span>' +
-          '</div>' +
-          '<div class="locked-item" data-action="pattern">' +
-          '<span class="locked-label">반복되는 패턴 확인하기</span>' +
-          '<span class="locked-badge">🔒</span>' +
-          '</div>' +
-          '</div>';
-      }
-      
-      // 링크 저장 안내
-      html += '<div style="background:var(--card);border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-top:16px;">' +
-        '<div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:8px;">🔗 이 페이지 저장하기</div>' +
-        '<div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px;">' +
-        '다음에 쉽게 확인하려면<br/>북마크 추가하거나 홈 화면에 저장해두세요.' +
-        '</div>' +
-        '<button id="copyLinkBtn" style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">' +
-        '<i class="fa-solid fa-link"></i> 링크 복사하기' +
-        '</button>' +
-        '</div>';
-
-      app.innerHTML = html;
-
-      // 이벤트 바인딩
-      document.getElementById('actionBtn').addEventListener('click', function() {
-        document.getElementById('memoText').value = '';
-        document.getElementById('memoModal').classList.add('active');
+        weekHtml += `
+          <div class="week-day">
+            <div class="week-day-name">${dayNames[i]}</div>
+            <div class="${cellClass}" data-date="${dateKey}" data-done="${isDone}" data-future="${isFuture}">${icon}</div>
+          </div>
+        `;
       });
-
-      var historyBtn = document.getElementById('viewMemoHistory');
-      if (historyBtn) {
-        historyBtn.addEventListener('click', function() {
-          renderMemoHistoryModal(token);
+      
+      // 메모
+      const latestMemo = getLatestMemo(token);
+      const memos = loadMemos(token);
+      let memoHtml = '';
+      if (latestMemo) {
+        const memoDate = new Date(latestMemo.date);
+        const memoDateStr = `${memoDate.getMonth() + 1}월 ${memoDate.getDate()}일`;
+        memoHtml = `
+          <div class="memo-display">
+            <div class="memo-display-label">📝 ${memoDateStr} 메모</div>
+            <div class="memo-display-text">${latestMemo.text}</div>
+          </div>
+        `;
+        if (memos.length > 1) {
+          memoHtml += `<button class="link-btn" id="viewMemoHistory" style="margin-bottom:12px;">이전 메모 ${memos.length - 1}개 보기</button>`;
+        }
+      }
+      
+      // 주간 상태
+      const weeklyStatus = getWeeklyStatus(tests || [], selectedWeekOffset);
+      
+      // 최근 활동 HTML (훈련 + 검사 통합)
+      let activityHtml = '';
+      const allActivities = [
+        ...(trainings || []).map(t => ({ ...t, testType: 'training' })),
+        ...(tests || [])
+      ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+      
+      if (allActivities.length === 0) {
+        activityHtml = '<div class="empty-activity">아직 활동 기록이 없어요</div>';
+      } else {
+        allActivities.forEach((r, idx) => {
+          const iconClass = getTestIconClass(r.testType);
+          const icon = getTestIcon(r.testType);
+          const name = getTestName(r.testType);
+          const date = formatDate(r.date);
+          
+          let scoreText = '';
+          if (r.summary) {
+            if (r.testType === 'training') {
+              scoreText = `${r.summary.correct || 0}/${r.summary.total || 0}`;
+            } else if (r.summary.accuracy !== undefined) {
+              scoreText = Math.round(r.summary.accuracy * 100) + '%';
+            } else if (r.summary.totalSpan !== undefined) {
+              scoreText = r.summary.totalSpan + '점';
+            }
+          }
+          
+          activityHtml += `
+            <div class="activity-item" data-index="${idx}">
+              <div class="activity-icon ${iconClass}">
+                <i class="fa-solid ${icon}"></i>
+              </div>
+              <div class="activity-info">
+                <div class="activity-name">${name}</div>
+                <div class="activity-date">${date}</div>
+              </div>
+              ${scoreText ? `<div class="activity-score">${scoreText}</div>` : ''}
+            </div>
+          `;
         });
       }
-
-      // 주 네비게이션 버튼 (유료일 때만)
-      if (isPaid) {
-        var prevBtn = document.getElementById('prevWeekBtn');
-        var nextBtn = document.getElementById('nextWeekBtn');
+      
+      // 활동 데이터 저장 (모달에서 사용)
+      guardianData.allActivities = allActivities;
+      
+      // 다음 리포트 날짜
+      const nextSunday = new Date();
+      nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()));
+      const nextReportDate = `${nextSunday.getMonth() + 1}월 ${nextSunday.getDate()}일`;
+      
+      app.innerHTML = `
+        <!-- 프로필 -->
+        <div class="profile-card">
+          <div class="profile-name">${user.name || '사용자'}님</div>
+          <div class="profile-info">브레인 업과 함께하는 중</div>
+          <div class="status-badge ${status.class}">${status.text}</div>
+          <p style="font-size:14px;color:var(--muted);margin-top:8px;">${status.desc}</p>
+        </div>
         
-        if (prevBtn) {
-          prevBtn.addEventListener('click', function() {
-            if (!this.disabled) {
-              selectedWeekOffset--;
-              renderGuardianView();
-            }
-          });
-        }
+        <!-- 액션 -->
+        <div class="action-card">
+          <div class="action-message">${actionMessage}</div>
+          ${memoHtml}
+          <div style="display:flex;gap:10px;align-items:stretch;">
+            <button class="action-btn ${status.class}" id="actionBtn" style="flex:1;">
+              <i class="fa-solid fa-pen"></i>
+              ${latestMemo ? '새 메모 작성' : '관찰 메모 남기기'}
+            </button>
+            ${latestMemo ? `<button class="action-btn" id="editMemoBtn" style="width:56px;padding:16px;background:var(--bg);color:var(--text);border:1px solid var(--border);"><i class="fa-solid fa-edit"></i></button>` : ''}
+          </div>
+          <div class="action-hint">부모님께 전화나 문자로 안부를 전해보세요</div>
+        </div>
         
-        if (nextBtn) {
-          nextBtn.addEventListener('click', function() {
-            if (!this.disabled) {
-              selectedWeekOffset++;
-              renderGuardianView();
-            }
-          });
+        <!-- 통계 -->
+        <div class="stats-card">
+          <div class="stats-title">
+            <i class="fa-solid fa-chart-simple"></i>
+            관리 참여 현황
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value">${stats.streak}</div>
+              <div class="stat-label">연속일</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">${stats.maxStreak || stats.streak}</div>
+              <div class="stat-label">최장 연속</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">${stats.totalTrainings || 0}</div>
+              <div class="stat-label">누적</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 주간 -->
+        <div class="week-card">
+          <div class="week-header">
+            <div class="week-title">📋 주간 리포트</div>
+          </div>
+          
+          <div class="week-nav">
+            <button class="week-nav-btn" id="prevWeekBtn">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="week-nav-label">
+              ${getWeekLabel(selectedWeekOffset)}
+              ${isThisWeek ? '<br/><span class="this-week-badge">이번 주</span>' : ''}
+            </div>
+            <button class="week-nav-btn" id="nextWeekBtn" ${selectedWeekOffset >= 0 ? 'disabled' : ''}>
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+          
+          <div class="week-grid">${weekHtml}</div>
+          
+          ${isThisWeek && stats.streak > 0 ? `
+            <div class="streak-info">
+              <i class="fa-solid fa-fire"></i>
+              <span>${stats.streak}일 연속 참여 중</span>
+            </div>
+          ` : ''}
+        </div>
+        
+        <!-- 주간 상태 -->
+        <div class="status-card">
+          <div class="stats-title">
+            <i class="fa-solid fa-heart-pulse"></i>
+            ${isThisWeek ? '이번 주' : '해당 주'} 상태
+          </div>
+          <div class="status-list">
+            <div class="status-item">
+              <div class="status-dot" style="background:${weeklyStatus.speed.color}"></div>
+              <div class="status-item-label">처리속도</div>
+              <div class="status-item-value" style="color:${weeklyStatus.speed.color}">${weeklyStatus.speed.label}</div>
+            </div>
+            <div class="status-item">
+              <div class="status-dot" style="background:${weeklyStatus.inhibit.color}"></div>
+              <div class="status-item-label">주의·억제</div>
+              <div class="status-item-value" style="color:${weeklyStatus.inhibit.color}">${weeklyStatus.inhibit.label}</div>
+            </div>
+            <div class="status-item">
+              <div class="status-dot" style="background:${weeklyStatus.workingMem.color}"></div>
+              <div class="status-item-label">작업기억</div>
+              <div class="status-item-value" style="color:${weeklyStatus.workingMem.color}">${weeklyStatus.workingMem.label}</div>
+            </div>
+            <div class="status-item">
+              <div class="status-dot" style="background:${weeklyStatus.spatialMem.color}"></div>
+              <div class="status-item-label">공간기억</div>
+              <div class="status-item-value" style="color:${weeklyStatus.spatialMem.color}">${weeklyStatus.spatialMem.label}</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 최근 활동 -->
+        <div class="activity-card">
+          <div class="activity-title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            최근 활동
+          </div>
+          <div class="activity-list">${activityHtml}</div>
+        </div>
+        
+        <!-- 자녀 확인 중 -->
+        ${isThisWeek ? `
+          <div class="watching-card">
+            <div class="watching-header">
+              <div class="watching-dot"></div>
+              <span class="watching-label">자녀 확인 중</span>
+            </div>
+            <div class="watching-text">
+              다음 리포트: <strong>${nextReportDate}</strong><br/>
+              변화가 생기면 확인할 수 있어요.
+            </div>
+          </div>
+        ` : ''}
+        
+        <!-- 링크 복사 -->
+        <button class="copy-link-btn" id="copyLinkBtn">
+          <i class="fa-solid fa-link"></i>
+          이 페이지 링크 복사
+        </button>
+        
+        <!-- 안내 -->
+        <div class="info-card">
+          <p>
+            <i class="fa-solid fa-info-circle"></i>
+            이 페이지는 부모님의 뇌 건강 관리 현황을 보여줍니다.
+          </p>
+        </div>
+      `;
+      
+      // 이벤트 바인딩
+      bindEvents();
+    }
+    
+    // 이벤트 바인딩
+    function bindEvents() {
+      const token = getTokenFromUrl();
+      
+      // 메모 버튼 (새 메모)
+      document.getElementById('actionBtn')?.addEventListener('click', () => {
+        editingMemoIndex = null;
+        document.getElementById('memoText').value = '';
+        document.getElementById('memoModalTitle').textContent = '📝 관찰 메모';
+        document.getElementById('memoModal').classList.add('active');
+      });
+      
+      // 수정 버튼 (최신 메모 수정)
+      document.getElementById('editMemoBtn')?.addEventListener('click', () => {
+        const memos = loadMemos(token);
+        if (memos.length > 0) {
+          const lastIndex = memos.length - 1;
+          openEditMemoModal(lastIndex, memos[lastIndex].text);
         }
-      }
-
+      });
+      
+      // 메모 히스토리
+      document.getElementById('viewMemoHistory')?.addEventListener('click', () => {
+        renderMemoHistory();
+      });
+      
+      // 주 네비게이션
+      document.getElementById('prevWeekBtn')?.addEventListener('click', () => {
+        selectedWeekOffset--;
+        renderData();
+      });
+      
+      document.getElementById('nextWeekBtn')?.addEventListener('click', () => {
+        if (selectedWeekOffset < 0) {
+          selectedWeekOffset++;
+          renderData();
+        }
+      });
+      
       // 날짜 셀 클릭
-      var cells = document.querySelectorAll('.week-day-cell');
-      for (var k = 0; k < cells.length; k++) {
-        cells[k].addEventListener('click', function() {
-          var dateKey = this.getAttribute('data-date');
-          var isDone = this.getAttribute('data-done') === 'true';
-          var isFuture = this.getAttribute('data-future') === 'true';
+      document.querySelectorAll('.week-day-cell').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const dateKey = cell.dataset.date;
+          const isDone = cell.dataset.done === 'true';
+          const isFuture = cell.dataset.future === 'true';
           
-          var text = '';
-          if (isFuture) {
-            text = '아직 지나지 않은 날이에요.';
-          } else if (isDone) {
-            text = '이 날은 참여했어요.';
-          } else {
-            text = '이 날은 참여 기록이 없어요.';
-          }
+          let text = '';
+          if (isFuture) text = '아직 지나지 않은 날이에요.';
+          else if (isDone) text = '이 날은 참여했어요! 👏';
+          else text = '이 날은 참여 기록이 없어요.';
           
-          document.getElementById('dayModalDate').textContent = formatDate(dateKey);
+          document.getElementById('dayModalDate').textContent = formatDateShort(dateKey);
           document.getElementById('dayModalText').textContent = text;
           document.getElementById('dayModal').classList.add('active');
         });
-      }
-
-      // 잠금 기능 클릭
-      if (!isPaid) {
-        var lockedItems = document.querySelectorAll('.locked-item');
-        for (var l = 0; l < lockedItems.length; l++) {
-          lockedItems[l].addEventListener('click', function() {
-            document.getElementById('premiumModal').classList.add('active');
-          });
-        }
-      }
-
-      // 개발자 버튼 텍스트
-      var devBtn = document.getElementById('devUnlockBtn');
-      devBtn.textContent = isPaid ? '무료로 되돌리기' : '유료 전환 테스트';
+      });
+      
+      // 활동 아이템 클릭
+      document.querySelectorAll('.activity-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const idx = parseInt(item.dataset.index);
+          const result = guardianData.allActivities[idx];
+          if (result) showActivityDetail(result);
+        });
+      });
       
       // 링크 복사
-      document.getElementById('copyLinkBtn').addEventListener('click', function() {
-        var url = window.location.href;
-        navigator.clipboard.writeText(url).then(function() {
-          var btn = document.getElementById('copyLinkBtn');
+      document.getElementById('copyLinkBtn')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          const btn = document.getElementById('copyLinkBtn');
           btn.innerHTML = '<i class="fa-solid fa-check"></i> 복사 완료!';
           btn.style.background = '#dcfce7';
           btn.style.color = 'var(--good)';
-          btn.style.borderColor = 'var(--good)';
-          setTimeout(function() {
-            btn.innerHTML = '<i class="fa-solid fa-link"></i> 링크 복사하기';
-            btn.style.background = 'var(--bg)';
-            btn.style.color = 'var(--text)';
-            btn.style.borderColor = 'var(--border)';
+          setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-link"></i> 이 페이지 링크 복사';
+            btn.style.background = '';
+            btn.style.color = '';
           }, 2000);
-        }).catch(function() {
-          alert('링크 복사에 실패했어요.\n수동으로 주소를 복사해주세요.');
+        } catch {
+          alert('링크 복사에 실패했어요.');
+        }
+      });
+    }
+    
+    // 활동 상세 모달
+    function showActivityDetail(result) {
+      const name = getTestName(result.testType);
+      const date = formatDate(result.date);
+      
+      let content = `<p style="color:var(--muted);margin-bottom:12px;">${date}</p>`;
+      
+      if (result.summary) {
+        if (result.testType === 'training') {
+          content += `
+            <div style="background:var(--bg);padding:14px;border-radius:12px;margin-bottom:8px;">
+              <div style="font-size:13px;color:var(--muted);">정답</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.correct || 0} / ${result.summary.total || 0}</div>
+            </div>
+          `;
+          if (result.summary.span) {
+            content += `
+              <div style="background:var(--bg);padding:14px;border-radius:12px;">
+                <div style="font-size:13px;color:var(--muted);">자릿수</div>
+                <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.span}자리</div>
+              </div>
+            `;
+          }
+        } else if (result.testType === 'pattern') {
+          content += `
+            <div style="background:var(--bg);padding:14px;border-radius:12px;margin-bottom:8px;">
+              <div style="font-size:13px;color:var(--muted);">정확도</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${Math.round((result.summary.accuracy || 0) * 100)}%</div>
+            </div>
+          `;
+          if (result.summary.meanRtMs) {
+            content += `
+              <div style="background:var(--bg);padding:14px;border-radius:12px;">
+                <div style="font-size:13px;color:var(--muted);">평균 반응속도</div>
+                <div style="font-size:20px;font-weight:700;color:var(--accent);">${Math.round(result.summary.meanRtMs)}ms</div>
+              </div>
+            `;
+          }
+        } else if (result.testType === 'gonogo') {
+          content += `
+            <div style="background:var(--bg);padding:14px;border-radius:12px;margin-bottom:8px;">
+              <div style="font-size:13px;color:var(--muted);">Go 정확도</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${Math.round((result.summary.goAcc || 0) * 100)}%</div>
+            </div>
+            <div style="background:var(--bg);padding:14px;border-radius:12px;">
+              <div style="font-size:13px;color:var(--muted);">No-Go 정확도</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${Math.round((result.summary.nogoAcc || 0) * 100)}%</div>
+            </div>
+          `;
+        } else if (result.testType === 'digitspan') {
+          content += `
+            <div style="background:var(--bg);padding:14px;border-radius:12px;">
+              <div style="font-size:13px;color:var(--muted);">총 점수</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.totalSpan || 0}점</div>
+            </div>
+          `;
+        }
+      }
+      
+      document.getElementById('activityModalTitle').textContent = name;
+      document.getElementById('activityModalContent').innerHTML = content;
+      document.getElementById('activityModal').classList.add('active');
+    }
+    
+    // 메모 히스토리
+    function renderMemoHistory() {
+      const token = getTokenFromUrl();
+      const memos = loadMemos(token);
+      const pastMemos = memos.slice(0, -1).reverse();
+      
+      let html = '';
+      pastMemos.forEach((m, i) => {
+        const d = new Date(m.date);
+        const dateStr = `${d.getMonth() + 1}월 ${d.getDate()}일`;
+        const originalIndex = memos.length - 2 - i;
+        
+        html += `
+          <div class="memo-history-item">
+            <div class="memo-history-content">
+              <div class="memo-history-date">${dateStr}</div>
+              <div class="memo-history-text">${m.text}</div>
+            </div>
+            <button class="memo-edit-btn" data-index="${originalIndex}" style="background:none;border:none;color:var(--accent);font-size:14px;cursor:pointer;padding:4px;margin-right:4px;"><i class="fa-solid fa-edit"></i></button>
+            <button class="memo-delete-btn" data-index="${originalIndex}">&times;</button>
+          </div>
+        `;
+      });
+      
+      if (pastMemos.length === 0) {
+        html = '<div style="text-align:center;color:var(--muted);padding:20px;">이전 메모가 없어요</div>';
+      }
+      
+      document.getElementById('memoHistoryList').innerHTML = html;
+      document.getElementById('memoHistoryModal').classList.add('active');
+      
+      // 수정 버튼
+      document.querySelectorAll('.memo-edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.index);
+          const memos = loadMemos(token);
+          const memo = memos[idx];
+          if (memo) {
+            document.getElementById('memoHistoryModal').classList.remove('active');
+            openEditMemoModal(idx, memo.text);
+          }
+        });
+      });
+      
+      // 삭제 버튼
+      document.querySelectorAll('.memo-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.index);
+          if (confirm('이 메모를 삭제할까요?')) {
+            deleteMemo(token, idx);
+            const remaining = loadMemos(token);
+            if (remaining.length <= 1) {
+              document.getElementById('memoHistoryModal').classList.remove('active');
+              renderData();
+            } else {
+              renderMemoHistory();
+            }
+          }
         });
       });
     }
-
+    
     // 모달 이벤트
-    document.getElementById('dayModalClose').addEventListener('click', function() {
+    document.getElementById('memoCancel').addEventListener('click', () => {
+      editingMemoIndex = null;
+      document.getElementById('memoModal').classList.remove('active');
+    });
+    
+    document.getElementById('memoSave').addEventListener('click', () => {
+      const token = getTokenFromUrl();
+      const text = document.getElementById('memoText').value.trim();
+      if (text) {
+        if (editingMemoIndex !== null) {
+          updateMemo(token, editingMemoIndex, text);
+        } else {
+          saveMemo(token, text);
+        }
+        editingMemoIndex = null;
+        document.getElementById('memoModal').classList.remove('active');
+        renderData();
+      }
+    });
+    
+    document.getElementById('dayModalClose').addEventListener('click', () => {
       document.getElementById('dayModal').classList.remove('active');
     });
-
-    document.getElementById('dayModal').addEventListener('click', function(e) {
-      if (e.target.id === 'dayModal') {
-        document.getElementById('dayModal').classList.remove('active');
-      }
+    
+    document.getElementById('activityModalClose').addEventListener('click', () => {
+      document.getElementById('activityModal').classList.remove('active');
     });
-
-    document.getElementById('closePremiumModal').addEventListener('click', function() {
-      document.getElementById('premiumModal').classList.remove('active');
-    });
-
-    document.getElementById('premiumModal').addEventListener('click', function(e) {
-      if (e.target.id === 'premiumModal') {
-        document.getElementById('premiumModal').classList.remove('active');
-      }
-    });
-
-    document.getElementById('requestSubscribeBtn').addEventListener('click', function() {
-      alert('부모님께 구독 요청 메시지를 보냈어요.\n(기능 준비 중)');
-      document.getElementById('premiumModal').classList.remove('active');
-    });
-
-    document.getElementById('closeMemoHistory').addEventListener('click', function() {
+    
+    document.getElementById('memoHistoryClose').addEventListener('click', () => {
       document.getElementById('memoHistoryModal').classList.remove('active');
     });
-
-    document.getElementById('memoHistoryModal').addEventListener('click', function(e) {
-      if (e.target.id === 'memoHistoryModal') {
-        document.getElementById('memoHistoryModal').classList.remove('active');
-      }
+    
+    // 모달 오버레이 클릭
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
     });
-
-    document.getElementById('memoCancel').addEventListener('click', function() {
-      document.getElementById('memoModal').classList.remove('active');
-    });
-
-    document.getElementById('memoModal').addEventListener('click', function(e) {
-      if (e.target.id === 'memoModal') {
-        document.getElementById('memoModal').classList.remove('active');
-      }
-    });
-
-    document.getElementById('memoSave').addEventListener('click', function() {
-      var token = getTokenFromUrl();
-      var text = document.getElementById('memoText').value.trim();
-      if (text) {
-        saveMemo(token, text);
-      }
-      document.getElementById('memoModal').classList.remove('active');
-      renderGuardianView();
-    });
-
-    document.getElementById('devUnlockBtn').onclick = function() {
-      var currentToken = getTokenFromUrl();
-      if (!currentToken) {
-        alert('토큰이 URL에 없습니다.');
-        return;
-      }
-      
-      var tokens = loadGuardianTokens();
-      if (!tokens[currentToken]) {
-        alert('토큰이 localStorage에 없습니다.\n부모 앱에서 공유 링크를 먼저 생성해주세요.');
-        return;
-      }
-      
-      var currentPaid = isGuardianTokenPaid(currentToken);
-      var newPaid = !currentPaid;
-      
-      tokens[currentToken].isPaid = newPaid;
-      tokens[currentToken].paidAt = newPaid ? Date.now() : null;
-      localStorage.setItem(GUARDIAN_TOKENS_KEY, JSON.stringify(tokens));
-      
-      selectedWeekOffset = 0; // 주 선택 초기화
-      alert('상태 변경: ' + (currentPaid ? '유료' : '무료') + ' -> ' + (newPaid ? '유료' : '무료'));
-      renderGuardianView();
-    };
-
-    // 초기 렌더링
-    renderGuardianView();
+    
+    // 시작
+    render();
   </script>
 </body>
-
 </html>

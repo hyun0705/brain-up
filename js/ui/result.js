@@ -1,12 +1,13 @@
 // ui/result.js
 import { $ } from '../core/utils.js';
-import { state, resetState } from '../core/state.js';
-import { LS_KEYS, loadHistory, getUserProfile } from '../core/storage.js';
+import { state, resetState, clearTestProgress } from '../core/state.js';
+import { LS_KEYS, loadHistory, getUserProfile, markGuestTestDone } from '../core/storage.js';
 import { getInterpretation, getOverallInterpretation, getTrendInterpretation } from '../core/scoring.js';
 import { renderMainIntro } from './intro.js';
 import { renderHome } from './home.js';
 import { playClick } from '../core/sound.js';
 import { startDigitSpanTraining, hasTrainedToday } from '../training/digitspan-training.js';
+import { isLoggedIn, showSignupPrompt } from './auth.js';
 
 const app = $("#app");
 
@@ -126,6 +127,14 @@ export function renderChartLegend() {
 }
 
 export function renderFinalResult() {
+  // 검사 완료 - 세션 상태 삭제
+  clearTestProgress();
+  
+  // 비로그인이면 1회 체험 완료 기록
+  if (!isLoggedIn()) {
+    markGuestTestDone();
+  }
+  
   const p = state.patternResult;
   const g = state.gonogoResult;
   const d = state.digitspanResult;
@@ -148,7 +157,10 @@ export function renderFinalResult() {
 
   document.querySelector(".progress").textContent = "검사 완료";
   
-  const profileInfo = profile ? `<span style="color:var(--muted);font-size:14px;margin-left:8px;">만 ${profile.age}세 ${profile.gender === 'male' ? '남성' : '여성'}</span>` : '';
+  let profileInfo = '';
+  if (profile && profile.age) {
+    profileInfo = `<span style="color:var(--muted);font-size:14px;margin-left:8px;">${profile.age} ${profile.gender === 'male' ? '남성' : profile.gender === 'female' ? '여성' : ''}</span>`;
+  }
 
   app.innerHTML = `
     <section class="card">
@@ -250,15 +262,28 @@ export function renderFinalResult() {
 
   setTimeout(() => drawHistoryChart('historyChart'), 50);
 
+  // 비로그인 상태면 회원가입 유도
+  if (!isLoggedIn()) {
+    setTimeout(() => showSignupPrompt(), 1000);
+  }
+
   if (!hasTrainedToday()) {
-    $("#goTraining").onclick = () => {
+    $("#goTraining").onclick = async () => {
       playClick();
+      // 로그인 체크
+      if (!isLoggedIn()) {
+        alert('관리 기능은 로그인 후 이용할 수 있어요.');
+        const { renderLogin } = await import('./auth.js');
+        renderLogin();
+        return;
+      }
       startDigitSpanTraining();
     };
   }
   
   $("#goHome").onclick = () => {
     playClick();
+    clearTestProgress(); // 검사 진행 상태 삭제
     renderHome();
   };
 }

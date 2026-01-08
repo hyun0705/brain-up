@@ -587,6 +587,38 @@ button.big.ghost:hover {
   gap: 12px;
 }
 
+.selectRow {
+  display: flex;
+  gap: 8px;
+}
+
+.selectRow .formSelect {
+  flex: 1;
+  min-width: 0;
+}
+
+.inputGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inputGroup .formInput {
+  flex: 1;
+}
+
+.inputSuffix {
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.dateInput {
+  width: 100%;
+  font-size: 17px;
+  color-scheme: light;
+}
+
 .formSelect {
   flex: 1;
   padding: 14px 16px;
@@ -757,6 +789,16 @@ button.big.ghost:hover {
   border: 1px solid #86efac;
 }
 
+.todayStatus.locked {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  opacity: 0.8;
+}
+
+.todayStatus.locked .todayStatusIcon {
+  color: #9ca3af;
+}
+
 .todayStatusIcon {
   font-size: 24px;
   width: 48px;
@@ -810,8 +852,35 @@ button.big.ghost:hover {
   background: #1d4ed8;
 }
 
+.primaryBtn.danger {
+  background: var(--warn);
+}
+
+.primaryBtn.danger:hover {
+  background: #c2410c;
+}
+
 .primaryBtn:active {
   transform: scale(0.98);
+}
+
+.secondaryBtn {
+  padding: 16px 20px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.secondaryBtn:hover {
+  background: #e5e7eb;
 }
 
 .greetingSub {
@@ -840,6 +909,20 @@ button.big.ghost:hover {
 
 .trialBanner.expired:hover {
   border-color: #f59e0b;
+}
+
+.trialBanner.signup {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-color: #93c5fd;
+  cursor: pointer;
+}
+
+.trialBanner.signup:hover {
+  border-color: var(--accent);
+}
+
+.trialBanner.signup .trialBannerIcon {
+  color: var(--accent);
 }
 
 .trialBannerIcon {
@@ -1038,6 +1121,55 @@ button.big.ghost:hover {
   margin-top: 12px;
 }
 
+/* 결제 안내 */
+.paymentInfoBox {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.paymentInfoRow {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.paymentInfoRow:last-child {
+  border-bottom: none;
+}
+
+.paymentInfoLabel {
+  font-size: 14px;
+  color: #6b7280;
+  width: 80px;
+}
+
+.paymentInfoValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.paymentInfoValue.highlight {
+  color: var(--accent);
+}
+
+.paymentInfoRow .copyBtn {
+  padding: 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.paymentInfoRow .copyBtn:hover {
+  background: #f3f4f6;
+}
+
 /* 주간 상태 (검사) */
 .weeklyStatus {
   display: flex;
@@ -1075,6 +1207,25 @@ button.big.ghost:hover {
 
 .weeklyStatus.done .weeklyStatusIcon {
   color: var(--good);
+}
+
+.weeklyStatus.inprogress {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+}
+
+.weeklyStatus.inprogress .weeklyStatusIcon {
+  color: var(--warn);
+}
+
+.weeklyStatus.locked {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  opacity: 0.8;
+}
+
+.weeklyStatus.locked .weeklyStatusIcon {
+  color: #9ca3af;
 }
 
 .weeklyStatusTitle {
@@ -1872,4 +2023,589 @@ button.big.ghost:hover {
   padding: 3px 10px;
   border-radius: 10px;
   margin-top: 6px;
+}
+
+/* ========== 로그인/회원가입 ========== */
+.authDivider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.authDivider::before,
+.authDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.authDivider span {
+  padding: 0 12px;
+}
+
+.kakaoBtn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+  background: #FEE500;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.kakaoBtn:hover {
+  background: #FDDC3F;
+}
+
+.authLinks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.authLinkDivider {
+  color: var(--border);
+}
+
+/* 모달 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 30px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modalIcon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  background: var(--accent-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--accent);
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.modalDesc {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+/* Go/No-Go 터치 버튼 (모바일) */
+.gonogoTouchBtn {
+  display: block;
+  width: 100%;
+  padding: 20px;
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  background: var(--accent);
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.gonogoTouchBtn:active {
+  transform: scale(0.96);
+}
+
+/* ========== 모바일 반응형 ========== */
+@media (max-width: 480px) {
+  /* 달력 */
+  .calendarCell {
+    min-height: 44px;
+    padding-top: 2px;
+  }
+  
+  .calendarCell .dayNum {
+    font-size: 10px;
+  }
+  
+  .stamp {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+  
+  .calendarCell .stamps {
+    margin-top: -4px;
+    gap: 2px;
+  }
+  
+  .calendarLegend {
+    gap: 12px;
+  }
+  
+  .legendItem {
+    font-size: 12px;
+  }
+  
+  .legendItem .stamp {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+  
+  /* 패턴 퍼즐 */
+  .patternWrap {
+    gap: 8px;
+  }
+  
+  .patternCard {
+    padding: 8px;
+    min-height: 140px;
+    border-radius: 12px;
+  }
+  
+  .patternCard canvas {
+    max-width: 100%;
+    height: auto !important;
+  }
+  
+  /* 위치 기억 그리드 */
+  .spatialGrid {
+    gap: 4px !important;
+  }
+  
+  .spatialCell {
+    width: 50px !important;
+    height: 50px !important;
+  }
+  
+  /* 숫자 키패드 */
+  .digitPad {
+    gap: 6px;
+    max-width: 300px;
+  }
+  
+  .digitBtn {
+    height: 46px;
+    font-size: 20px;
+  }
+  
+  .digitInput {
+    width: 32px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 20px;
+    margin: 0 2px;
+  }
+  
+  /* 버튼 */
+  button.big {
+    height: 50px;
+    font-size: 16px;
+  }
+  
+  .primaryBtn {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+  
+  /* 일반 */
+  .title {
+    font-size: 22px;
+  }
+  
+  .desc {
+    font-size: 15px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+  
+  .container {
+    padding: 12px;
+  }
+  
+  /* 결과 그리드 */
+  .resultGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  
+  .stat .value {
+    font-size: 24px;
+  }
+  
+  /* 리포트 그리드 */
+  .reportGrid {
+    gap: 8px;
+  }
+  
+  .reportItemValue {
+    font-size: 24px;
+  }
+}
+
+/* =========================
+   공지사항 배너 & 모달
+========================= */
+.noticeBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #93c5fd;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.noticeBanner:hover {
+  border-color: var(--accent);
+}
+
+.noticeBannerIcon {
+  font-size: 24px;
+  color: var(--accent);
+}
+
+.noticeBannerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.noticeBannerTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.noticeBannerDesc {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.noticeBannerArrow {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.noticeBanner .newBadge {
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.newBadge {
+  display: inline-block;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* 공지사항 모달 */
+.noticeModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.noticeModalOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.noticeModalContent {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.noticeModalHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0ea5e9;
+  margin-bottom: 16px;
+}
+
+.noticeModalIcon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+}
+
+.noticeModalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.noticeModalBody {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.noticeModalDate {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 20px;
+}
+
+.noticeModalClose {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.noticeModalClose:hover {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+}
+
+/* 공지사항 목록 페이지 */
+.noticeList {
+  margin-top: 16px;
+}
+
+.noticeItem {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.noticeItem:hover {
+  background: #f3f4f6;
+}
+
+.noticeItem.new {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.noticeItem.new:hover {
+  background: #f3f4f6;
+}
+
+.noticeItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.noticeItemTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.noticeItem.new .noticeItemTitle {
+  color: var(--text);
+}
+
+.noticeItemDate {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.noticeItem.new .noticeItemDate {
+  color: #9ca3af;
+}
+
+/* 공지사항 상세 페이지 */
+.noticeDetail {
+  margin-top: 16px;
+}
+
+.noticeDetailTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.noticeDetailDate {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.noticeDetailBody {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.8;
+}
+
+.loadingText {
+  text-align: center;
+  color: #9ca3af;
+  padding: 40px 0;
+}
+
+.emptyText {
+  text-align: center;
+  color: #9ca3af;
+  padding: 40px 0;
+}
+
+/* ========== 구독 상태 화면 ========== */
+.subscriptionInfoBox {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.subscriptionInfoRow {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.subscriptionInfoRow:last-child {
+  border-bottom: none;
+}
+
+.subscriptionInfoLabel {
+  font-size: 14px;
+  color: #6b7280;
+  width: 100px;
+}
+
+.subscriptionInfoValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.subscriptionInfoValue.highlight {
+  color: var(--accent);
+}
+
+.subscriptionBenefits {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f0fdf4;
+  border-radius: 12px;
+}
+
+.subscriptionBenefitTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--good);
+  margin-bottom: 12px;
+}
+
+.subscriptionBenefitList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.subscriptionBenefitItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.subscriptionBenefitItem i {
+  color: var(--good);
+  font-size: 12px;
 }

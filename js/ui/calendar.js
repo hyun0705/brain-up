@@ -1,15 +1,35 @@
 // ui/calendar.js
 import { $ } from '../core/utils.js';
-import { LS_KEYS, loadHistory, getDateKey, getTrialDaysLeft } from '../core/storage.js';
+import { LS_KEYS, loadHistory, getDateKey, getTrialDaysLeft, isSubscribedSync, getSubscriptionCache, clearSubscription } from '../core/storage.js';
 import { playClick } from '../core/sound.js';
 import { renderHome } from './home.js';
+import { isLoggedIn, requestPayment, cancelPayment, getPendingPayment } from '../core/api.js';
 
 const app = $("#app");
 
 // ========== 업그레이드 안내 화면 ==========
 
-export function renderUpgradePrompt() {
+export async function renderUpgradePrompt() {
   document.querySelector(".progress").textContent = "구독 안내";
+  
+  // 구독 중이면 구독 상태 화면으로
+  if (isSubscribedSync()) {
+    renderSubscriptionStatus();
+    return;
+  }
+  
+  // 이미 대기 중인 결제가 있는지 확인
+  if (isLoggedIn()) {
+    try {
+      const pending = await getPendingPayment();
+      if (pending && pending.payment) {
+        renderPaymentComplete();
+        return;
+      }
+    } catch (e) {
+      // 무시
+    }
+  }
   
   let selectedPlan = 'yearly'; // 기본 선택: 연 구독
   
@@ -99,14 +119,280 @@ export function renderUpgradePrompt() {
     
     $("#payBtn").onclick = () => {
       playClick();
-      const planText = selectedPlan === 'yearly' ? '연 구독 (₩99,000/년)' : '월 구독 (₩9,900/월)';
-      alert(`${planText}\n\n결제 기능은 준비 중입니다.\n곧 서비스될 예정이에요!`);
+      renderPaymentInfo(selectedPlan);
     };
     
     $("#backHome").onclick = () => { playClick(); renderHome(); };
   }
   
   render();
+}
+
+// ========== 결제 안내 화면 ==========
+
+function renderPaymentInfo(plan) {
+  const amount = plan === 'yearly' ? 99000 : 9900;
+  const planText = plan === 'yearly' ? '연 구독' : '월 구독';
+  
+  app.innerHTML = `
+    <section class="card">
+      <div class="upgradeHeader">
+        <div class="upgradeIcon"><i class="fa-solid fa-building-columns"></i></div>
+        <h1 class="title">계좌이체 안내</h1>
+        <p class="desc">${planText} · ${amount.toLocaleString()}원</p>
+      </div>
+      
+      <div class="paymentInfoBox">
+        <div class="paymentInfoRow">
+          <span class="paymentInfoLabel">은행</span>
+          <span class="paymentInfoValue">카카오뱅크</span>
+        </div>
+        <div class="paymentInfoRow">
+          <span class="paymentInfoLabel">계좌번호</span>
+          <span class="paymentInfoValue" id="accountNumber">3333-10-3568315</span>
+          <button class="copyBtn" id="copyAccount"><i class="fa-solid fa-copy"></i></button>
+        </div>
+        <div class="paymentInfoRow">
+          <span class="paymentInfoLabel">예금주</span>
+          <span class="paymentInfoValue">강현</span>
+        </div>
+        <div class="paymentInfoRow">
+          <span class="paymentInfoLabel">금액</span>
+          <span class="paymentInfoValue highlight">${amount.toLocaleString()}원</span>
+        </div>
+      </div>
+      
+      <div class="notice" style="margin-top:16px;">
+        <i class="fa-solid fa-info-circle" style="color:var(--accent);"></i>
+        입금 후 아래 버튼을 눌러주세요.<br/>
+        확인까지 최대 24시간이 소요될 수 있어요.
+      </div>
+      
+      <button class="primaryBtn" id="confirmPayment" style="margin-top:20px;">
+        <i class="fa-solid fa-check"></i>
+        입금 완료했어요
+      </button>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:12px;">
+        <button class="big ghost" id="backToUpgrade">뒤로</button>
+      </div>
+    </section>
+  `;
+  
+  $("#copyAccount").onclick = async () => {
+    playClick();
+    try {
+      await navigator.clipboard.writeText('3333103568315');
+      $("#copyAccount").innerHTML = '<i class="fa-solid fa-check"></i>';
+      setTimeout(() => {
+        $("#copyAccount").innerHTML = '<i class="fa-solid fa-copy"></i>';
+      }, 1500);
+    } catch {
+      alert('복사 실패. 직접 복사해주세요.');
+    }
+  };
+  
+  $("#confirmPayment").onclick = async () => {
+    playClick();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요해요.');
+      return;
+    }
+    
+    const confirmed = confirm(`정말 ${amount.toLocaleString()}원을 입금하셨나요?\n\n입금하지 않았다면 '취소'를 눌러주세요.`);
+    if (!confirmed) return;
+    
+    try {
+      await requestPayment(plan, amount);
+      renderPaymentComplete();
+    } catch (e) {
+      alert('오류: ' + e.message);
+    }
+  };
+  
+  $("#backToUpgrade").onclick = () => { playClick(); renderUpgradePrompt(); };
+}
+
+function renderPaymentComplete(paymentId) {
+  app.innerHTML = `
+    <section class="card" style="text-align:center;">
+      <div class="upgradeIcon" style="background:#f0fdf4;"><i class="fa-solid fa-clock" style="color:var(--good);"></i></div>
+      <h1 class="title">입금 확인 중</h1>
+      <p class="desc">
+        입금 확인 후 구독이 활성화됩니다.<br/>
+        확인까지 최대 24시간이 소요될 수 있어요.
+      </p>
+      
+      <div class="notice" style="margin-top:20px;">
+        <i class="fa-solid fa-bell" style="color:var(--accent);"></i>
+        구독이 활성화되면 앱에서 알려드릴게요.
+      </div>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
+        <button class="big" id="goHome">홈으로</button>
+      </div>
+      
+      <button class="textBtn" id="cancelPayment" style="margin-top:16px;color:#dc2626;">
+        잘못 눌렀어요 (취소)
+      </button>
+    </section>
+  `;
+  
+  $("#goHome").onclick = () => { playClick(); renderHome(); };
+  
+  $("#cancelPayment").onclick = async () => {
+    playClick();
+    const confirmed = confirm('결제 요청을 취소할까요?');
+    if (!confirmed) return;
+    
+    try {
+      await cancelPayment();
+      alert('취소되었습니다.');
+      renderUpgradePrompt();
+    } catch (e) {
+      alert('오류: ' + e.message);
+    }
+  };
+}
+
+// ========== 구독 상태 화면 ==========
+
+function renderSubscriptionStatus() {
+  document.querySelector(".progress").textContent = "구독 관리";
+  
+  const subscription = getSubscriptionCache();
+  const planText = subscription?.plan === 'yearly' ? '연간 구독' : '월간 구독';
+  const amount = subscription?.plan === 'yearly' ? '99,000' : '9,900';
+  
+  // 만료일 포맷팅
+  let expiresText = '-';
+  let daysLeft = 0;
+  if (subscription?.expiresAt) {
+    const expiresDate = new Date(subscription.expiresAt);
+    expiresText = expiresDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+    daysLeft = Math.ceil((expiresDate - new Date()) / (1000 * 60 * 60 * 24));
+  }
+  
+  app.innerHTML = `
+    <section class="card">
+      <div class="upgradeHeader">
+        <div class="upgradeIcon" style="background:#f0fdf4;"><i class="fa-solid fa-crown" style="color:var(--good);"></i></div>
+        <h1 class="title">구독 중</h1>
+        <p class="desc">프리미엄 회원이신 것을 환영해요!</p>
+      </div>
+      
+      <div class="subscriptionInfoBox">
+        <div class="subscriptionInfoRow">
+          <span class="subscriptionInfoLabel">현재 플랜</span>
+          <span class="subscriptionInfoValue">${planText}</span>
+        </div>
+        <div class="subscriptionInfoRow">
+          <span class="subscriptionInfoLabel">결제 금액</span>
+          <span class="subscriptionInfoValue">₩${amount}</span>
+        </div>
+        <div class="subscriptionInfoRow">
+          <span class="subscriptionInfoLabel">다음 결제일</span>
+          <span class="subscriptionInfoValue">${expiresText}</span>
+        </div>
+        <div class="subscriptionInfoRow">
+          <span class="subscriptionInfoLabel">남은 기간</span>
+          <span class="subscriptionInfoValue highlight">${daysLeft}일</span>
+        </div>
+      </div>
+      
+      <div class="subscriptionBenefits">
+        <div class="subscriptionBenefitTitle">이용 중인 혜택</div>
+        <div class="subscriptionBenefitList">
+          <div class="subscriptionBenefitItem">
+            <i class="fa-solid fa-check"></i>
+            <span>달력 & 통계</span>
+          </div>
+          <div class="subscriptionBenefitItem">
+            <i class="fa-solid fa-check"></i>
+            <span>상세 분석</span>
+          </div>
+          <div class="subscriptionBenefitItem">
+            <i class="fa-solid fa-check"></i>
+            <span>무제한 관리</span>
+          </div>
+          <div class="subscriptionBenefitItem">
+            <i class="fa-solid fa-check"></i>
+            <span>리마인더</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
+        <button class="big" id="backHome">홈으로</button>
+      </div>
+      
+      <button class="textBtn" id="cancelSubscription" style="margin-top:16px;color:#dc2626;">
+        구독 해지하기
+      </button>
+    </section>
+  `;
+  
+  $("#backHome").onclick = () => { playClick(); renderHome(); };
+  
+  $("#cancelSubscription").onclick = () => {
+    playClick();
+    renderCancelSubscription();
+  };
+}
+
+// ========== 구독 해지 화면 ==========
+
+function renderCancelSubscription() {
+  const subscription = getSubscriptionCache();
+  
+  let expiresText = '-';
+  if (subscription?.expiresAt) {
+    const expiresDate = new Date(subscription.expiresAt);
+    expiresText = expiresDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  
+  app.innerHTML = `
+    <section class="card" style="text-align:center;">
+      <div class="upgradeIcon" style="background:#fef2f2;"><i class="fa-solid fa-heart-crack" style="color:#dc2626;"></i></div>
+      <h1 class="title">정말 해지하시겠어요?</h1>
+      <p class="desc">
+        해지하시면 <b>${expiresText}</b>까지<br/>
+        프리미엄 기능을 이용할 수 있어요.<br/>
+        이후에는 무료 기능만 사용 가능해요.
+      </p>
+      
+      <div class="notice" style="margin-top:20px;">
+        <i class="fa-solid fa-info-circle" style="color:var(--accent);"></i>
+        해지 후에도 기존 기록은 유지됩니다.
+      </div>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
+        <button class="big" id="keepSubscription">계속 구독할게요</button>
+      </div>
+      
+      <button class="textBtn" id="confirmCancel" style="margin-top:16px;color:#dc2626;">
+        그래도 해지할게요
+      </button>
+    </section>
+  `;
+  
+  $("#keepSubscription").onclick = () => { 
+    playClick(); 
+    renderSubscriptionStatus(); 
+  };
+  
+  $("#confirmCancel").onclick = async () => {
+    playClick();
+    
+    const confirmed = confirm('정말 구독을 해지할까요?\n\n현재 구독 기간이 끝날 때까지는 계속 이용할 수 있어요.');
+    if (!confirmed) return;
+    
+    // 로컬에서 구독 상태 삭제 (실제 해지는 서버에서 자동 만료)
+    // 나중에 서버 API로 해지 요청 추가 가능
+    alert('구독이 해지되었어요.\n현재 구독 기간이 끝날 때까지는 계속 이용할 수 있어요.');
+    renderHome();
+  };
 }
 
 // ========== 유틸 함수 ==========

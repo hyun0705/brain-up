@@ -1,10 +1,11 @@
 // tests/pattern.js
 import { $, clamp, nowMs, formatMMSS, showCountdown, TEST_DURATION_MS } from '../core/utils.js';
-import { state, detachKeyHandler } from '../core/state.js';
+import { state, detachKeyHandler, saveTestProgress, clearTestProgress } from '../core/state.js';
 import { LS_KEYS, loadHistory, saveHistory, loadBaseline, tryUpdateBaseline } from '../core/storage.js';
 import { computeIndexFromBaseline } from '../core/scoring.js';
 import { startGoNoGoTest } from './gonogo.js';
 import { playCorrect, playWrong, playStart, playComplete, playClick } from '../core/sound.js';
+import { isLoggedIn, saveResults } from '../core/api.js';
 
 const app = $("#app");
 
@@ -37,9 +38,12 @@ function toggleRandomCells(rng, p, k) {
 
 function renderPatternToCanvas(pattern, canvas) {
   const { size, cells } = pattern;
-  const cellPx = 24;
-  const gapPx = 3;
-  const pad = 12;
+  
+  // 모바일 대응: 화면 너비에 따라 셀 크기 조정
+  const isMobile = window.innerWidth <= 480;
+  const cellPx = isMobile ? 18 : 24;
+  const gapPx = isMobile ? 2 : 3;
+  const pad = isMobile ? 8 : 12;
 
   const w = pad * 2 + size * cellPx + (size - 1) * gapPx;
   const h = w;
@@ -356,6 +360,13 @@ function finishPatternTest() {
   saveHistory(LS_KEYS.patternHistory, history);
   const baseline = tryUpdateBaseline(history, LS_KEYS.patternBaseline) || loadBaseline(LS_KEYS.patternBaseline);
   state.patternResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  saveTestProgress(); // 진행 상태 저장
+  
+  // 서버에 결과 저장
+  if (isLoggedIn()) {
+    saveResults('pattern', summary).catch(e => console.error('결과 저장 실패:', e));
+  }
+  
   playComplete();
   renderPatternDone();
 }
@@ -374,4 +385,31 @@ function renderPatternDone() {
     </section>
   `;
   $("#nextTest").onclick = () => { playClick(); startGoNoGoTest(); };
+}
+
+// 검사 이어하기
+export function resumePatternTest() {
+  document.querySelector(".progress").textContent = "검사 1/4 · 처리속도";
+  
+  // 이미 완료된 경우 다음 검사로
+  if (state.patternResult) {
+    startGoNoGoTest();
+    return;
+  }
+  
+  // 진행 상태에 따라 적절한 화면으로
+  if (state.phase === "overview") {
+    renderTestOverview();
+  } else if (state.phase === "intro") {
+    renderPatternIntro();
+  } else if (state.phase === "practice") {
+    renderPatternIntro(); // 연습은 처음부터
+  } else if (state.phase === "ready") {
+    renderPatternReady();
+  } else if (state.phase === "test") {
+    // 본 검사 중이었으면 이어서 시작
+    renderPatternReady();
+  } else {
+    renderPatternIntro();
+  }
 }
