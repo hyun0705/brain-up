@@ -39,6 +39,9 @@ function toggleRandomCells(rng, p, k) {
 function renderPatternToCanvas(pattern, canvas) {
   const { size, cells } = pattern;
   
+  // 다크모드 체크
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  
   // 모바일 대응: 화면 너비에 따라 셀 크기 조정
   const isMobile = window.innerWidth <= 480;
   const cellPx = isMobile ? 18 : 24;
@@ -55,7 +58,8 @@ function renderPatternToCanvas(pattern, canvas) {
   const ctx = canvas.getContext("2d");
   ctx.scale(2, 2);
 
-  ctx.fillStyle = "#ffffff";
+  // 배경색 (다크모드: 어두운 회색)
+  ctx.fillStyle = isDark ? "#1f2937" : "#ffffff";
   ctx.fillRect(0, 0, w, h);
 
   for (let r = 0; r < size; r++) {
@@ -63,12 +67,16 @@ function renderPatternToCanvas(pattern, canvas) {
       const i = r * size + c;
       const x = pad + c * (cellPx + gapPx);
       const y = pad + r * (cellPx + gapPx);
-      ctx.fillStyle = cells[i] ? "#2563eb" : "#f1f5f9";
+      // 셀 색상 (다크모드: 채워진 셀은 밝은 파란색, 빈 셀은 어두운 회색)
+      ctx.fillStyle = cells[i] 
+        ? (isDark ? "#60a5fa" : "#2563eb") 
+        : (isDark ? "#374151" : "#f1f5f9");
       ctx.fillRect(x, y, cellPx, cellPx);
     }
   }
 
-  ctx.strokeStyle = "#e5e7eb";
+  // 테두리
+  ctx.strokeStyle = isDark ? "#4b5563" : "#e5e7eb";
   ctx.lineWidth = 2;
   ctx.strokeRect(1, 1, w - 2, h - 2);
 }
@@ -184,12 +192,12 @@ function renderTestOverview() {
         </div>
       </div>
       
-      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px;margin-bottom:16px;">
+      <div class="testTipBox">
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <div style="font-size:18px;">🔊</div>
           <div>
             <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">검사 전 안내</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.5;">
+            <div class="tipList">
               • 사운드를 켜주세요<br/>
               • 방해받지 않는 환경에서 진행해주세요<br/>
               • 중간에 중단하면 처음부터 다시 시작해요
@@ -355,14 +363,20 @@ function finishPatternTest() {
   detachKeyHandler();
   if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
   const summary = computePatternSummary();
+  
+  // 비로그인일 때만 로컬스토리지에 저장
+  if (!isLoggedIn()) {
+    const history = loadHistory(LS_KEYS.patternHistory);
+    history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
+    saveHistory(LS_KEYS.patternHistory, history);
+  }
+  
   const history = loadHistory(LS_KEYS.patternHistory);
-  history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
-  saveHistory(LS_KEYS.patternHistory, history);
   const baseline = tryUpdateBaseline(history, LS_KEYS.patternBaseline) || loadBaseline(LS_KEYS.patternBaseline);
   state.patternResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
   saveTestProgress(); // 진행 상태 저장
   
-  // 서버에 결과 저장
+  // 로그인 사용자는 서버에만 저장
   if (isLoggedIn()) {
     saveResults('pattern', summary).catch(e => console.error('결과 저장 실패:', e));
   }

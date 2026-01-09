@@ -64,3 +64,7 @@ brain-up/
 - `bc_digitspan_history_v1`: 숫자 기억 검사 기록
 - `bc_spatial_history_v1`: 위치 기억 검사 기록
 - `*_baseline_v1`: 각 검사별 기준선 데이터
+
+## 주간 범위 (중요)
+- **일요일 ~ 토요일** (일월화수목금토)
+- storage.js, api.js, calendar.js, report.js, guardian.html 모두 동일하게 적용

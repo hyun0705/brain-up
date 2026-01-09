@@ -1,5 +1,5 @@
 // ui/settings.js
-import { $ } from '../core/utils.js';
+import { $, showToast, showConfirmModal } from '../core/utils.js';
 import { getUserProfile, saveUserProfile, getTrialDaysLeft, isSubscribedSync, LS_KEYS } from '../core/storage.js';
 import { playClick } from '../core/sound.js';
 import { renderHome } from './home.js';
@@ -9,6 +9,137 @@ import { isLoggedIn, logout, renderLogin, unlinkKakao } from './auth.js';
 import { getUserName, updateUserName, getUserBirthDate, getUserGender, updateUserProfile, deleteAccount } from '../core/api.js';
 
 const app = $("#app");
+const API_URL = 'https://brainup-api.stardog0705.workers.dev';
+
+// 다크모드 초기화
+export function initTheme() {
+  const savedTheme = localStorage.getItem('brainup_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+// 다크모드 토글
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('brainup_theme', next);
+  return next;
+}
+
+// 현재 테마 가져오기
+function getCurrentTheme() {
+  return localStorage.getItem('brainup_theme') || 'light';
+}
+
+// 앱 버전 로드
+async function loadAppVersion() {
+  try {
+    const res = await fetch(`${API_URL}/api/app-version`);
+    const data = await res.json();
+    const versionEl = document.getElementById('appVersionValue');
+    if (versionEl) {
+      versionEl.textContent = data.version || '1.0.0';
+    }
+  } catch (e) {
+    const versionEl = document.getElementById('appVersionValue');
+    if (versionEl) {
+      versionEl.textContent = '1.0.0';
+    }
+  }
+}
+
+// 문의하기 화면
+function renderInquiry() {
+  document.querySelector(".progress").textContent = "문의하기";
+  
+  app.innerHTML = `
+    <section class="card">
+      <h1 class="title" style="margin-bottom:20px;">문의하기</h1>
+      <p class="desc" style="margin-bottom:20px;">겁금한 점이나 개선 요청사항을 남겨주세요.</p>
+      
+      <div class="formGroup">
+        <label class="formLabel">문의 유형</label>
+        <select id="inquiryType" class="formSelect" style="width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:8px;font-size:15px;">
+          <option value="bug">오류/버그 신고</option>
+          <option value="feature">기능 요청</option>
+          <option value="payment">결제 문의</option>
+          <option value="account">계정 문제</option>
+          <option value="other">기타</option>
+        </select>
+      </div>
+      
+      <div class="formGroup" style="margin-top:16px;">
+        <label class="formLabel">내용</label>
+        <textarea id="inquiryContent" class="formInput" style="height:150px;resize:none;" placeholder="문의 내용을 작성해주세요..."></textarea>
+      </div>
+      
+      <div class="formGroup" style="margin-top:16px;">
+        <label class="formLabel">연락처 (선택)</label>
+        <input type="text" id="inquiryContact" class="formInput" placeholder="이메일 또는 연락처" />
+      </div>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
+        <button class="big primary" id="submitInquiry">문의 접수</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="backSettings">취소</button>
+      </div>
+    </section>
+  `;
+  
+  $("#submitInquiry").onclick = async () => {
+    const type = $("#inquiryType").value;
+    const content = $("#inquiryContent").value.trim();
+    const contact = $("#inquiryContact").value.trim();
+    
+    if (!content) {
+      showToast('문의 내용을 입력해주세요', 'error');
+      return;
+    }
+    
+    playClick();
+    
+    try {
+      const btn = $("#submitInquiry");
+      btn.disabled = true;
+      btn.textContent = '접수 중...';
+      
+      const res = await fetch(`${API_URL}/api/inquiry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, content, contact })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        showToast('문의가 접수되었어요', 'success');
+        setTimeout(() => renderSettings(), 500);
+      } else {
+        showToast('접수 실패: ' + (data.error || '알 수 없는 오류'), 'error');
+        btn.disabled = false;
+        btn.textContent = '문의 접수';
+      }
+    } catch (e) {
+      showToast('오류: ' + e.message, 'error');
+      $("#submitInquiry").disabled = false;
+      $("#submitInquiry").textContent = '문의 접수';
+    }
+  };
+  
+  $("#backSettings").onclick = () => { playClick(); renderSettings(); };
+}
+
+// 생년월일 포맷 (YYYY-MM-DD -> YYYY년 M월 D일)
+function formatBirthDate(dateStr) {
+  if (!dateStr) return '미설정';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const y = parts[0];
+  const m = parseInt(parts[1], 10);
+  const d = parseInt(parts[2], 10);
+  return `${y}년 ${m}월 ${d}일`;
+}
 
 export function renderSettings() {
   document.querySelector(".progress").textContent = "설정";
@@ -23,10 +154,14 @@ export function renderSettings() {
   if (loggedIn) {
     const serverBirthDate = getUserBirthDate();
     if (serverBirthDate) {
-      birthDateText = serverBirthDate;
+      birthDateText = formatBirthDate(serverBirthDate);
     }
-  } else if (profile.age) {
-    birthDateText = profile.age;
+  } else if (profile.birthYear && profile.birthMonth && profile.birthDay) {
+    // 온보딩에서 입력한 생년월일 사용
+    const y = profile.birthYear;
+    const m = String(profile.birthMonth).padStart(2, '0');
+    const d = String(profile.birthDay).padStart(2, '0');
+    birthDateText = formatBirthDate(`${y}-${m}-${d}`);
   }
   
   // 성별 텍스트 (로그인 상태면 서버 데이터, 아니면 로컬)
@@ -151,6 +286,20 @@ export function renderSettings() {
         </div>
       </div>
       
+      <div class="settingsSection">
+        <div class="settingsSectionTitle">화면</div>
+        
+        <div class="settingItem" id="themeSetting">
+          <div class="settingLabel">
+            <i class="fa-solid fa-${getCurrentTheme() === 'dark' ? 'moon' : 'sun'}"></i>
+            <span>다크 모드</span>
+          </div>
+          <div class="themeToggle ${getCurrentTheme() === 'dark' ? 'active' : ''}" id="themeToggle">
+            <div class="themeToggleKnob"></div>
+          </div>
+        </div>
+      </div>
+      
       ${!isLoggedIn() ? `
       <div class="settingsSection">
         <div class="settingsSectionTitle">데이터</div>
@@ -197,12 +346,20 @@ export function renderSettings() {
       <div class="settingsSection">
         <div class="settingsSectionTitle">정보</div>
         
+        <div class="settingItem" id="inquirySetting">
+          <div class="settingLabel">
+            <i class="fa-solid fa-envelope"></i>
+            <span>문의하기</span>
+          </div>
+          <i class="fa-solid fa-chevron-right settingArrow"></i>
+        </div>
+        
         <div class="settingItem" id="appVersion">
           <div class="settingLabel">
             <i class="fa-solid fa-info-circle"></i>
             <span>앱 버전</span>
           </div>
-          <div class="settingValue">1.0.0</div>
+          <div class="settingValue" id="appVersionValue">로딩...</div>
         </div>
       </div>
       
@@ -228,6 +385,14 @@ export function renderSettings() {
   }
   $("#reminderSetting").onclick = () => { playClick(); renderReminderSettings(); };
   
+  // 다크모드 토글
+  $("#themeSetting").onclick = () => {
+    playClick();
+    const newTheme = toggleTheme();
+    $("#themeToggle").classList.toggle('active', newTheme === 'dark');
+    $("#themeSetting .fa-solid").className = `fa-solid fa-${newTheme === 'dark' ? 'moon' : 'sun'}`;
+  };
+  
   // 비로그인일 때만 데이터 삭제
   if (!isLoggedIn() && $("#clearData")) {
     $("#clearData").onclick = () => { playClick(); confirmClearData(); };
@@ -237,10 +402,16 @@ export function renderSettings() {
   if (isLoggedIn()) {
     $("#logoutBtn").onclick = async () => {
       playClick();
-      if (confirm('로그아웃 할까요?')) {
+      const confirmed = await showConfirmModal({
+        title: '로그아웃 할까요?',
+        message: '다시 로그인하면 데이터를<br/>이어서 사용할 수 있어요',
+        confirmText: '로그아웃',
+        cancelText: '취소'
+      });
+      if (confirmed) {
         await logout();
-        alert('로그아웃 되었습니다.');
-        renderHome();
+        showToast('로그아웃 되었어요', 'success');
+        setTimeout(() => renderHome(), 500);
       }
     };
     
@@ -253,6 +424,12 @@ export function renderSettings() {
   }
   
   $("#backHome").onclick = () => { playClick(); renderHome(); };
+  
+  // 문의하기
+  $("#inquirySetting").onclick = () => { playClick(); renderInquiry(); };
+  
+  // 앱 버전 로드
+  loadAppVersion();
 }
 
 // 자녀 공유 화면
@@ -307,7 +484,7 @@ function renderShareToChild() {
     
     // 로그인 확인
     if (!isLoggedIn()) {
-      alert('로그인이 필요합니다.');
+      showToast('로그인이 필요해요', 'error');
       renderLogin();
       return;
     }
@@ -322,12 +499,14 @@ function renderShareToChild() {
       
       try {
         await navigator.clipboard.writeText(url);
+        showToast('공유 링크가 생성되었어요', 'success');
         showShareSuccess(url);
       } catch (err) {
+        showToast('공유 링크가 생성되었어요', 'success');
         showShareManual(url);
       }
     } catch (e) {
-      alert('공유 링크 생성 실패: ' + e.message);
+      showToast('공유 링크 생성 실패', 'error');
       const btn = $("#createShareLink");
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-link"></i> 공유 링크 생성하기';
@@ -378,7 +557,7 @@ function showShareSuccess(url) {
         $("#copyAgain").innerHTML = '<i class="fa-solid fa-copy"></i>';
       }, 1500);
     } catch (err) {
-      alert('복사에 실패했습니다. 링크를 직접 선택해서 복사해주세요.');
+      showToast('복사에 실패했어요', 'error');
     }
   };
   
@@ -451,54 +630,106 @@ function renderNameSettings() {
   $("#saveName").onclick = async () => {
     const newName = $("#nameInput").value.trim();
     if (!newName) {
-      alert('이름을 입력해주세요.');
+      showToast('이름을 입력해주세요', 'error');
       return;
     }
     
     playClick();
     try {
       await updateUserName(newName);
-      alert('이름이 변경되었어요!');
-      renderSettings();
+      showToast('이름이 변경되었어요', 'success');
+      setTimeout(() => renderSettings(), 500);
     } catch (e) {
-      alert('변경 실패: ' + e.message);
+      showToast('변경 실패: ' + e.message, 'error');
     }
   };
   
   $("#backSettings").onclick = () => { playClick(); renderSettings(); };
 }
 
-// 연령대 설정
+// 비로그인 사용자용 생년월일 설정
 function renderAgeSettings() {
   const profile = getUserProfile() || {};
   
+  const currentYear = profile.birthYear || '';
+  const currentMonth = profile.birthMonth ? String(profile.birthMonth).padStart(2, '0') : '';
+  const currentDay = profile.birthDay ? String(profile.birthDay).padStart(2, '0') : '';
+  
+  // 연도 옵션 (1930~2010)
+  const yearOptions = ['<option value="">연도</option>'];
+  for (let y = 2010; y >= 1930; y--) {
+    yearOptions.push(`<option value="${y}" ${currentYear == y ? 'selected' : ''}>${y}</option>`);
+  }
+  
+  // 월 옵션
+  const monthOptions = ['<option value="">월</option>'];
+  for (let m = 1; m <= 12; m++) {
+    const mv = String(m).padStart(2, '0');
+    monthOptions.push(`<option value="${mv}" ${currentMonth == mv ? 'selected' : ''}>${m}</option>`);
+  }
+  
+  // 일 옵션
+  const dayOptions = ['<option value="">일</option>'];
+  for (let d = 1; d <= 31; d++) {
+    const dv = String(d).padStart(2, '0');
+    dayOptions.push(`<option value="${dv}" ${currentDay == dv ? 'selected' : ''}>${d}</option>`);
+  }
+  
   app.innerHTML = `
     <section class="card">
-      <h1 class="title" style="margin-bottom:20px;">연령대 설정</h1>
+      <h1 class="title" style="margin-bottom:20px;">생년월일 설정</h1>
+      <p class="desc" style="margin-bottom:20px;">연령대별 분석에 사용됩니다.</p>
       
-      <div class="formOptions vertical">
-        <button class="formOption ${profile.age === '40대' ? 'selected' : ''}" data-value="40대">40대</button>
-        <button class="formOption ${profile.age === '50대' ? 'selected' : ''}" data-value="50대">50대</button>
-        <button class="formOption ${profile.age === '60대' ? 'selected' : ''}" data-value="60대">60대</button>
-        <button class="formOption ${profile.age === '70대 이상' ? 'selected' : ''}" data-value="70대 이상">70대 이상</button>
+      <div class="formGroup">
+        <label class="formLabel">생년월일</label>
+        <div class="selectRow">
+          <select id="birthYear" class="formSelect">${yearOptions.join('')}</select>
+          <select id="birthMonth" class="formSelect">${monthOptions.join('')}</select>
+          <select id="birthDay" class="formSelect">${dayOptions.join('')}</select>
+        </div>
       </div>
       
       <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
-        <button class="big" id="backSettings">저장</button>
+        <button class="big primary" id="saveBirthDate">저장</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="backSettings">취소</button>
       </div>
     </section>
   `;
   
-  document.querySelectorAll('.formOption').forEach(btn => {
-    btn.onclick = () => {
-      playClick();
-      document.querySelectorAll('.formOption').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      
-      const newProfile = { ...profile, age: btn.dataset.value };
-      saveUserProfile(newProfile);
+  $("#saveBirthDate").onclick = () => {
+    const year = $("#birthYear").value;
+    const month = $("#birthMonth").value;
+    const day = $("#birthDay").value;
+    
+    if (!year || !month || !day) {
+      showToast('생년월일을 모두 선택해주세요', 'error');
+      return;
+    }
+    
+    playClick();
+    
+    // 나이 계산
+    const today = new Date();
+    let age = today.getFullYear() - parseInt(year);
+    const monthDiff = today.getMonth() + 1 - parseInt(month);
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parseInt(day))) {
+      age--;
+    }
+    
+    const newProfile = { 
+      ...profile, 
+      birthYear: parseInt(year),
+      birthMonth: parseInt(month),
+      birthDay: parseInt(day),
+      age: age
     };
-  });
+    saveUserProfile(newProfile);
+    
+    showToast('생년월일이 변경되었어요', 'success');
+    setTimeout(() => renderSettings(), 500);
+  };
   
   $("#backSettings").onclick = () => { playClick(); renderSettings(); };
 }
@@ -511,7 +742,7 @@ function renderGenderSettings() {
     <section class="card">
       <h1 class="title" style="margin-bottom:20px;">성별 설정</h1>
       
-      <div class="formOptions vertical">
+      <div class="formOptions">
         <button class="formOption ${profile.gender === 'male' ? 'selected' : ''}" data-value="male">남성</button>
         <button class="formOption ${profile.gender === 'female' ? 'selected' : ''}" data-value="female">여성</button>
       </div>
@@ -605,36 +836,48 @@ function exportAllData() {
   a.click();
   URL.revokeObjectURL(url);
   
-  alert('데이터가 다운로드되었습니다.');
+  showToast('데이터가 다운로드되었어요', 'success');
 }
 
 // 데이터 삭제 확인
-function confirmClearData() {
-  if (confirm('정말 모든 데이터를 삭제할까요?\n\n검사 기록, 관리 기록, 설정 등 모든 데이터가 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.')) {
-    if (confirm('마지막 확인입니다.\n정말로 삭제하시겠습니까?')) {
-      Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
-      alert('모든 데이터가 삭제되었습니다.');
-      location.reload();
-    }
+async function confirmClearData() {
+  const confirmed = await showConfirmModal({
+    title: '모든 데이터를 삭제할까요?',
+    message: '검사 기록, 관리 기록, 설정 등<br/>모든 데이터가 삭제되며<br/>이 작업은 되돌릴 수 없어요',
+    confirmText: '삭제',
+    cancelText: '취소',
+    danger: true
+  });
+  
+  if (confirmed) {
+    Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
+    showToast('모든 데이터가 삭제되었어요', 'success');
+    setTimeout(() => location.reload(), 500);
   }
 }
 
 // 회원 탈퇴 확인
 async function confirmDeleteAccount() {
-  if (confirm('정말 탈퇴하시겠습니까?\n\n모든 계정 정보와 검사/관리 기록이 삭제됩니다.\n카카오 연결도 함께 해제됩니다.\n이 작업은 되돌릴 수 없습니다.')) {
-    if (confirm('마지막 확인입니다.\n정말로 탈퇴하시겠습니까?')) {
-      try {
-        // 카카오 연결 끊기 시도
-        await unlinkKakao();
-        // 서버 탈퇴
-        await deleteAccount();
-        // 로컬 데이터도 삭제
-        Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
-        alert('탈퇴가 완료되었습니다.\n이용해 주셔서 감사했습니다.');
-        location.reload();
-      } catch (e) {
-        alert('탈퇴 실패: ' + e.message);
-      }
+  const confirmed = await showConfirmModal({
+    title: '정말 탈퇴하시겠어요?',
+    message: '모든 계정 정보와 검사/관리 기록이<br/>삭제되며 되돌릴 수 없어요',
+    confirmText: '탈퇴하기',
+    cancelText: '취소',
+    danger: true
+  });
+  
+  if (confirmed) {
+    try {
+      // 카카오 연결 끊기 시도
+      await unlinkKakao();
+      // 서버 탈퇴
+      await deleteAccount();
+      // 로컬 데이터도 삭제
+      Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
+      showToast('탈퇴가 완료되었어요', 'success');
+      setTimeout(() => location.reload(), 500);
+    } catch (e) {
+      showToast('탈퇴 실패: ' + e.message, 'error');
     }
   }
 }
@@ -704,7 +947,7 @@ function renderBirthDateSettings() {
     const day = $("#birthDay").value;
     
     if (!year || !month || !day) {
-      alert('생년월일을 모두 선택해주세요.');
+      showToast('생년월일을 모두 선택해주세요', 'error');
       return;
     }
     
@@ -713,10 +956,10 @@ function renderBirthDateSettings() {
     playClick();
     try {
       await updateUserProfile({ birthDate });
-      alert('생년월일이 변경되었어요!');
-      renderSettings();
+      showToast('생년월일이 변경되었어요', 'success');
+      setTimeout(() => renderSettings(), 500);
     } catch (e) {
-      alert('변경 실패: ' + e.message);
+      showToast('변경 실패: ' + e.message, 'error');
     }
   };
   
@@ -731,7 +974,7 @@ function renderGenderSettingsLoggedIn() {
     <section class="card">
       <h1 class="title" style="margin-bottom:20px;">성별 설정</h1>
       
-      <div class="formOptions vertical">
+      <div class="formOptions">
         <button class="formOption ${currentGender === 'male' ? 'selected' : ''}" data-value="male">남성</button>
         <button class="formOption ${currentGender === 'female' ? 'selected' : ''}" data-value="female">여성</button>
       </div>
@@ -758,17 +1001,17 @@ function renderGenderSettingsLoggedIn() {
   
   $("#saveGender").onclick = async () => {
     if (!selectedGender) {
-      alert('성별을 선택해주세요.');
+      showToast('성별을 선택해주세요', 'error');
       return;
     }
     
     playClick();
     try {
       await updateUserProfile({ gender: selectedGender });
-      alert('성별이 변경되었어요!');
-      renderSettings();
+      showToast('성별이 변경되었어요', 'success');
+      setTimeout(() => renderSettings(), 500);
     } catch (e) {
-      alert('변경 실패: ' + e.message);
+      showToast('변경 실패: ' + e.message, 'error');
     }
   };
   
@@ -871,15 +1114,15 @@ export function renderCompleteProfile() {
     const day = $("#profileDay").value;
     
     if (!name) {
-      alert('이름을 입력해주세요.');
+      showToast('이름을 입력해주세요', 'error');
       return;
     }
     if (!year || !month || !day) {
-      alert('생년월일을 모두 선택해주세요.');
+      showToast('생년월일을 모두 선택해주세요', 'error');
       return;
     }
     if (!selectedGender) {
-      alert('성별을 선택해주세요.');
+      showToast('성별을 선택해주세요', 'error');
       return;
     }
     
@@ -888,10 +1131,10 @@ export function renderCompleteProfile() {
     playClick();
     try {
       await updateUserProfile({ name, birthDate, gender: selectedGender });
-      alert('프로필이 저장되었어요!');
-      renderHome();
+      showToast('프로필이 저장되었어요', 'success');
+      setTimeout(() => renderHome(), 500);
     } catch (e) {
-      alert('저장 실패: ' + e.message);
+      showToast('저장 실패: ' + e.message, 'error');
     }
   };
   

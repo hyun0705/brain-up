@@ -233,15 +233,19 @@ function finishDigitSpanTest() {
     raw: (state.digitSpan.forwardSpan + state.digitSpan.backwardSpan) / 14 * 100,
   };
   
-  const history = loadHistory(LS_KEYS.digitspanHistory);
-  history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
-  saveHistory(LS_KEYS.digitspanHistory, history);
+  // 비로그인일 때만 로컬스토리지에 저장
+  if (!isLoggedIn()) {
+    const history = loadHistory(LS_KEYS.digitspanHistory);
+    history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
+    saveHistory(LS_KEYS.digitspanHistory, history);
+  }
   
+  const history = loadHistory(LS_KEYS.digitspanHistory);
   const baseline = tryUpdateBaseline(history, LS_KEYS.digitspanBaseline) || loadBaseline(LS_KEYS.digitspanBaseline);
   state.digitspanResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
   saveTestProgress(); // 진행 상태 저장
   
-  // 서버에 결과 저장
+  // 로그인 사용자는 서버에만 저장
   if (isLoggedIn()) {
     saveResults('digitspan', summary).catch(e => console.error('결과 저장 실패:', e));
   }

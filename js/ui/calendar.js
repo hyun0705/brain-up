@@ -276,8 +276,8 @@ function renderSubscriptionStatus() {
   
   app.innerHTML = `
     <section class="card">
-      <div class="upgradeHeader">
-        <div class="upgradeIcon" style="background:#f0fdf4;"><i class="fa-solid fa-crown" style="color:var(--good);"></i></div>
+      <div class="upgradeHeader subscribed">
+        <div class="upgradeIcon subscribed"><i class="fa-solid fa-crown"></i></div>
         <h1 class="title">구독 중</h1>
         <p class="desc">프리미엄 회원이신 것을 환영해요!</p>
       </div>
@@ -354,7 +354,7 @@ function renderCancelSubscription() {
   
   app.innerHTML = `
     <section class="card" style="text-align:center;">
-      <div class="upgradeIcon" style="background:#fef2f2;"><i class="fa-solid fa-heart-crack" style="color:#dc2626;"></i></div>
+      <div class="upgradeIcon" style="background:#1f2937;"><i class="fa-solid fa-heart-crack" style="color:#ef4444;"></i></div>
       <h1 class="title">정말 해지하시겠어요?</h1>
       <p class="desc">
         해지하시면 <b>${expiresText}</b>까지<br/>
@@ -420,25 +420,25 @@ function getTestCompletedSet() {
 // 주간 범위 (월요일 시작)
 function getWeekRange(date = new Date()) {
   const d = new Date(date);
-  const day = d.getDay();
-  const diffToMonday = day === 0 ? -6 : 1 - day; // 일요일이면 -6, 아니면 월요일까지 차이
+  const dayOfWeek = d.getDay(); // 0=일, 1=월, ..., 6=토
   
-  const monday = new Date(d);
-  monday.setDate(d.getDate() + diffToMonday);
-  monday.setHours(0, 0, 0, 0);
+  // 일요일 시작 (일~토)
+  const sunday = new Date(d);
+  sunday.setDate(d.getDate() - dayOfWeek);
+  sunday.setHours(0, 0, 0, 0);
   
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+  const saturday = new Date(sunday);
+  saturday.setDate(sunday.getDate() + 6);
+  saturday.setHours(23, 59, 59, 999);
   
   const days = [];
   for (let i = 0; i < 7; i++) {
-    const day = new Date(monday);
-    day.setDate(monday.getDate() + i);
+    const day = new Date(sunday);
+    day.setDate(sunday.getDate() + i);
     days.push(getDateKey(day));
   }
   
-  return { monday, sunday, days };
+  return { sunday, saturday, days };
 }
 
 // 주간 완료율

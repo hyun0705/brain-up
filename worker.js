@@ -20,6 +20,23 @@ export default {
     }
 
     const ADMIN_KEY = 'brainup2026!';
+    
+    // DB에서 관리자 비밀번호 확인 함수
+    async function getAdminPassword(env) {
+      try {
+        const settings = await env.DB.prepare('SELECT value FROM app_settings WHERE key = ?').bind('admin_password').first();
+        return settings ? settings.value : ADMIN_KEY;
+      } catch {
+        return ADMIN_KEY;
+      }
+    }
+    
+    // 관리자 인증 확인
+    async function verifyAdmin(request, env) {
+      const adminKey = request.headers.get('X-Admin-Key');
+      const storedPassword = await getAdminPassword(env);
+      return adminKey === storedPassword;
+    }
 
     try {
       // ========== 인증 API ==========
@@ -76,11 +93,19 @@ export default {
         if (!token) {
           return Response.json({ error: '로그인이 필요합니다.' }, { status: 401, headers: corsHeaders });
         }
-        const session = await env.DB.prepare('SELECT user_id, expires_at FROM sessions WHERE token = ?').bind(token).first();
+        const session = await env.DB.prepare('SELECT user_id, expires_at, created_at FROM sessions WHERE token = ?').bind(token).first();
         if (!session || new Date(session.expires_at) < new Date()) {
           return Response.json({ error: '세션이 만료되었습니다.' }, { status: 401, headers: corsHeaders });
         }
         const user = await env.DB.prepare('SELECT id, email, name, birth_date, gender FROM users WHERE id = ?').bind(session.user_id).first();
+        
+        // 오늘 첫 접속인 경우에만 세션 시간 갱신 (하루 1회)
+        const lastLoginDate = session.created_at ? session.created_at.split('T')[0] : null;
+        const todayDate = new Date().toISOString().split('T')[0];
+        if (lastLoginDate !== todayDate) {
+          await env.DB.prepare('UPDATE sessions SET created_at = datetime("now") WHERE token = ?').bind(token).run();
+        }
+        
         return Response.json({ user }, { headers: corsHeaders });
       }
 
@@ -153,8 +178,17 @@ export default {
         if (!session) {
           return Response.json({ error: '세션이 만료되었습니다.' }, { status: 401, headers: corsHeaders });
         }
-        const results = await env.DB.prepare('SELECT * FROM test_results WHERE user_id = ? ORDER BY created_at DESC').bind(session.user_id).all();
-        return Response.json({ results: results.results }, { headers: corsHeaders });
+        const results = await env.DB.prepare('SELECT id, user_id, test_type, summary, created_at FROM test_results WHERE user_id = ? ORDER BY created_at DESC').bind(session.user_id).all();
+        // summary를 파싱하고 date 필드 추가
+        const parsedResults = results.results.map(r => ({
+          id: r.id,
+          user_id: r.user_id,
+          test_type: r.test_type,
+          summary: JSON.parse(r.summary || '{}'),
+          date: r.created_at,
+          created_at: r.created_at
+        }));
+        return Response.json({ results: parsedResults }, { headers: corsHeaders });
       }
 
       // ========== 보호자 공유 API ==========
@@ -390,13 +424,17 @@ export default {
         const todaySignups = await env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')").first();
         const totalTests = await env.DB.prepare('SELECT COUNT(*) as count FROM test_results').first();
         const pendingPayments = await env.DB.prepare("SELECT COUNT(*) as count FROM payments WHERE status = 'pending'").first();
-        const activeSubscriptions = await env.DB.prepare("SELECT COUNT(*) as count FROM payments WHERE status = 'confirmed' AND expires_at > datetime('now')").first();
+        const activeSubscriptions = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as count FROM payments WHERE status = 'confirmed' AND expires_at > datetime('now')").first();
+        const monthlySubscriptions = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as count FROM payments WHERE status = 'confirmed' AND expires_at > datetime('now') AND plan = 'monthly'").first();
+        const yearlySubscriptions = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as count FROM payments WHERE status = 'confirmed' AND expires_at > datetime('now') AND plan = 'yearly'").first();
         return Response.json({
           totalUsers: totalUsers?.count || 0,
           todaySignups: todaySignups?.count || 0,
           totalTests: totalTests?.count || 0,
           pendingPayments: pendingPayments?.count || 0,
-          activeSubscriptions: activeSubscriptions?.count || 0
+          activeSubscriptions: activeSubscriptions?.count || 0,
+          monthlySubscriptions: monthlySubscriptions?.count || 0,
+          yearlySubscriptions: yearlySubscriptions?.count || 0
         }, { headers: corsHeaders });
       }
 
@@ -468,6 +506,145 @@ export default {
         }
         const users = await env.DB.prepare("SELECT id, name, email, kakao_id, created_at FROM users WHERE date(created_at) = date('now') ORDER BY created_at DESC").all();
         return Response.json({ users: users.results }, { headers: corsHeaders });
+      }
+
+      // 가입 추이 (7일)
+      if (path === '/api/admin/signup-trend' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const trend = await env.DB.prepare(`
+          SELECT date(created_at) as date, COUNT(*) as count 
+          FROM users 
+          WHERE created_at >= date('now', '-7 days')
+          GROUP BY date(created_at)
+          ORDER BY date ASC
+        `).all();
+        return Response.json({ trend: trend.results }, { headers: corsHeaders });
+      }
+
+      // 가입 기록 전체
+      if (path === '/api/admin/all-signups' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const period = url.searchParams.get('period') || '7';
+        let query = 'SELECT id, name, email, kakao_id, created_at FROM users';
+        if (period === '7') {
+          query += " WHERE created_at >= datetime('now', '-7 days')";
+        } else if (period === '30') {
+          query += " WHERE created_at >= datetime('now', '-30 days')";
+        }
+        query += ' ORDER BY created_at DESC';
+        const users = await env.DB.prepare(query).all();
+        return Response.json({ users: users.results }, { headers: corsHeaders });
+      }
+
+      // 휴면 사용자 (30일 이상 미접속)
+      if (path === '/api/admin/dormant-users' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const users = await env.DB.prepare(`
+          SELECT u.id, u.name, u.email, u.kakao_id, u.created_at,
+            (SELECT MAX(created_at) FROM sessions WHERE user_id = u.id) as last_login
+          FROM users u
+          WHERE (
+            SELECT MAX(created_at) FROM sessions WHERE user_id = u.id
+          ) < datetime('now', '-30 days')
+          OR NOT EXISTS (SELECT 1 FROM sessions WHERE user_id = u.id)
+          ORDER BY last_login ASC
+        `).all();
+        return Response.json({ users: users.results }, { headers: corsHeaders });
+      }
+
+      // 시간대별 이용 현황 (최근 7일, 한국시간 기준)
+      if (path === '/api/admin/hourly-usage' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const hourly = await env.DB.prepare(`
+          SELECT CAST(strftime('%H', datetime(created_at, '+9 hours')) AS INTEGER) as hour, COUNT(*) as count
+          FROM test_results
+          WHERE created_at >= datetime('now', '-7 days')
+          GROUP BY hour
+          ORDER BY hour
+        `).all();
+        return Response.json({ hourly: hourly.results }, { headers: corsHeaders });
+      }
+
+      // 월별 매출 현황
+      if (path === '/api/admin/monthly-revenue' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const monthly = await env.DB.prepare(`
+          SELECT strftime('%Y-%m', confirmed_at) as month, SUM(amount) as revenue, COUNT(*) as count
+          FROM payments
+          WHERE status = 'confirmed' AND confirmed_at IS NOT NULL
+          GROUP BY month
+          ORDER BY month ASC
+        `).all();
+        return Response.json({ monthly: monthly.results }, { headers: corsHeaders });
+      }
+
+      // 곧 만료되는 구독 (7일 이내)
+      if (path === '/api/admin/expiring-subscriptions' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const subscriptions = await env.DB.prepare(`
+          SELECT p.*, u.name as user_name, u.email as user_email
+          FROM payments p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.status = 'confirmed' 
+            AND p.expires_at > datetime('now')
+            AND p.expires_at <= datetime('now', '+7 days')
+          ORDER BY p.expires_at ASC
+        `).all();
+        return Response.json({ subscriptions: subscriptions.results }, { headers: corsHeaders });
+      }
+
+      // 구독 이탈률 (만료 후 갱신 안 한 사용자)
+      if (path === '/api/admin/churn-rate' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        // 만료된 구독 (갱신 안 함)
+        const churned = await env.DB.prepare(`
+          SELECT p.*, u.name as user_name, u.email as user_email
+          FROM payments p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.status = 'confirmed' 
+            AND p.expires_at < datetime('now')
+            AND p.user_id NOT IN (
+              SELECT user_id FROM payments 
+              WHERE status = 'confirmed' AND expires_at > datetime('now')
+            )
+          ORDER BY p.expires_at DESC
+        `).all();
+        
+        // 전체 구독 이력 있는 사용자 수
+        const totalSubscribed = await env.DB.prepare(`
+          SELECT COUNT(DISTINCT user_id) as count FROM payments WHERE status = 'confirmed'
+        `).first();
+        
+        const churnRate = totalSubscribed.count > 0 
+          ? Math.round((churned.results.length / totalSubscribed.count) * 100) 
+          : 0;
+        
+        return Response.json({ 
+          churned: churned.results, 
+          churnRate,
+          totalSubscribed: totalSubscribed.count
+        }, { headers: corsHeaders });
       }
 
       if (path === '/api/admin/all-tests' && request.method === 'GET') {
@@ -542,6 +719,17 @@ export default {
         return Response.json({ success: true }, { headers: corsHeaders });
       }
 
+      // 구독 취소 (관리자)
+      if (path === '/api/admin/subscription/cancel' && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const { userId } = await request.json();
+        await env.DB.prepare("UPDATE payments SET status = 'cancelled', expires_at = datetime('now') WHERE user_id = ? AND status = 'confirmed' AND expires_at > datetime('now')").bind(userId).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
       if (path.startsWith('/api/admin/user/') && request.method === 'GET') {
         const adminKey = request.headers.get('X-Admin-Key');
         if (adminKey !== ADMIN_KEY) {
@@ -574,6 +762,84 @@ export default {
       if (path === '/api/notices' && request.method === 'GET') {
         const notices = await env.DB.prepare("SELECT id, title, content, created_at FROM notices WHERE is_active = 1 ORDER BY created_at DESC").all();
         return Response.json({ notices: notices.results }, { headers: corsHeaders });
+      }
+
+      // 앱 버전 조회 (공개 API - 인증 없이)
+      if (path === '/api/app-version' && request.method === 'GET') {
+        const version = await env.DB.prepare('SELECT value FROM app_settings WHERE key = ?').bind('app_version').first();
+        const notes = await env.DB.prepare('SELECT value FROM app_settings WHERE key = ?').bind('version_notes').first();
+        return Response.json({ 
+          version: version ? version.value : '1.0.0',
+          notes: notes ? notes.value : null
+        }, { headers: corsHeaders });
+      }
+
+      // 문의 접수 (공개 API)
+      if (path === '/api/inquiry' && request.method === 'POST') {
+        const { type, content, contact } = await request.json();
+        if (!content) {
+          return Response.json({ error: '내용을 입력해주세요.' }, { status: 400, headers: corsHeaders });
+        }
+        await env.DB.prepare('INSERT INTO inquiries (type, content, contact) VALUES (?, ?, ?)').bind(type, content, contact || null).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 관리자: 문의 목록 조회
+      if (path === '/api/admin/inquiries' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const filter = url.searchParams.get('filter') || 'pending';
+        let sql = 'SELECT * FROM inquiries';
+        if (filter === 'pending') sql += " WHERE status = 'pending'";
+        else if (filter === 'resolved') sql += " WHERE status = 'resolved'";
+        sql += ' ORDER BY created_at DESC';
+        const inquiries = await env.DB.prepare(sql).all();
+        return Response.json({ inquiries: inquiries.results }, { headers: corsHeaders });
+      }
+
+      // 관리자: 문의 상세
+      if (path.match(/^\/api\/admin\/inquiry\/\d+$/) && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const id = path.split('/').pop();
+        const inquiry = await env.DB.prepare('SELECT * FROM inquiries WHERE id = ?').bind(id).first();
+        return Response.json({ inquiry }, { headers: corsHeaders });
+      }
+
+      // 관리자: 문의 완료 처리
+      if (path.match(/^\/api\/admin\/inquiry\/\d+\/resolve$/) && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const id = path.split('/')[4];
+        await env.DB.prepare("UPDATE inquiries SET status = 'resolved', resolved_at = datetime('now') WHERE id = ?").bind(id).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 관리자: 문의 재오픈
+      if (path.match(/^\/api\/admin\/inquiry\/\d+\/reopen$/) && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const id = path.split('/')[4];
+        await env.DB.prepare("UPDATE inquiries SET status = 'pending', resolved_at = NULL WHERE id = ?").bind(id).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 관리자: 대기 중 문의 수
+      if (path === '/api/admin/inquiries/count' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const result = await env.DB.prepare("SELECT COUNT(*) as count FROM inquiries WHERE status = 'pending'").first();
+        return Response.json({ count: result.count }, { headers: corsHeaders });
       }
 
       if (path === '/api/admin/notices' && request.method === 'GET') {
@@ -612,6 +878,76 @@ export default {
         }
         const noticeId = path.split('/').pop();
         await env.DB.prepare('DELETE FROM notices WHERE id = ?').bind(noticeId).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 관리자 활동 로그 기록
+      if (path === '/api/admin/log' && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const { action, target, details } = await request.json();
+        await env.DB.prepare('INSERT INTO admin_logs (action, target, details) VALUES (?, ?, ?)').bind(action, target || null, details || null).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 관리자 활동 로그 조회
+      if (path === '/api/admin/logs' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const logs = await env.DB.prepare('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 100').all();
+        return Response.json({ logs: logs.results }, { headers: corsHeaders });
+      }
+
+      // 관리자 비밀번호 변경
+      if (path === '/api/admin/change-password' && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const { currentPassword, newPassword } = await request.json();
+        
+        // 현재 비밀번호 확인
+        const settings = await env.DB.prepare('SELECT value FROM app_settings WHERE key = ?').bind('admin_password').first();
+        const storedPassword = settings ? settings.value : 'brainup2026!';
+        
+        if (currentPassword !== storedPassword) {
+          return Response.json({ error: '현재 비밀번호가 일치하지 않습니다.' }, { status: 400, headers: corsHeaders });
+        }
+        
+        // 새 비밀번호 저장
+        await env.DB.prepare('INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, datetime("now"))').bind('admin_password', newPassword).run();
+        
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 앱 버전 조회
+      if (path === '/api/admin/app-version' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const version = await env.DB.prepare('SELECT value, updated_at FROM app_settings WHERE key = ?').bind('app_version').first();
+        return Response.json({ 
+          version: version ? version.value : '1.0.0',
+          updated_at: version ? version.updated_at : null
+        }, { headers: corsHeaders });
+      }
+
+      // 앱 버전 업데이트
+      if (path === '/api/admin/app-version' && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const { version, notes } = await request.json();
+        await env.DB.prepare('INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, datetime("now"))').bind('app_version', version).run();
+        if (notes) {
+          await env.DB.prepare('INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, datetime("now"))').bind('version_notes', notes).run();
+        }
         return Response.json({ success: true }, { headers: corsHeaders });
       }
 

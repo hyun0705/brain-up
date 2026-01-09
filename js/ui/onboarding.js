@@ -1,5 +1,5 @@
 // ui/onboarding.js
-import { $ } from '../core/utils.js';
+import { $, showToast } from '../core/utils.js';
 import { saveUserProfile, getUserProfile } from '../core/storage.js';
 import { playClick } from '../core/sound.js';
 import { renderHome } from './home.js';
@@ -51,6 +51,9 @@ function renderOnboardingStep1() {
         <span class="dot active"></span>
         <span class="dot"></span>
         <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
       </div>
       
       <button class="primaryBtn" id="nextBtn">
@@ -63,13 +66,164 @@ function renderOnboardingStep1() {
   $("#nextBtn").onclick = () => { playClick(); renderOnboardingStep2(); };
 }
 
+// Step 2: 검사란?
+function renderOnboardingStep2() {
+  document.querySelector(".progress").textContent = "검사 소개";
+  
+  app.innerHTML = `
+    <section class="card onboardingCard">
+      <div class="onboardingIcon small">
+        <i class="fa-solid fa-clipboard-check"></i>
+      </div>
+      <h1 class="title">주간 검사란?</h1>
+      <p class="desc">
+        <b>일주일에 1번</b>, 내 인지 상태를<br/>
+        정확하게 측정해요.
+      </p>
+      
+      <div class="testIntroList">
+        <div class="testIntroItem">
+          <div class="testIntroIcon" style="background: #E3F2FD;">
+            <i class="fa-solid fa-grip" style="color: #1976D2;"></i>
+          </div>
+          <div class="testIntroText">
+            <strong>패턴 비교</strong>
+            <span>시각적 패턴 인식 능력</span>
+          </div>
+        </div>
+        <div class="testIntroItem">
+          <div class="testIntroIcon" style="background: #E8F5E9;">
+            <i class="fa-solid fa-hand" style="color: #388E3C;"></i>
+          </div>
+          <div class="testIntroText">
+            <strong>Go/No-Go</strong>
+            <span>반응 억제 및 집중력</span>
+          </div>
+        </div>
+        <div class="testIntroItem">
+          <div class="testIntroIcon" style="background: #FFF3E0;">
+            <i class="fa-solid fa-list-ol" style="color: #F57C00;"></i>
+          </div>
+          <div class="testIntroText">
+            <strong>숫자 기억</strong>
+            <span>작업 기억력</span>
+          </div>
+        </div>
+        <div class="testIntroItem">
+          <div class="testIntroIcon" style="background: #F3E5F5;">
+            <i class="fa-solid fa-border-all" style="color: #7B1FA2;"></i>
+          </div>
+          <div class="testIntroText">
+            <strong>공간 기억</strong>
+            <span>공간 기억력</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="onboardingTip">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span>4가지 검사로 약 6분 정도 걸려요</span>
+      </div>
+      
+      <div class="onboardingProgress">
+        <span class="dot done"></span>
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+      
+      <div class="onboardingBtnRow">
+        <button class="secondaryBtn" id="prevBtn">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button class="primaryBtn" id="nextBtn">
+          다음
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </section>
+  `;
+  
+  $("#prevBtn").onclick = () => { playClick(); renderOnboardingStep1(); };
+  $("#nextBtn").onclick = () => { playClick(); renderOnboardingStep3(); };
+}
+
+// Step 3: 관리란?
+function renderOnboardingStep3() {
+  document.querySelector(".progress").textContent = "관리 소개";
+  
+  app.innerHTML = `
+    <section class="card onboardingCard">
+      <div class="onboardingIcon small">
+        <i class="fa-solid fa-dumbbell"></i>
+      </div>
+      <h1 class="title">매일 관리란?</h1>
+      <p class="desc">
+        <b>매일 3분</b>, 두뇌를 훈련해서<br/>
+        인지 기능을 유지하고 향상시켜요.
+      </p>
+      
+      <div class="trainingIntroBox">
+        <div class="trainingIntroIcon">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div class="trainingIntroContent">
+          <strong>숫자 기억 훈련</strong>
+          <p>점점 길어지는 숫자를 기억하며<br/>작업 기억력을 강화해요</p>
+        </div>
+      </div>
+      
+      <div class="onboardingCompare">
+        <div class="compareItem">
+          <div class="compareLabel">주간 검사</div>
+          <div class="compareDesc">측정 · 주 1회 · 5분</div>
+        </div>
+        <div class="compareVs">VS</div>
+        <div class="compareItem">
+          <div class="compareLabel">매일 관리</div>
+          <div class="compareDesc">훈련 · 매일 · 3분</div>
+        </div>
+      </div>
+      
+      <div class="onboardingTip">
+        <i class="fa-solid fa-fire"></i>
+        <span>꾸준히 하면 연속 기록이 쌓여요!</span>
+      </div>
+      
+      <div class="onboardingProgress">
+        <span class="dot done"></span>
+        <span class="dot done"></span>
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+      
+      <div class="onboardingBtnRow">
+        <button class="secondaryBtn" id="prevBtn">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button class="primaryBtn" id="nextBtn">
+          다음
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </section>
+  `;
+  
+  $("#prevBtn").onclick = () => { playClick(); renderOnboardingStep2(); };
+  $("#nextBtn").onclick = () => { playClick(); renderOnboardingStep4(); };
+}
+
 // 모바일 감지
 function isMobile() {
   return window.innerWidth <= 768 || 'ontouchstart' in window;
 }
 
-// Step 2: 프로필 입력
-function renderOnboardingStep2() {
+// Step 4: 프로필 입력
+function renderOnboardingStep4() {
   document.querySelector(".progress").textContent = "프로필 설정";
   
   const today = new Date();
@@ -138,14 +292,22 @@ function renderOnboardingStep2() {
       
       <div class="onboardingProgress">
         <span class="dot done"></span>
+        <span class="dot done"></span>
+        <span class="dot done"></span>
         <span class="dot active"></span>
+        <span class="dot"></span>
         <span class="dot"></span>
       </div>
       
-      <button class="primaryBtn" id="nextBtn" disabled>
-        다음
-        <i class="fa-solid fa-arrow-right"></i>
-      </button>
+      <div class="onboardingBtnRow">
+        <button class="secondaryBtn" id="prevBtn">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button class="primaryBtn" id="nextBtn" disabled>
+          다음
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
       
       <button class="textBtn" id="skipBtn">나중에 할게요</button>
     </section>
@@ -193,6 +355,8 @@ function renderOnboardingStep2() {
     };
   });
   
+  $("#prevBtn").onclick = () => { playClick(); renderOnboardingStep3(); };
+  
   $("#nextBtn").onclick = () => {
     const birth = getBirthData();
     
@@ -205,7 +369,7 @@ function renderOnboardingStep2() {
     
     // 만 19세 미만 체크
     if (age < 19) {
-      alert('본 서비스는 만 19세 이상 성인을 대상으로 합니다.');
+      showToast('만 19세 이상만 이용할 수 있어요', 'error');
       return;
     }
     
@@ -217,18 +381,18 @@ function renderOnboardingStep2() {
       age, 
       gender: selectedGender 
     };
-    renderOnboardingStep3();
+    renderOnboardingStep5();
   };
   
   $("#skipBtn").onclick = () => {
     playClick();
     window._onboardingData = { birthYear: null, birthMonth: null, birthDay: null, age: null, gender: null };
-    renderOnboardingStep3();
+    renderOnboardingStep5();
   };
 }
 
-// Step 3: 알림 설정
-function renderOnboardingStep3() {
+// Step 5: 알림 설정
+function renderOnboardingStep5() {
   document.querySelector(".progress").textContent = "알림 설정";
   
   app.innerHTML = `
@@ -261,16 +425,29 @@ function renderOnboardingStep3() {
         </div>
       </div>
       
+      <div class="notice" style="margin-top: 12px; font-size: 13px;">
+        <i class="fa-solid fa-info-circle" style="color:var(--accent);"></i>
+        알림 기능은 추후 업데이트 예정이에요.
+      </div>
+      
       <div class="onboardingProgress">
         <span class="dot done"></span>
         <span class="dot done"></span>
+        <span class="dot done"></span>
+        <span class="dot done"></span>
         <span class="dot active"></span>
+        <span class="dot"></span>
       </div>
       
-      <button class="primaryBtn" id="completeBtn">
-        <i class="fa-solid fa-check"></i>
-        완료
-      </button>
+      <div class="onboardingBtnRow">
+        <button class="secondaryBtn" id="prevBtn">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button class="primaryBtn" id="nextBtn">
+          다음
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
     </section>
   `;
   
@@ -285,7 +462,9 @@ function renderOnboardingStep3() {
     };
   });
   
-  $("#completeBtn").onclick = () => {
+  $("#prevBtn").onclick = () => { playClick(); renderOnboardingStep4(); };
+  
+  $("#nextBtn").onclick = () => {
     playClick();
     
     // 프로필 저장
@@ -302,13 +481,13 @@ function renderOnboardingStep3() {
     };
     saveUserProfile(profile);
     
-    // 완료 화면
-    renderOnboardingComplete();
+    // 첫 검사 유도 화면
+    renderOnboardingStep6();
   };
 }
 
-// 완료 화면
-function renderOnboardingComplete() {
+// Step 6: 첫 검사 유도
+function renderOnboardingStep6() {
   document.querySelector(".progress").textContent = "준비 완료";
   
   app.innerHTML = `
@@ -318,21 +497,49 @@ function renderOnboardingComplete() {
       </div>
       <h1 class="title">준비가 완료됐어요!</h1>
       <p class="desc">
-        지금 바로 첫 두뇌 관리를<br/>
-        시작해보세요.
+        지금 바로 첫 검사를 해볼까요?<br/>
+        내 두뇌 상태를 확인해보세요.
       </p>
       
-      <div class="onboardingTip">
-        <i class="fa-solid fa-lightbulb"></i>
-        <span>14일 무료로 체험할 수 있어요</span>
+      <div class="firstTestBox">
+        <div class="firstTestIcon">
+          <i class="fa-solid fa-play-circle"></i>
+        </div>
+        <div class="firstTestContent">
+          <strong>첫 주간 검사 시작하기</strong>
+          <p>4가지 검사 · 약 6분 소요</p>
+        </div>
       </div>
       
-      <button class="primaryBtn" id="startBtn">
-        <i class="fa-solid fa-home"></i>
-        홈으로 가기
+      <div class="onboardingTip">
+        <i class="fa-solid fa-gift"></i>
+        <span>14일 무료로 모든 기능을 체험하세요</span>
+      </div>
+      
+      <div class="onboardingProgress">
+        <span class="dot done"></span>
+        <span class="dot done"></span>
+        <span class="dot done"></span>
+        <span class="dot done"></span>
+        <span class="dot done"></span>
+        <span class="dot active"></span>
+      </div>
+      
+      <button class="primaryBtn" id="startTestBtn">
+        <i class="fa-solid fa-clipboard-check"></i>
+        첫 검사 시작하기
       </button>
+      
+      <button class="textBtn" id="goHomeBtn">홈에서 둘러볼게요</button>
     </section>
   `;
   
-  $("#startBtn").onclick = () => { playClick(); renderHome(); };
+  $("#startTestBtn").onclick = async () => {
+    playClick();
+    // 검사 인트로 화면으로 이동
+    const { startPatternTest } = await import('../tests/pattern.js');
+    startPatternTest();
+  };
+  
+  $("#goHomeBtn").onclick = () => { playClick(); renderHome(); };
 }

@@ -1,8 +1,9 @@
 // ui/auth.js - 로그인/회원가입 UI
 
-import { $ } from '../core/utils.js';
+import { $, showToast } from '../core/utils.js';
 import { playClick } from '../core/sound.js';
-import { login, signup, kakaoLogin, isLoggedIn, getMe, logout, getUserName, getUserBirthDate, getUserGender } from '../core/api.js';
+import { login, signup, kakaoLogin, isLoggedIn, getMe, logout, getUserName, getUserBirthDate, getUserGender, syncTodayStatus } from '../core/api.js';
+import { saveServerStatus, clearServerStatus } from '../core/storage.js';
 
 const app = $("#app");
 const KAKAO_JS_KEY = 'adc4f06aa51de1a85ffeca1989719c3c';
@@ -99,7 +100,7 @@ export function renderSignup(redirectAfter = null) {
 // 카카오 로그인 실행
 function doKakaoLogin() {
   if (!window.Kakao) {
-    alert('카카오 SDK를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+    showToast('카카오 SDK를 불러오는 중입니다', 'warning');
     return;
   }
   
@@ -117,24 +118,36 @@ function doKakaoLogin() {
           
           try {
             await kakaoLogin({ kakaoId, email, name });
-            alert('카카오 로그인 성공!');
-            // 프로필 완성 여부 확인
-            if (needsProfileCompletion()) {
-              goCompleteProfile();
-            } else {
-              goHome();
+            
+            // 서버에서 오늘/이번 주 상태 동기화
+            try {
+              const status = await syncTodayStatus();
+              saveServerStatus(status);
+              console.log('서버 상태 동기화 완료:', status);
+            } catch (syncErr) {
+              console.error('서버 상태 동기화 실패:', syncErr);
             }
+            
+            showToast('로그인 성공!', 'success');
+            // 프로필 완성 여부 확인
+            setTimeout(() => {
+              if (needsProfileCompletion()) {
+                goCompleteProfile();
+              } else {
+                goHome();
+              }
+            }, 500);
           } catch (e) {
-            alert('로그인 실패: ' + e.message);
+            showToast('로그인 실패: ' + e.message, 'error');
           }
         },
         fail: function(error) {
-          alert('사용자 정보를 가져올 수 없습니다.');
+          showToast('사용자 정보를 가져올 수 없어요', 'error');
         }
       });
     },
     fail: function(err) {
-      alert('카카오 로그인 실패');
+      showToast('카카오 로그인 실패', 'error');
     }
   });
 }
@@ -188,7 +201,7 @@ export async function checkLoginForFeature(featureName, callback) {
       renderLogin();
     }
   } else {
-    alert(`${featureName} 기능은 로그인이 필요해요.`);
+    showToast(`${featureName} 기능은 로그인이 필요해요`, 'error');
     renderLogin();
   }
 }

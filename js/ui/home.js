@@ -39,6 +39,34 @@ async function loadTestModules() {
   }
 }
 
+// 처음 사용자 안내 문구
+function getFirstTimeGuide() {
+  const loggedIn = isLoggedIn();
+  const guideKey = loggedIn ? 'brainup_guide_shown_logged' : 'brainup_guide_shown_guest';
+  const guideShown = localStorage.getItem(guideKey) === 'true';
+  
+  // 이미 본 사용자는 안 보여줌
+  if (guideShown) {
+    return '';
+  }
+  
+  // 가이드 본 것으로 표시
+  localStorage.setItem(guideKey, 'true');
+  
+  return `
+    <div class="firstTimeGuide">
+      <div class="guideIcon"><i class="fa-solid fa-lightbulb"></i></div>
+      <div class="guideContent">
+        <div class="guideTitle">처음이시네요! 환영합니다 👋</div>
+        <div class="guideText">
+          매주 1회 <b>검사</b>로 내 두뇌 상태를 확인하고<br/>
+          매일 <b>3분 관리</b>로 두뇌를 단련해보세요!
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // 가장 약한 영역 찾기
 function getWeakestArea() {
   const patternHist = loadHistory(LS_KEYS.patternHistory);
@@ -83,6 +111,16 @@ function getGreeting() {
   if (hour >= 12 && hour < 17) return { text: `${namePrefix}좋은 오후예요`, sub: '잠깐 쉬면서 두뇌 관리 어떠세요?' };
   if (hour >= 17 && hour < 21) return { text: `${namePrefix}좋은 저녁이에요`, sub: '오늘 하루도 수고 많으셨어요' };
   return { text: `${namePrefix}편안한 밤 되세요`, sub: '내일 또 만나요' };
+}
+
+// 오늘 날짜 문자열
+function getTodayDateStr() {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const date = now.getDate();
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayName = dayNames[now.getDay()];
+  return `${month}월 ${date}일 (${dayName})`;
 }
 
 // 연속 기록 멘트
@@ -522,17 +560,24 @@ export async function renderHome() {
     `;
   }
   
+  // 처음 사용자 가이드
+  const firstTimeGuide = getFirstTimeGuide();
+  
   app.innerHTML = `
     <section class="card">
       ${noticeBanner}
       ${trialBanner}
+      ${firstTimeGuide}
       
-      <div class="homeGreetingRow">
-        <div class="homeGreeting">
-          <div class="greetingText">${greeting.text}</div>
-          <div class="greetingSub">${greeting.sub}</div>
+      <div class="greetingCard">
+        <div class="greetingCardDate">${getTodayDateStr()}</div>
+        <div class="greetingCardBody">
+          <div class="greetingContent">
+            <div class="greetingText">${greeting.text}</div>
+            <div class="greetingSub">${greeting.sub}</div>
+          </div>
+          ${streakBadge}
         </div>
-        ${streakBadge}
       </div>
       
       <div class="homeSectionTitle">이번 주 검사</div>

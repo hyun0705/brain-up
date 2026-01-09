@@ -216,14 +216,20 @@ async function runGoNoGoTest() {
 function finishGoNoGoTest() {
   if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
   const summary = computeGoNoGoSummary(state.trials);
+  
+  // 비로그인일 때만 로컬스토리지에 저장
+  if (!isLoggedIn()) {
+    const history = loadHistory(LS_KEYS.gonogoHistory);
+    history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
+    saveHistory(LS_KEYS.gonogoHistory, history);
+  }
+  
   const history = loadHistory(LS_KEYS.gonogoHistory);
-  history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
-  saveHistory(LS_KEYS.gonogoHistory, history);
   const baseline = tryUpdateBaseline(history, LS_KEYS.gonogoBaseline) || loadBaseline(LS_KEYS.gonogoBaseline);
   state.gonogoResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
   saveTestProgress(); // 진행 상태 저장
   
-  // 서버에 결과 저장
+  // 로그인 사용자는 서버에만 저장
   if (isLoggedIn()) {
     saveResults('gonogo', summary).catch(e => console.error('결과 저장 실패:', e));
   }

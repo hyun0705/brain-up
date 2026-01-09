@@ -83,11 +83,74 @@ export function getDateKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-// 오늘 관리 완료 여부
+// ========== 서버 동기화 상태 (로그인 사용자) ==========
+
+const SERVER_STATUS_KEY = "bc_server_status_v1";
+
+// 서버 동기화 상태 저장
+export function saveServerStatus(status) {
+  const today = getDateKey();
+  localStorage.setItem(SERVER_STATUS_KEY, JSON.stringify({
+    ...status,
+    dateKey: today,
+    savedAt: Date.now()
+  }));
+}
+
+// 서버 동기화 상태 가져오기
+export function getServerStatus() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SERVER_STATUS_KEY) || "null");
+    if (!saved) return null;
+    
+    // 오늘 날짜가 아니면 무효 (매일 새로 확인 필요)
+    const today = getDateKey();
+    if (saved.dateKey !== today) {
+      return null;
+    }
+    
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+// 서버 상태 삭제 (로그아웃 시)
+export function clearServerStatus() {
+  localStorage.removeItem(SERVER_STATUS_KEY);
+}
+
+// 오늘 관리 완료로 마킹 (관리 완료 시 호출)
+export function markTrainedTodayLocal() {
+  const current = getServerStatus() || {};
+  saveServerStatus({
+    ...current,
+    trainedToday: true
+  });
+}
+
+// 이번 주 검사 완료로 마킹 (검사 완료 시 호출)
+export function markTestedThisWeekLocal() {
+  const current = getServerStatus() || {};
+  saveServerStatus({
+    ...current,
+    testedThisWeek: true
+  });
+}
+
+// 오늘 관리 완료 여부 (로컬 + 서버 상태 확인)
 export function hasTrainedToday() {
+  // 1. 로컬 히스토리 확인
   const history = loadHistory(LS_KEYS.digitspanTrainingHistory);
   const today = getDateKey();
-  return history.some(entry => entry.date_key === today);
+  const localDone = history.some(entry => entry.date_key === today);
+  if (localDone) return true;
+  
+  // 2. 서버 동기화 상태 확인 (로그인 사용자)
+  const serverStatus = getServerStatus();
+  if (serverStatus && serverStatus.trainedToday) return true;
+  
+  return false;
 }
 
 // 연속 관리 일수
@@ -119,35 +182,42 @@ export function getStreak() {
 export function getCurrentWeekRange() {
   const today = new Date();
   const dayOfWeek = today.getDay(); // 0=일, 1=월, ..., 6=토
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diffToMonday);
-  monday.setHours(0, 0, 0, 0);
+  // 일요일 시작 (일~토)
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - dayOfWeek);
+  sunday.setHours(0, 0, 0, 0);
   
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+  const saturday = new Date(sunday);
+  saturday.setDate(sunday.getDate() + 6);
+  saturday.setHours(23, 59, 59, 999);
   
-  return { monday, sunday };
+  return { sunday, saturday };
 }
 
-// 이번 주에 검사했는지 여부
+// 이번 주에 검사했는지 여부 (로컬 + 서버 상태 확인)
 export function hasTestedThisWeek() {
+  // 1. 로컬 히스토리 확인
   const history = loadHistory(LS_KEYS.patternHistory);
-  if (history.length === 0) return false;
+  if (history.length > 0) {
+    const { sunday, saturday } = getCurrentWeekRange();
+    const localDone = history.some(entry => {
+      const entryDate = new Date(entry.ended_at);
+      return entryDate >= sunday && entryDate <= saturday;
+    });
+    if (localDone) return true;
+  }
   
-  const { monday, sunday } = getCurrentWeekRange();
+  // 2. 서버 동기화 상태 확인 (로그인 사용자)
+  const serverStatus = getServerStatus();
+  if (serverStatus && serverStatus.testedThisWeek) return true;
   
-  return history.some(entry => {
-    const entryDate = new Date(entry.ended_at);
-    return entryDate >= monday && entryDate <= sunday;
-  });
+  return false;
 }
 
 // 이번 주 검사 기록 가져오기
 export function getThisWeekTestResults() {
-  const { monday, sunday } = getCurrentWeekRange();
+  const { sunday, saturday } = getCurrentWeekRange();
   
   const patternHist = loadHistory(LS_KEYS.patternHistory);
   const gonogoHist = loadHistory(LS_KEYS.gonogoHistory);
@@ -157,7 +227,7 @@ export function getThisWeekTestResults() {
   const filterThisWeek = (history) => {
     return history.filter(entry => {
       const entryDate = new Date(entry.ended_at);
-      return entryDate >= monday && entryDate <= sunday;
+      return entryDate >= sunday && entryDate <= saturday;
     });
   };
   

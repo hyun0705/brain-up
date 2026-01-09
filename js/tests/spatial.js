@@ -225,15 +225,19 @@ function finishSpatialTest() {
     raw: Number(raw.toFixed(3))
   };
   
-  const history = loadHistory(LS_KEYS.spatialHistory);
-  history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
-  saveHistory(LS_KEYS.spatialHistory, history);
+  // 비로그인일 때만 로컬스토리지에 저장
+  if (!isLoggedIn()) {
+    const history = loadHistory(LS_KEYS.spatialHistory);
+    history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
+    saveHistory(LS_KEYS.spatialHistory, history);
+  }
   
+  const history = loadHistory(LS_KEYS.spatialHistory);
   const baseline = tryUpdateBaseline(history, LS_KEYS.spatialBaseline) || loadBaseline(LS_KEYS.spatialBaseline);
   state.spatialResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
   clearTestProgress(); // 모든 검사 완료 - 진행 상태 삭제
   
-  // 서버에 결과 저장
+  // 로그인 사용자는 서버에만 저장
   if (isLoggedIn()) {
     saveResults('spatial', summary).catch(e => console.error('결과 저장 실패:', e));
   }

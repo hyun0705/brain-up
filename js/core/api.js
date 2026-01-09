@@ -98,6 +98,8 @@ export async function logout() {
   localStorage.removeItem('bc_session_state_v1');
   // 구독 상태 삭제
   localStorage.removeItem('bc_subscription_v1');
+  // 서버 동기화 상태 삭제
+  localStorage.removeItem('bc_server_status_v1');
 }
 
 // 저장된 사용자 이름 가져오기
@@ -148,14 +150,6 @@ export async function saveResults(testType, summary) {
   return apiRequest('/api/results', {
     method: 'POST',
     body: JSON.stringify({ testType, summary }),
-  });
-}
-
-// 관리(훈련) 결과 저장
-export async function saveTrainingResult(summary) {
-  return apiRequest('/api/training', {
-    method: 'POST',
-    body: JSON.stringify({ summary }),
   });
 }
 
@@ -211,5 +205,48 @@ export async function deleteAccount() {
   localStorage.removeItem('brainup_user_name');
   localStorage.removeItem('brainup_user_birthdate');
   localStorage.removeItem('brainup_user_gender');
+  localStorage.removeItem('bc_server_status_v1');
   return data;
+}
+
+// 오늘/이번 주 기록 동기화 (로그인 후 호출)
+// 기존 API를 활용하여 직접 계산
+export async function syncTodayStatus() {
+  try {
+    // 검사 결과를 가져와서 확인 (training 타입도 test_results에 저장됨)
+    const testResults = await apiRequest('/api/results', { method: 'GET' }).then(d => d.results || []).catch(() => []);
+    
+    // 오늘 날짜 확인
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    // 이번 주 범위 계산 (일요일 ~ 토요일)
+    const dayOfWeek = today.getDay(); // 0=일, 1=월, ..., 6=토
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - dayOfWeek);
+    sunday.setHours(0, 0, 0, 0);
+    const saturday = new Date(sunday);
+    saturday.setDate(sunday.getDate() + 6);
+    saturday.setHours(23, 59, 59, 999);
+    
+    // 오늘 관리 여부 확인 (training 타입)
+    const trainedToday = testResults.some(r => {
+      if (r.test_type !== 'training') return false;
+      const tDate = new Date(r.date || r.created_at);
+      const tDateKey = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}-${String(tDate.getDate()).padStart(2, '0')}`;
+      return tDateKey === todayKey;
+    });
+    
+    // 이번 주 검사 여부 확인 (pattern 검사 기준)
+    const testedThisWeek = testResults.some(r => {
+      if (r.test_type !== 'pattern') return false;
+      const rDate = new Date(r.date || r.created_at);
+      return rDate >= sunday && rDate <= saturday;
+    });
+    
+    return { trainedToday, testedThisWeek };
+  } catch (e) {
+    console.error('오늘 상태 동기화 실패:', e);
+    return { trainedToday: false, testedThisWeek: false };
+  }
 }

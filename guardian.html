@@ -556,23 +556,28 @@
     }
     
     .activity-icon.pattern {
-      background: #fef3c7;
-      color: #f59e0b;
+      background: #dbeafe;
+      color: #2563eb;
     }
     
     .activity-icon.gonogo {
-      background: #dbeafe;
-      color: #3b82f6;
+      background: #dcfce7;
+      color: #16a34a;
     }
     
-    .activity-icon.digit {
-      background: #d1fae5;
-      color: #10b981;
+    .activity-icon.digitspan {
+      background: #ffedd5;
+      color: #ea580c;
+    }
+    
+    .activity-icon.spatial {
+      background: #fee2e2;
+      color: #dc2626;
     }
     
     .activity-icon.training {
-      background: #fce7f3;
-      color: #db2777;
+      background: #f3e8ff;
+      color: #9333ea;
     }
     
     .activity-info {
@@ -930,7 +935,7 @@
       const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
       const month = koreaDate.getUTCMonth() + 1;
       const day = koreaDate.getUTCDate();
-      const hours = koreaDate.getUTCHours();
+      const hours = String(koreaDate.getUTCHours()).padStart(2, '0');
       const mins = String(koreaDate.getUTCMinutes()).padStart(2, '0');
       return `${month}월 ${day}일 ${hours}:${mins}`;
     }
@@ -980,28 +985,34 @@
     // 검사 타입 이름
     function getTestName(type) {
       const names = {
-        'pattern': '패턴 기억력',
-        'gonogo': '반응 억제력', 
-        'digitspan': '숫자 기억력',
-        'training': '일일 관리'
+        'pattern': '처리속도',
+        'gonogo': '주의·억제', 
+        'digitspan': '숫자기억',
+        'spatial': '위치기억',
+        'training': '두뇌 관리'
       };
       return names[type] || type;
     }
     
-    // 검사 타입 아이콘
+    // 검사 타입 아이콘 클래스
     function getTestIconClass(type) {
-      if (type === 'pattern') return 'pattern';
-      if (type === 'gonogo') return 'gonogo';
-      if (type === 'training') return 'training';
-      return 'digit';
+      const classes = {
+        'pattern': 'pattern',
+        'gonogo': 'gonogo',
+        'digitspan': 'digitspan',
+        'spatial': 'spatial',
+        'training': 'training'
+      };
+      return classes[type] || 'pattern';
     }
     
     function getTestIcon(type) {
       const icons = {
-        'pattern': 'fa-th',
+        'pattern': 'fa-grip',
         'gonogo': 'fa-hand',
-        'digitspan': 'fa-calculator',
-        'training': 'fa-brain'
+        'digitspan': 'fa-list-ol',
+        'spatial': 'fa-border-all',
+        'training': 'fa-dumbbell'
       };
       return icons[type] || 'fa-clipboard-check';
     }
@@ -1120,18 +1131,18 @@
         else inhibitStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      // 작업기억 (digitspan)
+      // 숫자기억 (digitspan)
       const digitResults = weekResults.filter(r => r.testType === 'digitspan');
-      let workingMemStatus = { label: '데이터 없음', color: 'var(--muted)' };
+      let digitMemStatus = { label: '데이터 없음', color: 'var(--muted)' };
       if (digitResults.length > 0) {
         const avgSpan = digitResults.reduce((sum, r) => sum + (r.summary?.totalSpan || 0), 0) / digitResults.length;
-        if (avgSpan >= 10) workingMemStatus = { label: '유지 중', color: 'var(--good)' };
-        else if (avgSpan >= 7) workingMemStatus = { label: '양호', color: 'var(--good)' };
-        else if (avgSpan >= 5) workingMemStatus = { label: '보통', color: 'var(--warn)' };
-        else workingMemStatus = { label: '변동 있음', color: 'var(--warn)' };
+        if (avgSpan >= 10) digitMemStatus = { label: '유지 중', color: 'var(--good)' };
+        else if (avgSpan >= 7) digitMemStatus = { label: '양호', color: 'var(--good)' };
+        else if (avgSpan >= 5) digitMemStatus = { label: '보통', color: 'var(--warn)' };
+        else digitMemStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      // 공간기억 (spatial)
+      // 위치기억 (spatial)
       const spatialResults = weekResults.filter(r => r.testType === 'spatial');
       let spatialMemStatus = { label: '데이터 없음', color: 'var(--muted)' };
       if (spatialResults.length > 0) {
@@ -1142,7 +1153,7 @@
         else spatialMemStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      return { speed: speedStatus, inhibit: inhibitStatus, workingMem: workingMemStatus, spatialMem: spatialMemStatus };
+      return { speed: speedStatus, inhibit: inhibitStatus, digitMem: digitMemStatus, spatialMem: spatialMemStatus };
     }
     
     // 메인 렌더링
@@ -1188,14 +1199,22 @@
       const status = getStatus(stats);
       const actionMessage = getActionMessage(status);
       
-      // 참여한 날짜 Set (훈련 기준) - UTC를 한국시간으로 변환
-      const participatedDates = new Set();
+      // 참여한 날짜 Set (훈련 + 검사) - UTC를 한국시간으로 변환
+      const trainingDates = new Set();
+      const testDates = new Set();
+      
       (trainings || []).forEach(r => {
-        // DB에서 온 UTC 시간을 한국 시간으로 변환
-        const utcDate = new Date(r.date + 'Z'); // UTC로 파싱
+        const utcDate = new Date(r.date + 'Z');
         const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
         const dateKey = koreaDate.toISOString().split('T')[0];
-        participatedDates.add(dateKey);
+        trainingDates.add(dateKey);
+      });
+      
+      (tests || []).forEach(r => {
+        const utcDate = new Date(r.date + 'Z');
+        const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+        const dateKey = koreaDate.toISOString().split('T')[0];
+        testDates.add(dateKey);
       });
       
       // 선택된 주
@@ -1205,22 +1224,26 @@
       const isThisWeek = selectedWeekOffset === 0;
       
       // 선택된 주 참여 일수
-      let weekDays = 0;
+      let weekTrainingDays = 0;
+      let weekTestDays = 0;
       weekDates.forEach(d => {
-        if (participatedDates.has(d)) weekDays++;
+        if (trainingDates.has(d)) weekTrainingDays++;
+        if (testDates.has(d)) weekTestDays++;
       });
       
       // 주간 그리드 HTML
       let weekHtml = '';
       weekDates.forEach((dateKey, i) => {
-        const isDone = participatedDates.has(dateKey);
+        const hasTraining = trainingDates.has(dateKey);
+        const hasTest = testDates.has(dateKey);
         const isFuture = dateKey > today;
         const isToday = dateKey === today;
         
         let cellClass = 'week-day-cell';
         let icon = '';
         
-        if (isDone) {
+        // 관리 기준으로 체크 표시
+        if (hasTraining) {
           cellClass += ' done';
           icon = '✔';
         } else if (isFuture) {
@@ -1233,10 +1256,17 @@
         
         if (isToday) cellClass += ' today';
         
+        // 검사 아이콘 (셀 아래에 표시)
+        let testIcon = '';
+        if (hasTest) {
+          testIcon = '<div style="font-size:10px;margin-top:4px;color:#2563eb;">📋</div>';
+        }
+        
         weekHtml += `
           <div class="week-day">
             <div class="week-day-name">${dayNames[i]}</div>
-            <div class="${cellClass}" data-date="${dateKey}" data-done="${isDone}" data-future="${isFuture}">${icon}</div>
+            <div class="${cellClass}" data-date="${dateKey}" data-training="${hasTraining}" data-test="${hasTest}" data-future="${isFuture}">${icon}</div>
+            ${testIcon}
           </div>
         `;
       });
@@ -1264,15 +1294,34 @@
       
       // 최근 활동 HTML (훈련 + 검사 통합)
       let activityHtml = '';
+      
+      // 검사 타입 우선순위: 처리속도 > 주의·억제 > 숫자기억 > 위치기억 > 두뇌 관리
+      const typeOrder = { pattern: 0, gonogo: 1, digitspan: 2, spatial: 3, training: 4 };
+      
+      // 모든 활동 합치기
       const allActivities = [
         ...(trainings || []).map(t => ({ ...t, testType: 'training' })),
         ...(tests || [])
-      ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+      ];
       
-      if (allActivities.length === 0) {
+      // 각 타입별로 가장 최신 기록만 추출
+      const latestByType = {};
+      allActivities.forEach(activity => {
+        const type = activity.testType;
+        if (!latestByType[type] || new Date(activity.date) > new Date(latestByType[type].date)) {
+          latestByType[type] = activity;
+        }
+      });
+      
+      // 타입 순서대로 정렬
+      const sortedActivities = Object.values(latestByType).sort((a, b) => {
+        return typeOrder[a.testType] - typeOrder[b.testType];
+      });
+      
+      if (sortedActivities.length === 0) {
         activityHtml = '<div class="empty-activity">아직 활동 기록이 없어요</div>';
       } else {
-        allActivities.forEach((r, idx) => {
+        sortedActivities.forEach((r, idx) => {
           const iconClass = getTestIconClass(r.testType);
           const icon = getTestIcon(r.testType);
           const name = getTestName(r.testType);
@@ -1282,10 +1331,15 @@
           if (r.summary) {
             if (r.testType === 'training') {
               scoreText = `${r.summary.correct || 0}/${r.summary.total || 0}`;
-            } else if (r.summary.accuracy !== undefined) {
-              scoreText = Math.round(r.summary.accuracy * 100) + '%';
-            } else if (r.summary.totalSpan !== undefined) {
-              scoreText = r.summary.totalSpan + '점';
+            } else if (r.testType === 'pattern') {
+              scoreText = Math.round((r.summary.accuracy || 0) * 100) + '%';
+            } else if (r.testType === 'gonogo') {
+              const avgAcc = ((r.summary.goAcc || 0) + (r.summary.nogoAcc || 0)) / 2;
+              scoreText = Math.round(avgAcc * 100) + '%';
+            } else if (r.testType === 'digitspan') {
+              scoreText = (r.summary.totalSpan || 0) + '점';
+            } else if (r.testType === 'spatial') {
+              scoreText = (r.summary.maxSpan || 0) + '칸';
             }
           }
           
@@ -1305,7 +1359,7 @@
       }
       
       // 활동 데이터 저장 (모달에서 사용)
-      guardianData.allActivities = allActivities;
+      guardianData.allActivities = sortedActivities;
       
       // 다음 리포트 날짜
       const nextSunday = new Date();
@@ -1378,6 +1432,11 @@
           
           <div class="week-grid">${weekHtml}</div>
           
+          <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:12px;color:var(--muted);">
+            <span><span style="color:#10b981;">✔</span> 관리</span>
+            <span>📋 검사</span>
+          </div>
+          
           ${isThisWeek && stats.streak > 0 ? `
             <div class="streak-info">
               <i class="fa-solid fa-fire"></i>
@@ -1404,13 +1463,13 @@
               <div class="status-item-value" style="color:${weeklyStatus.inhibit.color}">${weeklyStatus.inhibit.label}</div>
             </div>
             <div class="status-item">
-              <div class="status-dot" style="background:${weeklyStatus.workingMem.color}"></div>
-              <div class="status-item-label">작업기억</div>
-              <div class="status-item-value" style="color:${weeklyStatus.workingMem.color}">${weeklyStatus.workingMem.label}</div>
+              <div class="status-dot" style="background:${weeklyStatus.digitMem.color}"></div>
+              <div class="status-item-label">숫자기억</div>
+              <div class="status-item-value" style="color:${weeklyStatus.digitMem.color}">${weeklyStatus.digitMem.label}</div>
             </div>
             <div class="status-item">
               <div class="status-dot" style="background:${weeklyStatus.spatialMem.color}"></div>
-              <div class="status-item-label">공간기억</div>
+              <div class="status-item-label">위치기억</div>
               <div class="status-item-value" style="color:${weeklyStatus.spatialMem.color}">${weeklyStatus.spatialMem.label}</div>
             </div>
           </div>
@@ -1433,8 +1492,8 @@
               <span class="watching-label">자녀 확인 중</span>
             </div>
             <div class="watching-text">
-              다음 리포트: <strong>${nextReportDate}</strong><br/>
-              변화가 생기면 확인할 수 있어요.
+              부모님의 두뇌 건강을 함께 지켜보고 있어요.<br/>
+              가끔 안부 전화도 잊지 마세요 💙
             </div>
           </div>
         ` : ''}
@@ -1501,16 +1560,59 @@
       document.querySelectorAll('.week-day-cell').forEach(cell => {
         cell.addEventListener('click', () => {
           const dateKey = cell.dataset.date;
-          const isDone = cell.dataset.done === 'true';
+          const hasTraining = cell.dataset.training === 'true';
+          const hasTest = cell.dataset.test === 'true';
           const isFuture = cell.dataset.future === 'true';
           
           let text = '';
-          if (isFuture) text = '아직 지나지 않은 날이에요.';
-          else if (isDone) text = '이 날은 참여했어요! 👏';
-          else text = '이 날은 참여 기록이 없어요.';
+          if (isFuture) {
+            text = '아직 지나지 않은 날이에요.';
+          } else if (hasTraining || hasTest) {
+            text = '이 날은 참여했어요! 👏\n';
+            
+            // 관리 기록
+            if (hasTraining) {
+              const dayTrainings = (guardianData.trainings || []).filter(t => {
+                const utcDate = new Date(t.date + 'Z');
+                const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+                const tDateKey = koreaDate.toISOString().split('T')[0];
+                return tDateKey === dateKey;
+              });
+              
+              if (dayTrainings.length > 0) {
+                const times = dayTrainings.map(t => {
+                  const utcDate = new Date(t.date + 'Z');
+                  const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+                  const h = String(koreaDate.getUTCHours()).padStart(2, '0');
+                  const m = String(koreaDate.getUTCMinutes()).padStart(2, '0');
+                  return `${h}:${m}`;
+                }).join(', ');
+                text += `\n<span style="color:#10b981;">✔</span> 두뇌 관리: ${times}`;
+              }
+            }
+            
+            // 검사 기록
+            if (hasTest) {
+              const dayTests = (guardianData.tests || []).filter(t => {
+                const utcDate = new Date(t.date + 'Z');
+                const koreaDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+                const tDateKey = koreaDate.toISOString().split('T')[0];
+                return tDateKey === dateKey;
+              });
+              
+              if (dayTests.length > 0) {
+                // 검사 타입별로 중복 제거
+                const uniqueTestTypes = [...new Set(dayTests.map(t => t.testType))];
+                const testNames = uniqueTestTypes.map(type => getTestName(type)).join(', ');
+                text += `\n📋 검사: ${testNames}`;
+              }
+            }
+          } else {
+            text = '이 날은 참여 기록이 없어요.';
+          }
           
           document.getElementById('dayModalDate').textContent = formatDateShort(dateKey);
-          document.getElementById('dayModalText').textContent = text;
+          document.getElementById('dayModalText').innerHTML = text.replace(/\n/g, '<br/>');
           document.getElementById('dayModal').classList.add('active');
         });
       });
@@ -1599,6 +1701,21 @@
               <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.totalSpan || 0}점</div>
             </div>
           `;
+        } else if (result.testType === 'spatial') {
+          content += `
+            <div style="background:var(--bg);padding:14px;border-radius:12px;margin-bottom:8px;">
+              <div style="font-size:13px;color:var(--muted);">최대 스팬</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.maxSpan || 0}칸</div>
+            </div>
+          `;
+          if (result.summary.accuracy !== undefined) {
+            content += `
+              <div style="background:var(--bg);padding:14px;border-radius:12px;">
+                <div style="font-size:13px;color:var(--muted);">정확도</div>
+                <div style="font-size:20px;font-weight:700;color:var(--accent);">${Math.round((result.summary.accuracy || 0) * 100)}%</div>
+              </div>
+            `;
+          }
         }
       }
       

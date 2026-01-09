@@ -1,10 +1,9 @@
 // training/digitspan-training.js
 import { $, sleep, clamp } from '../core/utils.js';
 import { state } from '../core/state.js';
-import { LS_KEYS, loadHistory, getAnonId, getDateKey, hasTrainedToday, getStreak, markGuestTrainingDone } from '../core/storage.js';
+import { LS_KEYS, loadHistory, getAnonId, getDateKey, hasTrainedToday, getStreak, markGuestTrainingDone, markTrainedTodayLocal } from '../core/storage.js';
 import { playCorrect, playWrong, playComplete, playTick, playClick } from '../core/sound.js';
 import { renderHome } from '../ui/home.js';
-import { renderPastResults } from '../ui/intro.js';
 import { isLoggedIn, saveResults } from '../core/api.js';
 
 // re-export for other modules
@@ -317,6 +316,9 @@ function finishTraining() {
   // 비로그인이면 1회 체험 완료 기록
   if (!isLoggedIn()) {
     markGuestTrainingDone();
+  } else {
+    // 로그인 사용자는 오늘 관리 완료 마킹
+    markTrainedTodayLocal();
   }
   
   const streak = getStreak();

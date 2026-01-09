@@ -1,7 +1,7 @@
 // ui/result.js
 import { $ } from '../core/utils.js';
 import { state, resetState, clearTestProgress } from '../core/state.js';
-import { LS_KEYS, loadHistory, getUserProfile, markGuestTestDone } from '../core/storage.js';
+import { LS_KEYS, loadHistory, getUserProfile, markGuestTestDone, markTestedThisWeekLocal } from '../core/storage.js';
 import { getInterpretation, getOverallInterpretation, getTrendInterpretation } from '../core/scoring.js';
 import { renderMainIntro } from './intro.js';
 import { renderHome } from './home.js';
@@ -133,6 +133,9 @@ export function renderFinalResult() {
   // 비로그인이면 1회 체험 완료 기록
   if (!isLoggedIn()) {
     markGuestTestDone();
+  } else {
+    // 로그인 사용자는 이번 주 검사 완료 마킹
+    markTestedThisWeekLocal();
   }
   
   const p = state.patternResult;
@@ -141,10 +144,10 @@ export function renderFinalResult() {
   const s = state.spatialResult;
   const profile = getUserProfile();
 
-  const getBadgeClass = (label) => {
-    if (label === "좋아지는 중") return "badgeGood";
-    if (label === "변동 있음") return "badgeWarn";
-    return "";
+  const getStatusClass = (label) => {
+    if (label === "좋아지는 중") return "good";
+    if (label === "변동 있음") return "warn";
+    return "normal";
   };
 
   const pInterp = getInterpretation('pattern', p.index.index);
@@ -173,59 +176,47 @@ export function renderFinalResult() {
       </div>
 
       <div class="resultGrid">
-        <div class="stat" style="padding:14px;">
+        <div class="stat pattern">
           <div class="label">처리속도</div>
           <div class="value">${p.index.index}<small>/100</small></div>
-          <div style="font-size:14px;" class="${getBadgeClass(p.index.label)}">${p.index.label}</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:6px;">
-            ${p.summary.answered}문제 · ${Math.round(p.summary.accuracy * 100)}%
-          </div>
+          <div class="statusLabel ${getStatusClass(p.index.label)}">${p.index.label}</div>
+          <div class="detail">${p.summary.answered}문제 · ${Math.round(p.summary.accuracy * 100)}%</div>
         </div>
 
-        <div class="stat" style="padding:14px;">
+        <div class="stat gonogo">
           <div class="label">주의·억제</div>
           <div class="value">${g.index.index}<small>/100</small></div>
-          <div style="font-size:14px;" class="${getBadgeClass(g.index.label)}">${g.index.label}</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:6px;">
-            Go ${Math.round(g.summary.goAcc * 100)}% · NoGo ${Math.round(g.summary.nogoAcc * 100)}%
-          </div>
+          <div class="statusLabel ${getStatusClass(g.index.label)}">${g.index.label}</div>
+          <div class="detail">Go ${Math.round(g.summary.goAcc * 100)}% · NoGo ${Math.round(g.summary.nogoAcc * 100)}%</div>
         </div>
 
-        <div class="stat" style="padding:14px;">
+        <div class="stat digitspan">
           <div class="label">숫자 기억</div>
           <div class="value">${d.index.index}<small>/100</small></div>
-          <div style="font-size:14px;" class="${getBadgeClass(d.index.label)}">${d.index.label}</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:6px;">
-            정순 ${d.summary.forwardSpan} · 역순 ${d.summary.backwardSpan}
-          </div>
+          <div class="statusLabel ${getStatusClass(d.index.label)}">${d.index.label}</div>
+          <div class="detail">정순 ${d.summary.forwardSpan} · 역순 ${d.summary.backwardSpan}</div>
         </div>
 
-        <div class="stat" style="padding:14px;">
+        <div class="stat spatial">
           <div class="label">위치 기억</div>
           <div class="value">${s.index.index}<small>/100</small></div>
-          <div style="font-size:14px;" class="${getBadgeClass(s.index.label)}">${s.index.label}</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:6px;">
-            ${s.summary.correctTrials}/6 정답 · ${Math.round(s.summary.avgAccuracy * 100)}%
-          </div>
+          <div class="statusLabel ${getStatusClass(s.index.label)}">${s.index.label}</div>
+          <div class="detail">${s.summary.correctTrials}/6 정답 · ${Math.round(s.summary.avgAccuracy * 100)}%</div>
         </div>
       </div>
 
       <div class="interpretSection">
-        <div class="interpretItem">
-          <span class="interpIcon" style="color:#2563eb;">●</span>
-          <span class="interpText">${pInterp}</span>
+        <div class="interpretItem pattern">
+          <span class="interpText"><b>처리속도</b> ${pInterp}</span>
         </div>
-        <div class="interpretItem">
-          <span class="interpIcon" style="color:#16a34a;">●</span>
-          <span class="interpText">${gInterp}</span>
+        <div class="interpretItem gonogo">
+          <span class="interpText"><b>주의·억제</b> ${gInterp}</span>
         </div>
-        <div class="interpretItem">
-          <span class="interpIcon" style="color:#ea580c;">●</span>
-          <span class="interpText">${dInterp}</span>
+        <div class="interpretItem digitspan">
+          <span class="interpText"><b>숫자기억</b> ${dInterp}</span>
         </div>
-        <div class="interpretItem">
-          <span class="interpIcon" style="color:#dc2626;">●</span>
-          <span class="interpText">${sInterp}</span>
+        <div class="interpretItem spatial">
+          <span class="interpText"><b>위치기억</b> ${sInterp}</span>
         </div>
       </div>
 

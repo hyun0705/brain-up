@@ -60,3 +60,69 @@ export async function showCountdown(app) {
 export function getRandomItem(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
+
+// 커스텀 confirm 모달
+export function showConfirmModal(options) {
+  return new Promise((resolve) => {
+    const { title, message, confirmText = '확인', cancelText = '취소', danger = false } = options;
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-modal-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-modal">
+        <div class="confirm-modal-title">${title}</div>
+        <div class="confirm-modal-message">${message}</div>
+        <div class="confirm-modal-buttons">
+          <button class="confirm-modal-btn cancel">${cancelText}</button>
+          <button class="confirm-modal-btn confirm ${danger ? 'danger' : ''}">${confirmText}</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // 배경 클릭 시 취소
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        resolve(false);
+      }
+    };
+    
+    // 취소 버튼
+    overlay.querySelector('.confirm-modal-btn.cancel').onclick = () => {
+      overlay.remove();
+      resolve(false);
+    };
+    
+    // 확인 버튼
+    overlay.querySelector('.confirm-modal-btn.confirm').onclick = () => {
+      overlay.remove();
+      resolve(true);
+    };
+  });
+}
+
+// 토스트 메시지
+export function showToast(message, type = 'success', duration = 2000) {
+  // 기존 토스트 제거
+  const existing = document.querySelector('.toast-message');
+  if (existing) existing.remove();
+  
+  const toast = document.createElement('div');
+  toast.className = `toast-message ${type}`;
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  // 애니메이션 트리거
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+  
+  // 자동 제거
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 200);
+  }, duration);
+}

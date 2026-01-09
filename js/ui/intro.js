@@ -6,6 +6,7 @@ import { computeIndexFromBaseline } from '../core/scoring.js';
 import { startPatternTest } from '../tests/pattern.js';
 import { renderChartLegend, drawHistoryChart } from './result.js';
 import { playClick } from '../core/sound.js';
+import { isLoggedIn, getResults } from '../core/api.js';
 
 // renderHome은 순환참조 방지를 위해 동적 import 사용
 let renderHome = null;
@@ -22,25 +23,27 @@ const app = $("#app");
 // 현재 선택된 주 오프셋
 let selectedWeekOffset = 0;
 
-// 특정 오프셋의 주 범위 계산 (월요일 ~ 일요일)
+// 서버에서 가져온 결과 캐시
+let cachedServerResults = null;
+
+// 특정 오프셋의 주 범위 계산 (일요일 ~ 토요일)
 function getWeekRangeByOffset(offset = 0) {
   const today = new Date();
-  const dayOfWeek = today.getDay();
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const dayOfWeek = today.getDay(); // 0 = 일요일
   
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diffToMonday + (offset * 7));
-  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - dayOfWeek + (offset * 7));
+  sunday.setHours(0, 0, 0, 0);
   
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+  const saturday = new Date(sunday);
+  saturday.setDate(sunday.getDate() + 6);
+  saturday.setHours(23, 59, 59, 999);
   
-  return { monday, sunday };
+  return { monday: sunday, sunday: saturday }; // 변수명은 유지 (sunday=시작, saturday=끝)
 }
 
-// 특정 주의 검사 결과 가져오기
-function getWeekTestResults(offset = 0) {
+// 특정 주의 검사 결과 가져오기 (로컬스토리지)
+function getWeekTestResultsFromLocal(offset = 0) {
   const { monday, sunday } = getWeekRangeByOffset(offset);
   
   const patternHist = loadHistory(LS_KEYS.patternHistory);
@@ -63,6 +66,43 @@ function getWeekTestResults(offset = 0) {
   };
 }
 
+// 특정 주의 검사 결과 가져오기 (서버 데이터)
+function getWeekTestResultsFromServer(offset = 0) {
+  if (!cachedServerResults) return { pattern: [], gonogo: [], digitspan: [], spatial: [] };
+  
+  const { monday, sunday } = getWeekRangeByOffset(offset);
+  
+  const filterWeek = (testType) => {
+    return cachedServerResults
+      .filter(r => r.test_type === testType)
+      .filter(r => {
+        const dateStr = r.date || r.created_at;
+        if (!dateStr) return offset === 0;
+        const entryDate = new Date(dateStr);
+        return entryDate >= monday && entryDate <= sunday;
+      })
+      .map(r => ({
+        ended_at: r.date || r.created_at,
+        summary: typeof r.summary === 'string' ? JSON.parse(r.summary) : r.summary
+      }));
+  };
+  
+  return {
+    pattern: filterWeek('pattern'),
+    gonogo: filterWeek('gonogo'),
+    digitspan: filterWeek('digitspan'),
+    spatial: filterWeek('spatial')
+  };
+}
+
+// 특정 주의 검사 결과 가져오기 (로그인 여부에 따라 분기)
+function getWeekTestResults(offset = 0) {
+  if (isLoggedIn() && cachedServerResults) {
+    return getWeekTestResultsFromServer(offset);
+  }
+  return getWeekTestResultsFromLocal(offset);
+}
+
 // 주 라벨 생성
 function getWeekLabel(offset) {
   const { monday, sunday } = getWeekRangeByOffset(offset);
@@ -80,15 +120,27 @@ function getWeekLabel(offset) {
 
 // 가장 오래된 기록이 있는 주 오프셋 계산
 function getOldestWeekOffset() {
-  const patternHist = loadHistory(LS_KEYS.patternHistory);
-  if (patternHist.length === 0) return 0;
-  
   let oldestDate = null;
-  for (let i = 0; i < patternHist.length; i++) {
-    const d = new Date(patternHist[i].ended_at);
-    if (!oldestDate || d < oldestDate) {
-      oldestDate = d;
-    }
+  
+  if (isLoggedIn() && cachedServerResults && cachedServerResults.length > 0) {
+    // 서버 데이터에서 가장 오래된 날짜 찾기
+    cachedServerResults.forEach(r => {
+      const d = new Date(r.date);
+      if (!oldestDate || d < oldestDate) {
+        oldestDate = d;
+      }
+    });
+  } else {
+    // 로컬스토리지에서 찾기
+    const patternHist = loadHistory(LS_KEYS.patternHistory);
+    if (patternHist.length === 0) return 0;
+    
+    patternHist.forEach(entry => {
+      const d = new Date(entry.ended_at);
+      if (!oldestDate || d < oldestDate) {
+        oldestDate = d;
+      }
+    });
   }
   
   if (!oldestDate) return 0;
@@ -98,6 +150,14 @@ function getOldestWeekOffset() {
   const diffWeeks = Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000));
   
   return -diffWeeks - 1;
+}
+
+// 전체 기록 수 가져오기
+function getTotalRecordCount() {
+  if (isLoggedIn() && cachedServerResults) {
+    return cachedServerResults.filter(r => r.test_type === 'pattern').length;
+  }
+  return loadHistory(LS_KEYS.patternHistory).length;
 }
 
 export function renderMainIntro() {
@@ -339,12 +399,37 @@ export function renderProfileInput() {
   };
 }
 
-export function renderPastResults(initialOffset = null) {
+export async function renderPastResults(initialOffset = null) {
   if (initialOffset !== null) {
     selectedWeekOffset = initialOffset;
   }
   
   document.querySelector(".progress").textContent = "검사 결과";
+  
+  // 로딩 표시
+  app.innerHTML = `
+    <section class="card">
+      <div style="text-align:center;padding:40px;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:32px;color:var(--accent);"></i>
+        <p style="margin-top:16px;color:var(--muted);">데이터를 불러오는 중...</p>
+      </div>
+    </section>
+  `;
+  
+  // 로그인 사용자는 서버에서 데이터 가져오기
+  if (isLoggedIn()) {
+    try {
+      cachedServerResults = await getResults();
+    } catch (e) {
+      console.error('검사 결과 로드 실패:', e);
+      cachedServerResults = [];
+    }
+  }
+  
+  renderPastResultsContent();
+}
+
+function renderPastResultsContent() {
 
   const profile = getUserProfile();
   const isThisWeek = selectedWeekOffset === 0;
@@ -379,9 +464,6 @@ export function renderPastResults(initialOffset = null) {
     if (label === "변동 있음") return "badgeWarn";
     return "";
   };
-
-  // 전체 기록 수
-  const allPatternHist = loadHistory(LS_KEYS.patternHistory);
   
   let profileInfo = '';
   if (profile && profile.age) {
@@ -468,7 +550,7 @@ export function renderPastResults(initialOffset = null) {
       </div>
       
       <p class="desc" style="text-align:center;margin-top:12px;font-size:13px;">
-        총 ${allPatternHist.length}회 검사 기록
+        총 ${getTotalRecordCount()}회 검사 기록
       </p>
 
       <div class="controls" style="margin-top:14px;grid-template-columns:1fr;">
@@ -492,7 +574,7 @@ export function renderPastResults(initialOffset = null) {
     if (selectedWeekOffset > oldestOffset) {
       playClick();
       selectedWeekOffset--;
-      renderPastResults();
+      renderPastResultsContent();
     }
   };
   
@@ -500,7 +582,7 @@ export function renderPastResults(initialOffset = null) {
     if (selectedWeekOffset < 0) {
       playClick();
       selectedWeekOffset++;
-      renderPastResults();
+      renderPastResultsContent();
     }
   };
 
