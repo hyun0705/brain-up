@@ -987,7 +987,7 @@
       const names = {
         'pattern': '처리속도',
         'gonogo': '주의·억제', 
-        'digitspan': '숫자기억',
+        'digitspan': '작업기억',
         'spatial': '위치기억',
         'training': '두뇌 관리'
       };
@@ -1008,10 +1008,10 @@
     
     function getTestIcon(type) {
       const icons = {
-        'pattern': 'fa-grip',
+        'pattern': 'fa-bolt',
         'gonogo': 'fa-hand',
         'digitspan': 'fa-list-ol',
-        'spatial': 'fa-border-all',
+        'spatial': 'fa-grip',
         'training': 'fa-dumbbell'
       };
       return icons[type] || 'fa-clipboard-check';
@@ -1095,7 +1095,7 @@
       return memos.length > 0 ? memos[memos.length - 1] : null;
     }
     
-    // 주간 상태 계산
+    // 주간 상태 계산 - raw 값 (0-100%) 사용
     function getWeeklyStatus(results, offset) {
       const weekDates = getWeekDates(offset);
       const weekStart = new Date(weekDates[0]);
@@ -1103,53 +1103,57 @@
       weekEnd.setHours(23, 59, 59, 999);
       
       const weekResults = results.filter(r => {
-        const d = new Date(r.date);
+        // 서버 UTC 시간을 한국 시간으로 변환
+        const utcDate = new Date(r.date + 'Z');
+        const d = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
         return d >= weekStart && d <= weekEnd;
       });
       
-      // 처리속도 (pattern)
+      // 점수 계산 헬퍼 - raw 값 (0-100) 우선 사용
+      function getRawScore(summary) {
+        if (summary?.raw !== undefined) return summary.raw;
+        // 폴백: accuracy (0-1) -> 0-100으로 변환
+        if (summary?.accuracy !== undefined) return summary.accuracy * 100;
+        return 0;
+      }
+      
+      // 처리속도 (pattern) - raw 값 사용
       const patternResults = weekResults.filter(r => r.testType === 'pattern');
       let speedStatus = { label: '데이터 없음', color: 'var(--muted)' };
       if (patternResults.length > 0) {
-        const avgAcc = patternResults.reduce((sum, r) => sum + (r.summary?.accuracy || 0), 0) / patternResults.length;
-        if (avgAcc >= 0.85) speedStatus = { label: '안정적', color: 'var(--good)' };
-        else if (avgAcc >= 0.7) speedStatus = { label: '양호', color: 'var(--good)' };
+        const avgRaw = patternResults.reduce((sum, r) => sum + getRawScore(r.summary), 0) / patternResults.length;
+        if (avgRaw >= 85) speedStatus = { label: '안정적', color: 'var(--good)' };
+        else if (avgRaw >= 70) speedStatus = { label: '양호', color: 'var(--good)' };
         else speedStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      // 주의·억제 (gonogo)
+      // 주의·억제 (gonogo) - raw 값 사용
       const gonogoResults = weekResults.filter(r => r.testType === 'gonogo');
       let inhibitStatus = { label: '데이터 없음', color: 'var(--muted)' };
       if (gonogoResults.length > 0) {
-        const avgAcc = gonogoResults.reduce((sum, r) => {
-          const goAcc = r.summary?.goAcc || 0;
-          const nogoAcc = r.summary?.nogoAcc || 0;
-          return sum + (goAcc + nogoAcc) / 2;
-        }, 0) / gonogoResults.length;
-        if (avgAcc >= 0.85) inhibitStatus = { label: '양호', color: 'var(--good)' };
-        else if (avgAcc >= 0.7) inhibitStatus = { label: '보통', color: 'var(--good)' };
+        const avgRaw = gonogoResults.reduce((sum, r) => sum + getRawScore(r.summary), 0) / gonogoResults.length;
+        if (avgRaw >= 85) inhibitStatus = { label: '양호', color: 'var(--good)' };
+        else if (avgRaw >= 70) inhibitStatus = { label: '보통', color: 'var(--good)' };
         else inhibitStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      // 숫자기억 (digitspan)
+      // 작업기억 (digitspan) - raw 값 사용
       const digitResults = weekResults.filter(r => r.testType === 'digitspan');
       let digitMemStatus = { label: '데이터 없음', color: 'var(--muted)' };
       if (digitResults.length > 0) {
-        const avgSpan = digitResults.reduce((sum, r) => sum + (r.summary?.totalSpan || 0), 0) / digitResults.length;
-        if (avgSpan >= 10) digitMemStatus = { label: '유지 중', color: 'var(--good)' };
-        else if (avgSpan >= 7) digitMemStatus = { label: '양호', color: 'var(--good)' };
-        else if (avgSpan >= 5) digitMemStatus = { label: '보통', color: 'var(--warn)' };
+        const avgRaw = digitResults.reduce((sum, r) => sum + getRawScore(r.summary), 0) / digitResults.length;
+        if (avgRaw >= 70) digitMemStatus = { label: '유지 중', color: 'var(--good)' };
+        else if (avgRaw >= 50) digitMemStatus = { label: '양호', color: 'var(--good)' };
         else digitMemStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
-      // 위치기억 (spatial)
+      // 위치기억 (spatial) - raw 값 사용
       const spatialResults = weekResults.filter(r => r.testType === 'spatial');
       let spatialMemStatus = { label: '데이터 없음', color: 'var(--muted)' };
       if (spatialResults.length > 0) {
-        const avgSpan = spatialResults.reduce((sum, r) => sum + (r.summary?.maxSpan || 0), 0) / spatialResults.length;
-        if (avgSpan >= 7) spatialMemStatus = { label: '유지 중', color: 'var(--good)' };
-        else if (avgSpan >= 5) spatialMemStatus = { label: '양호', color: 'var(--good)' };
-        else if (avgSpan >= 4) spatialMemStatus = { label: '보통', color: 'var(--warn)' };
+        const avgRaw = spatialResults.reduce((sum, r) => sum + getRawScore(r.summary), 0) / spatialResults.length;
+        if (avgRaw >= 70) spatialMemStatus = { label: '유지 중', color: 'var(--good)' };
+        else if (avgRaw >= 50) spatialMemStatus = { label: '양호', color: 'var(--good)' };
         else spatialMemStatus = { label: '변동 있음', color: 'var(--warn)' };
       }
       
@@ -1295,7 +1299,7 @@
       // 최근 활동 HTML (훈련 + 검사 통합)
       let activityHtml = '';
       
-      // 검사 타입 우선순위: 처리속도 > 주의·억제 > 숫자기억 > 위치기억 > 두뇌 관리
+      // 검사 타입 우선순위: 처리속도 > 주의·억제 > 작업기억 > 위치기억 > 두뇌 관리
       const typeOrder = { pattern: 0, gonogo: 1, digitspan: 2, spatial: 3, training: 4 };
       
       // 모든 활동 합치기
@@ -1318,6 +1322,27 @@
         return typeOrder[a.testType] - typeOrder[b.testType];
       });
       
+      // 점수 표시 헬퍼 - raw 값 (0-100) 우선 사용
+      function getScoreText(summary, testType) {
+        if (!summary) return '';
+        
+        if (testType === 'training') {
+          return `${summary.correct || 0}/${summary.total || 0}`;
+        }
+        
+        // raw 값이 있으면 직접 사용 (이미 0-100 범위)
+        if (summary.raw !== undefined) {
+          return summary.raw + '%';
+        }
+        
+        // 폴백: accuracy (0-1) -> 0-100으로 변환
+        if (summary.accuracy !== undefined) {
+          return Math.round(summary.accuracy * 100) + '%';
+        }
+        
+        return '';
+      }
+      
       if (sortedActivities.length === 0) {
         activityHtml = '<div class="empty-activity">아직 활동 기록이 없어요</div>';
       } else {
@@ -1326,22 +1351,7 @@
           const icon = getTestIcon(r.testType);
           const name = getTestName(r.testType);
           const date = formatDate(r.date);
-          
-          let scoreText = '';
-          if (r.summary) {
-            if (r.testType === 'training') {
-              scoreText = `${r.summary.correct || 0}/${r.summary.total || 0}`;
-            } else if (r.testType === 'pattern') {
-              scoreText = Math.round((r.summary.accuracy || 0) * 100) + '%';
-            } else if (r.testType === 'gonogo') {
-              const avgAcc = ((r.summary.goAcc || 0) + (r.summary.nogoAcc || 0)) / 2;
-              scoreText = Math.round(avgAcc * 100) + '%';
-            } else if (r.testType === 'digitspan') {
-              scoreText = (r.summary.totalSpan || 0) + '점';
-            } else if (r.testType === 'spatial') {
-              scoreText = (r.summary.maxSpan || 0) + '칸';
-            }
-          }
+          const scoreText = getScoreText(r.summary, r.testType);
           
           activityHtml += `
             <div class="activity-item" data-index="${idx}">
@@ -1464,7 +1474,7 @@
             </div>
             <div class="status-item">
               <div class="status-dot" style="background:${weeklyStatus.digitMem.color}"></div>
-              <div class="status-item-label">숫자기억</div>
+              <div class="status-item-label">작업기억</div>
               <div class="status-item-value" style="color:${weeklyStatus.digitMem.color}">${weeklyStatus.digitMem.label}</div>
             </div>
             <div class="status-item">
@@ -1695,27 +1705,35 @@
             </div>
           `;
         } else if (result.testType === 'digitspan') {
+          // 정확도 표시
+          let digitspanAcc = 0;
+          if (result.summary.accuracy !== undefined && result.summary.accuracy > 0) {
+            digitspanAcc = Math.round(result.summary.accuracy * 100);
+          } else {
+            const totalSpan = result.summary.totalSpan || ((result.summary.forwardSpan || 0) + (result.summary.backwardSpan || 0));
+            digitspanAcc = Math.round((totalSpan / 14) * 100);
+          }
           content += `
+            <div style="background:var(--bg);padding:14px;border-radius:12px;margin-bottom:8px;">
+              <div style="font-size:13px;color:var(--muted);">정확도</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${digitspanAcc}%</div>
+            </div>
             <div style="background:var(--bg);padding:14px;border-radius:12px;">
-              <div style="font-size:13px;color:var(--muted);">총 점수</div>
-              <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.totalSpan || 0}점</div>
+              <div style="font-size:13px;color:var(--muted);">기억 자릿수</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">정순 ${result.summary.forwardSpan || 0} · 역순 ${result.summary.backwardSpan || 0}</div>
             </div>
           `;
         } else if (result.testType === 'spatial') {
           content += `
             <div style="background:var(--bg);padding:14px;border-radius:12px;margin-bottom:8px;">
-              <div style="font-size:13px;color:var(--muted);">최대 스팬</div>
-              <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.maxSpan || 0}칸</div>
+              <div style="font-size:13px;color:var(--muted);">정확도</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${Math.round((result.summary.avgAccuracy || 0) * 100)}%</div>
+            </div>
+            <div style="background:var(--bg);padding:14px;border-radius:12px;">
+              <div style="font-size:13px;color:var(--muted);">정답</div>
+              <div style="font-size:20px;font-weight:700;color:var(--accent);">${result.summary.correctTrials || 0}/${result.summary.totalTrials || 6}</div>
             </div>
           `;
-          if (result.summary.accuracy !== undefined) {
-            content += `
-              <div style="background:var(--bg);padding:14px;border-radius:12px;">
-                <div style="font-size:13px;color:var(--muted);">정확도</div>
-                <div style="font-size:20px;font-weight:700;color:var(--accent);">${Math.round((result.summary.accuracy || 0) * 100)}%</div>
-              </div>
-            `;
-          }
         }
       }
       

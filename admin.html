@@ -779,10 +779,6 @@
                   <i class="fa-solid fa-users"></i>
                   <span>사용자</span>
                 </div>
-                <div class="nav-item" data-page="signups">
-                  <i class="fa-solid fa-user-plus"></i>
-                  <span>가입 기록</span>
-                </div>
                 <div class="nav-item" data-page="tests">
                   <i class="fa-solid fa-clipboard-check"></i>
                   <span>검사 기록</span>
@@ -853,9 +849,6 @@
         case 'users':
           await renderUsersPage(main);
           break;
-        case 'signups':
-          await renderSignupsPage(main);
-          break;
         case 'tests':
           await renderTestsPage(main);
           break;
@@ -901,7 +894,7 @@
             <div class="label"><i class="fa-solid fa-users"></i> 총 가입자</div>
             <div class="value">${stats.totalUsers || 0}</div>
           </div>
-          <div class="stat-card" onclick="navigateTo('signups')" style="cursor:pointer;">
+          <div class="stat-card" onclick="navigateTo('users')" style="cursor:pointer;">
             <div class="label"><i class="fa-solid fa-user-plus"></i> 오늘 가입</div>
             <div class="value">${stats.todaySignups || 0}</div>
           </div>
@@ -924,8 +917,162 @@
           </div>
         `;
         
+        // 오늘 활동 현황 로드
+        loadTodayActivity();
+        
         // 가입 추이 그래프 로드
         loadSignupChart();
+      }
+    }
+    
+    // 오늘의 검사/관리 현황
+    async function loadTodayActivity() {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/today-activity`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        
+        const { tests, totalTests, totalTraining, yesterdayTotal } = data;
+        const todayTotal = totalTests + totalTraining;
+        const diff = todayTotal - yesterdayTotal;
+        const diffText = diff > 0 ? `+${diff}` : diff.toString();
+        const diffColor = diff >= 0 ? '#10b981' : '#ef4444';
+        
+        const todayHtml = `
+          <div class="card" style="margin-top:24px;">
+            <div class="card-header">
+              <span>오늘의 활동</span>
+              <span style="font-size:13px;color:${diffColor};font-weight:600;">어제 대비 ${diffText}</span>
+            </div>
+            <div style="padding:20px;">
+              <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:16px;">
+                <div style="text-align:center;padding:16px;background:#f0f9ff;border-radius:12px;">
+                  <div style="font-size:28px;font-weight:800;color:#2563eb;">${totalTests}</div>
+                  <div style="font-size:12px;color:#6b7280;margin-top:4px;">검사 완료</div>
+                </div>
+                <div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:12px;">
+                  <div style="font-size:28px;font-weight:800;color:#16a34a;">${totalTraining}</div>
+                  <div style="font-size:12px;color:#6b7280;margin-top:4px;">관리 완료</div>
+                </div>
+                <div style="text-align:center;padding:16px;background:#faf5ff;border-radius:12px;">
+                  <div style="font-size:28px;font-weight:800;color:#9333ea;">${todayTotal}</div>
+                  <div style="font-size:12px;color:#6b7280;margin-top:4px;">총 활동</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <span style="padding:6px 12px;background:#dbeafe;color:#2563eb;border-radius:20px;font-size:12px;font-weight:600;">
+                  <i class="fa-solid fa-bolt"></i> 처리속도 ${tests.pattern || 0}
+                </span>
+                <span style="padding:6px 12px;background:#dcfce7;color:#16a34a;border-radius:20px;font-size:12px;font-weight:600;">
+                  <i class="fa-solid fa-hand"></i> 주의억제 ${tests.gonogo || 0}
+                </span>
+                <span style="padding:6px 12px;background:#ffedd5;color:#ea580c;border-radius:20px;font-size:12px;font-weight:600;">
+                  <i class="fa-solid fa-list-ol"></i> 작업기억 ${tests.digitspan || 0}
+                </span>
+                <span style="padding:6px 12px;background:#fee2e2;color:#dc2626;border-radius:20px;font-size:12px;font-weight:600;">
+                  <i class="fa-solid fa-grip"></i> 위치기억 ${tests.spatial || 0}
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('statsGrid').insertAdjacentHTML('afterend', todayHtml);
+      } catch (e) {
+        console.error('Failed to load today activity:', e);
+      }
+    }
+    
+    // 최근 활동 피드
+    async function loadRecentActivity() {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/recent-activity`, {
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        const data = await res.json();
+        const activities = data.activities || [];
+        
+        if (activities.length === 0) return;
+        
+        function getActivityIcon(activity) {
+          if (activity.type === 'signup') return '<i class="fa-solid fa-user-plus" style="color:#3b82f6;"></i>';
+          if (activity.type === 'payment') {
+            if (activity.status === 'pending') return '<i class="fa-solid fa-credit-card" style="color:#f59e0b;"></i>';
+            if (activity.status === 'confirmed') return '<i class="fa-solid fa-check-circle" style="color:#10b981;"></i>';
+            return '<i class="fa-solid fa-times-circle" style="color:#ef4444;"></i>';
+          }
+          if (activity.type === 'training') return '<i class="fa-solid fa-dumbbell" style="color:#9333ea;"></i>';
+          // test
+          const icons = {
+            pattern: '<i class="fa-solid fa-bolt" style="color:#2563eb;"></i>',
+            gonogo: '<i class="fa-solid fa-hand" style="color:#16a34a;"></i>',
+            digitspan: '<i class="fa-solid fa-list-ol" style="color:#ea580c;"></i>',
+            spatial: '<i class="fa-solid fa-grip" style="color:#dc2626;"></i>'
+          };
+          return icons[activity.testType] || '<i class="fa-solid fa-clipboard-check"></i>';
+        }
+        
+        function getActivityText(activity) {
+          const name = activity.userName || '사용자';
+          if (activity.type === 'signup') return `<b>${name}</b>님이 가입했어요`;
+          if (activity.type === 'payment') {
+            const plan = activity.plan === 'yearly' ? '연간' : '월간';
+            if (activity.status === 'pending') return `<b>${name}</b>님이 ${plan} 구독 신청`;
+            if (activity.status === 'confirmed') return `<b>${name}</b>님 ${plan} 구독 승인됨`;
+            return `<b>${name}</b>님 구독 거절됨`;
+          }
+          if (activity.type === 'training') return `<b>${name}</b>님이 두뇌 관리 완료`;
+          // test
+          const testNames = { pattern: '처리속도', gonogo: '주의억제', digitspan: '작업기억', spatial: '위치기억' };
+          return `<b>${name}</b>님이 ${testNames[activity.testType] || '검사'} 완료`;
+        }
+        
+        function getTimeAgo(dateStr) {
+          const now = new Date();
+          const date = new Date(dateStr);
+          const diffMs = now - date;
+          const diffMin = Math.floor(diffMs / 60000);
+          const diffHour = Math.floor(diffMs / 3600000);
+          const diffDay = Math.floor(diffMs / 86400000);
+          
+          if (diffMin < 1) return '방금';
+          if (diffMin < 60) return `${diffMin}분 전`;
+          if (diffHour < 24) return `${diffHour}시간 전`;
+          return `${diffDay}일 전`;
+        }
+        
+        const feedHtml = `
+          <div class="card" style="margin-top:24px;">
+            <div class="card-header">
+              <span>최근 활동</span>
+              <span style="font-size:12px;color:#9ca3af;">실시간</span>
+            </div>
+            <div style="max-height:500px;overflow-y:auto;">
+              ${activities.map(a => `
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #f3f4f6;cursor:pointer;" onclick="showUserDetail(${a.userId})">
+                  <div style="width:32px;height:32px;background:#f3f4f6;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                    ${getActivityIcon(a)}
+                  </div>
+                  <div style="flex:1;font-size:13px;color:#374151;">
+                    ${getActivityText(a)}
+                  </div>
+                  <div style="font-size:11px;color:#9ca3af;white-space:nowrap;">
+                    ${getTimeAgo(a.createdAt)}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        
+        // 맨 아래에 추가
+        const cards = document.querySelectorAll('.main .card');
+        if (cards.length > 0) {
+          cards[cards.length - 1].insertAdjacentHTML('afterend', feedHtml);
+        }
+      } catch (e) {
+        console.error('Failed to load recent activity:', e);
       }
     }
     
@@ -962,7 +1109,7 @@
       const chartHtml = `
         <div class="card" style="margin-top:24px;">
           <div class="card-header">
-            <span><i class="fa-solid fa-chart-line"></i> 최근 7일 가입 추이</span>
+            <span>최근 7일 가입 추이</span>
             <span style="font-size:13px;color:#6b7280;">총 ${days.reduce((s,d) => s + d.count, 0)}명</span>
           </div>
           <div style="padding:20px;">
@@ -995,6 +1142,9 @@
       
       // 구독 이탈률 로드
       loadChurnRate();
+      
+      // 최근 활동 피드 로드 (맨 아래)
+      loadRecentActivity();
     }
     
     async function loadDormantUsers() {
@@ -1068,7 +1218,7 @@
         const hourlyHtml = `
           <div class="card" style="margin-top:24px;">
             <div class="card-header">
-              <span><i class="fa-solid fa-clock"></i> 시간대별 이용 현황 (최근 7일)</span>
+              <span>시간대별 이용 현황 (최근 7일)</span>
               <span style="font-size:13px;color:#6b7280;">피크: ${peakHour.hour}시 (${peakHour.count}회)</span>
             </div>
             <div style="padding:20px;">
@@ -1206,7 +1356,7 @@
         const churnHtml = `
           <div class="card" style="margin-top:24px;">
             <div class="card-header">
-              <span><i class="fa-solid fa-user-minus" style="color:#8b5cf6;"></i> 구독 이탈 현황</span>
+              <span>구독 이탈 현황</span>
               <span style="font-size:13px;color:#8b5cf6;font-weight:700;">이탈률 ${churnRate}%</span>
             </div>
             ${churned.length > 0 ? `
@@ -1726,6 +1876,7 @@
     // ========== 가입 기록 페이지 ==========
     let allSignups = [];
     let signupPeriod = '7';
+    let signupSearchQuery = '';
     
     async function renderSignupsPage(main) {
       main.innerHTML = `
@@ -1742,10 +1893,16 @@
         <div class="card">
           <div class="card-header">
             <span>가입 목록</span>
-            <div class="filter-group">
-              <button class="filter-btn" id="signupFilter7" onclick="setSignupPeriod('7')">최근 7일</button>
-              <button class="filter-btn" id="signupFilter30" onclick="setSignupPeriod('30')">최근 30일</button>
-              <button class="filter-btn" id="signupFilterAll" onclick="setSignupPeriod('all')">전체</button>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="position:relative;">
+                <input type="text" id="signupSearchInput" placeholder="ID/이름/이메일 검색" style="padding:8px 12px 8px 32px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;width:180px;" oninput="applySignupFilters()" />
+                <i class="fa-solid fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;"></i>
+              </div>
+              <div class="filter-group">
+                <button class="filter-btn" id="signupFilter7" onclick="setSignupPeriod('7')">최근 7일</button>
+                <button class="filter-btn" id="signupFilter30" onclick="setSignupPeriod('30')">최근 30일</button>
+                <button class="filter-btn" id="signupFilterAll" onclick="setSignupPeriod('all')">전체</button>
+              </div>
             </div>
           </div>
           <div id="signupTable">
@@ -1770,7 +1927,7 @@
         document.getElementById('signupFilter30').classList.toggle('active', signupPeriod === '30');
         document.getElementById('signupFilterAll').classList.toggle('active', signupPeriod === 'all');
         
-        renderSignupTable(allSignups);
+        applySignupFilters();
       } catch (e) {
         document.getElementById('signupTable').innerHTML = '<div class="empty">로딩 실패</div>';
       }
@@ -1781,10 +1938,27 @@
       loadSignups();
     }
     
+    function applySignupFilters() {
+      const searchInput = document.getElementById('signupSearchInput');
+      signupSearchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      
+      let filtered = allSignups;
+      if (signupSearchQuery) {
+        filtered = allSignups.filter(u => 
+          String(u.id).includes(signupSearchQuery) ||
+          (u.name || '').toLowerCase().includes(signupSearchQuery) ||
+          (u.email || '').toLowerCase().includes(signupSearchQuery)
+        );
+      }
+      
+      renderSignupTable(filtered);
+    }
+    
     function renderSignupTable(users) {
       const tableEl = document.getElementById('signupTable');
       if (users.length === 0) {
-        tableEl.innerHTML = '<div class="empty">가입 기록이 없습니다.</div>';
+        const msg = signupSearchQuery ? '검색 결과가 없습니다.' : '가입 기록이 없습니다.';
+        tableEl.innerHTML = `<div class="empty">${msg}</div>`;
         return;
       }
       
@@ -1865,7 +2039,7 @@
             <span>사용자 목록</span>
             <div style="display:flex;gap:12px;align-items:center;">
               <div style="position:relative;">
-                <input type="text" id="userSearchInput" placeholder="이름/이메일 검색" style="padding:8px 12px 8px 32px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;width:180px;" oninput="searchUsers()" />
+                <input type="text" id="userSearchInput" placeholder="ID/이름/이메일 검색" style="padding:8px 12px 8px 32px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;width:180px;" oninput="searchUsers()" />
                 <i class="fa-solid fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;"></i>
               </div>
               <div class="filter-group">
@@ -1920,8 +2094,9 @@
       
       // 검색어 필터
       if (userSearchQuery) {
-        const q = userSearchQuery.toLowerCase();
+        const q = userSearchQuery.toLowerCase().trim();
         filtered = filtered.filter(u => 
+          String(u.id).includes(q) ||
           (u.name && u.name.toLowerCase().includes(q)) ||
           (u.email && u.email.toLowerCase().includes(q))
         );
@@ -1981,7 +2156,7 @@
             <div class="value" id="testStatGonogo" style="font-size:24px;color:#16a34a;">-</div>
           </div>
           <div class="stat-card" style="padding:16px;background:#ffedd5;">
-            <div class="label" style="font-size:12px;"><i class="fa-solid fa-list-ol"></i> 숫자기억</div>
+            <div class="label" style="font-size:12px;"><i class="fa-solid fa-list-ol"></i> 작업기억</div>
             <div class="value" id="testStatDigit" style="font-size:24px;color:#ea580c;">-</div>
           </div>
           <div class="stat-card" style="padding:16px;background:#fee2e2;">
@@ -1997,13 +2172,19 @@
         <div class="card">
           <div class="card-header">
             <span>검사 목록</span>
-            <div class="filter-group">
-              <button class="filter-btn" id="testFilterAll" onclick="setTestFilter('all')">전체</button>
-              <button class="filter-btn" id="testFilterPattern" onclick="setTestFilter('pattern')">처리속도</button>
-              <button class="filter-btn" id="testFilterGonogo" onclick="setTestFilter('gonogo')">주의·억제</button>
-              <button class="filter-btn" id="testFilterDigit" onclick="setTestFilter('digit')">숫자기억</button>
-              <button class="filter-btn" id="testFilterSpatial" onclick="setTestFilter('spatial')">위치기억</button>
-              <button class="filter-btn" id="testFilterTraining" onclick="setTestFilter('training')">관리</button>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="position:relative;">
+                <input type="text" id="testSearch" placeholder="ID/이름 검색" style="padding:8px 12px 8px 32px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;width:180px;" oninput="applyTestFilters()" />
+                <i class="fa-solid fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;"></i>
+              </div>
+              <div class="filter-group">
+                <button class="filter-btn" id="testFilterAll" onclick="setTestFilter('all')">전체</button>
+                <button class="filter-btn" id="testFilterPattern" onclick="setTestFilter('pattern')">처리속도</button>
+                <button class="filter-btn" id="testFilterGonogo" onclick="setTestFilter('gonogo')">주의·억제</button>
+                <button class="filter-btn" id="testFilterDigit" onclick="setTestFilter('digit')">작업기억</button>
+                <button class="filter-btn" id="testFilterSpatial" onclick="setTestFilter('spatial')">위치기억</button>
+                <button class="filter-btn" id="testFilterTraining" onclick="setTestFilter('training')">관리</button>
+              </div>
             </div>
           </div>
           <div id="testTable">
@@ -2050,10 +2231,30 @@
       document.getElementById('testStatTraining').textContent = training;
     }
     
+    let testSearchQuery = '';
+    
     function filterTests(tests) {
-      if (testFilter === 'all') return tests;
-      if (testFilter === 'digit') return tests.filter(t => t.test_type === 'digitspan');
-      return tests.filter(t => t.test_type === testFilter);
+      let filtered = tests;
+      
+      // 타입 필터
+      if (testFilter !== 'all') {
+        if (testFilter === 'digit') {
+          filtered = filtered.filter(t => t.test_type === 'digitspan');
+        } else {
+          filtered = filtered.filter(t => t.test_type === testFilter);
+        }
+      }
+      
+      // 검색 필터
+      if (testSearchQuery) {
+        const query = testSearchQuery.toLowerCase().trim();
+        filtered = filtered.filter(t => 
+          String(t.user_id).includes(query) ||
+          (t.user_name || '').toLowerCase().includes(query)
+        );
+      }
+      
+      return filtered;
     }
     
     function setTestFilter(filter) {
@@ -2064,6 +2265,12 @@
       document.getElementById('testFilterDigit').classList.toggle('active', filter === 'digit');
       document.getElementById('testFilterSpatial').classList.toggle('active', filter === 'spatial');
       document.getElementById('testFilterTraining').classList.toggle('active', filter === 'training');
+      applyTestFilters();
+    }
+    
+    function applyTestFilters() {
+      const searchInput = document.getElementById('testSearch');
+      testSearchQuery = searchInput ? searchInput.value : '';
       renderTestTable(filterTests(allTests));
     }
     
@@ -2078,16 +2285,20 @@
         <table class="table">
           <thead>
             <tr>
-              <th>검사 종류</th>
+              <th>ID</th>
               <th>사용자</th>
+              <th>검사 종류</th>
+              <th>점수</th>
               <th>날짜</th>
             </tr>
           </thead>
           <tbody>
             ${tests.map(t => `
               <tr onclick="showUserDetail(${t.user_id})" style="cursor:pointer;">
-                <td>${getTestTypeBadge(t.test_type)}</td>
+                <td>${t.user_id}</td>
                 <td>${t.user_name || '-'}</td>
+                <td>${getTestTypeBadge(t.test_type)}</td>
+                <td>${getTestScore(t)}</td>
                 <td>${toKoreanTime(t.created_at)}</td>
               </tr>
             `).join('')}
@@ -2100,18 +2311,49 @@
       const badges = {
         'pattern': '<span class="badge" style="background:#dbeafe;color:#2563eb;">처리속도</span>',
         'gonogo': '<span class="badge" style="background:#dcfce7;color:#16a34a;">주의·억제</span>',
-        'digitspan': '<span class="badge" style="background:#ffedd5;color:#ea580c;">숫자기억</span>',
+        'digitspan': '<span class="badge" style="background:#ffedd5;color:#ea580c;">작업기억</span>',
         'spatial': '<span class="badge" style="background:#fee2e2;color:#dc2626;">위치기억</span>',
         'training': '<span class="badge" style="background:#f3e8ff;color:#9333ea;">두뇌 관리</span>'
       };
       return badges[type] || `<span class="badge">${type}</span>`;
     }
     
+    // 검사 점수 표시
+    function getTestScore(test) {
+      try {
+        const summary = typeof test.summary === 'string' ? JSON.parse(test.summary) : test.summary;
+        if (!summary) return '-';
+        
+        // raw 값 우선 사용 (0-100)
+        if (summary.raw !== undefined) {
+          const score = summary.raw;
+          const color = score >= 70 ? '#16a34a' : score >= 50 ? '#d97706' : '#dc2626';
+          return `<span style="font-weight:600;color:${color}">${score}%</span>`;
+        }
+        
+        // training: correct/total
+        if (test.test_type === 'training' && summary.correct !== undefined) {
+          return `<span style="color:#9333ea">${summary.correct}/${summary.total || 0}</span>`;
+        }
+        
+        // 폴백: accuracy (0-1)
+        if (summary.accuracy !== undefined) {
+          const score = Math.round(summary.accuracy * 100);
+          const color = score >= 70 ? '#16a34a' : score >= 50 ? '#d97706' : '#dc2626';
+          return `<span style="font-weight:600;color:${color}">${score}%</span>`;
+        }
+        
+        return '-';
+      } catch (e) {
+        return '-';
+      }
+    }
+    
     function getTestTypeName(type) {
       const names = {
         'pattern': '처리속도',
         'gonogo': '주의·억제',
-        'digitspan': '숫자기억',
+        'digitspan': '작업기억',
         'spatial': '위치기억',
         'training': '두뇌 관리'
       };
@@ -2167,6 +2409,9 @@
       }
     }
     
+    let allPayments = [];
+    let paymentSearchQuery = '';
+    
     async function renderPaymentsPage(main) {
       main.innerHTML = `
         <div class="page-header">
@@ -2181,9 +2426,16 @@
         <div class="card">
           <div class="card-header">
             <span>결제 내역</span>
-            <div class="filter-group">
-              <button class="filter-btn active" id="filterPending" onclick="setPaymentFilter('pending')">대기 중</button>
-              <button class="filter-btn" id="filterAll" onclick="setPaymentFilter('all')">전체</button>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="position:relative;">
+                <input type="text" id="paymentSearch" placeholder="ID/이름/이메일 검색" style="padding:8px 12px 8px 32px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;width:180px;" oninput="applyPaymentFilters()" />
+                <i class="fa-solid fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;"></i>
+              </div>
+              <div class="filter-group">
+                <button class="filter-btn active" id="filterPending" onclick="setPaymentFilter('pending')">대기 중</button>
+                <button class="filter-btn" id="filterConfirmed" onclick="setPaymentFilter('confirmed')">승인됨</button>
+                <button class="filter-btn" id="filterAll" onclick="setPaymentFilter('all')">전체</button>
+              </div>
             </div>
           </div>
           <div id="paymentTable">
@@ -2198,8 +2450,38 @@
     function setPaymentFilter(filter) {
       paymentFilter = filter;
       document.getElementById('filterPending').classList.toggle('active', filter === 'pending');
+      document.getElementById('filterConfirmed').classList.toggle('active', filter === 'confirmed');
       document.getElementById('filterAll').classList.toggle('active', filter === 'all');
-      loadPayments();
+      applyPaymentFilters();
+    }
+    
+    function applyPaymentFilters() {
+      const searchInput = document.getElementById('paymentSearch');
+      paymentSearchQuery = searchInput ? searchInput.value : '';
+      renderPaymentTable();
+    }
+    
+    function filterPayments(payments) {
+      let filtered = payments;
+      
+      // 상태 필터
+      if (paymentFilter === 'pending') {
+        filtered = filtered.filter(p => p.status === 'pending');
+      } else if (paymentFilter === 'confirmed') {
+        filtered = filtered.filter(p => p.status === 'confirmed');
+      }
+      
+      // 검색 필터
+      if (paymentSearchQuery) {
+        const query = paymentSearchQuery.toLowerCase().trim();
+        filtered = filtered.filter(p => 
+          String(p.user_id).includes(query) ||
+          (p.user_name || '').toLowerCase().includes(query) ||
+          (p.user_email || '').toLowerCase().includes(query)
+        );
+      }
+      
+      return filtered;
     }
     
     async function loadPayments() {
@@ -2211,55 +2493,60 @@
           headers: { 'X-Admin-Key': ADMIN_PASSWORD }
         });
         const data = await res.json();
-        let payments = data.payments || [];
-        
-        if (paymentFilter === 'pending') {
-          payments = payments.filter(p => p.status === 'pending');
-        }
-        
-        if (payments.length === 0) {
-          tableEl.innerHTML = `<div class="empty">${paymentFilter === 'pending' ? '승인 대기 중인 결제가 없습니다.' : '결제 내역이 없습니다.'}</div>`;
-          return;
-        }
-        
-        tableEl.innerHTML = `
-          <table class="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>이름</th>
-                <th>플랜</th>
-                <th>금액</th>
-                <th>상태</th>
-                <th>요청일</th>
-                <th>액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${payments.map(p => `
-                <tr onclick="showUserDetail(${p.user_id})" style="cursor:pointer;">
-                  <td>${p.user_id}</td>
-                  <td>${p.user_name || '-'}</td>
-                  <td>${p.plan === 'yearly' ? '연 구독' : '월 구독'}</td>
-                  <td>${Number(p.amount).toLocaleString()}원</td>
-                  <td><span class="status-badge ${p.status}">${getStatusText(p.status)}</span></td>
-                  <td>${toKoreanTime(p.created_at)}</td>
-                  <td>
-                    ${p.status === 'pending' ? `
-                      <div class="action-btns">
-                        <button class="action-btn confirm" onclick="event.stopPropagation(); confirmPayment(${p.id})">승인</button>
-                        <button class="action-btn reject" onclick="event.stopPropagation(); rejectPayment(${p.id})">거절</button>
-                      </div>
-                    ` : '-'}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+        allPayments = data.payments || [];
+        renderPaymentTable();
       } catch (e) {
         tableEl.innerHTML = '<div class="empty">로딩 실패</div>';
       }
+    }
+    
+    function renderPaymentTable() {
+      const tableEl = document.getElementById('paymentTable');
+      const payments = filterPayments(allPayments);
+      
+      if (payments.length === 0) {
+        const msg = paymentSearchQuery 
+          ? '검색 결과가 없습니다.' 
+          : (paymentFilter === 'pending' ? '승인 대기 중인 결제가 없습니다.' : '결제 내역이 없습니다.');
+        tableEl.innerHTML = `<div class="empty">${msg}</div>`;
+        return;
+      }
+      
+      tableEl.innerHTML = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>이름</th>
+              <th>플랜</th>
+              <th>금액</th>
+              <th>상태</th>
+              <th>요청일</th>
+              <th>액션</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${payments.map(p => `
+              <tr onclick="showUserDetail(${p.user_id})" style="cursor:pointer;">
+                <td>${p.user_id}</td>
+                <td>${p.user_name || '-'}</td>
+                <td>${p.plan === 'yearly' ? '연 구독' : '월 구독'}</td>
+                <td>${Number(p.amount).toLocaleString()}원</td>
+                <td><span class="status-badge ${p.status}">${getStatusText(p.status)}</span></td>
+                <td>${toKoreanTime(p.created_at)}</td>
+                <td>
+                  ${p.status === 'pending' ? `
+                    <div class="action-btns">
+                      <button class="action-btn confirm" onclick="event.stopPropagation(); confirmPayment(${p.id})">승인</button>
+                      <button class="action-btn reject" onclick="event.stopPropagation(); rejectPayment(${p.id})">거절</button>
+                    </div>
+                  ` : '-'}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
     }
     
     function getStatusText(status) {
@@ -2640,30 +2927,42 @@
           </div>
           
           <div class="modal-section">
-            <h3>검사 기록 (${testRecords.length}건)</h3>
+            <h3 style="display:flex;justify-content:space-between;align-items:center;">
+              검사 기록 (${testRecords.length}건)
+              ${testRecords.length > 0 ? `<button class="btn" style="padding:6px 12px;font-size:12px;" onclick="closeModal();showUserTests(${u.id}, '${u.name || '사용자'}')"><i class="fa-solid fa-list"></i> 전체 보기</button>` : ''}
+            </h3>
             <div class="test-list">
               ${testRecords.length === 0 ? '<div class="empty" style="padding:20px;">검사 기록이 없습니다.</div>' : 
-                testRecords.slice(0, 10).map(t => `
-                  <div class="test-item">
-                    <strong>${getTestTypeName(t.test_type)}</strong>
-                    <div class="date">${toKoreanTime(t.created_at)}</div>
+                testRecords.slice(0, 5).map(t => `
+                  <div class="test-item" style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                      <strong>${getTestTypeName(t.test_type)}</strong>
+                      <div class="date">${toKoreanTime(t.created_at)}</div>
+                    </div>
+                    <div>${getTestScore(t)}</div>
                   </div>
                 `).join('')}
-              ${testRecords.length > 10 ? `<div class="empty" style="padding:10px;font-size:13px;">외 ${testRecords.length - 10}건</div>` : ''}
+              ${testRecords.length > 5 ? `<div style="padding:8px;font-size:13px;color:#6b7280;text-align:center;">외 ${testRecords.length - 5}건 더 있음</div>` : ''}
             </div>
           </div>
           
           <div class="modal-section">
-            <h3>두뇌 관리 기록 (${trainingRecords.length}건)</h3>
+            <h3 style="display:flex;justify-content:space-between;align-items:center;">
+              두뇌 관리 기록 (${trainingRecords.length}건)
+              ${trainingRecords.length > 0 ? `<button class="btn" style="padding:6px 12px;font-size:12px;" onclick="closeModal();showUserTrainings(${u.id}, '${u.name || '사용자'}')"><i class="fa-solid fa-list"></i> 전체 보기</button>` : ''}
+            </h3>
             <div class="test-list">
               ${trainingRecords.length === 0 ? '<div class="empty" style="padding:20px;">관리 기록이 없습니다.</div>' : 
                 trainingRecords.slice(0, 5).map(t => `
-                  <div class="test-item" style="background:#f0fdf4;">
-                    <strong style="color:#16a34a;">두뇌 관리</strong>
-                    <div class="date">${toKoreanTime(t.created_at)}</div>
+                  <div class="test-item" style="background:#f0fdf4;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                      <strong style="color:#16a34a;">두뇌 관리</strong>
+                      <div class="date">${toKoreanTime(t.created_at)}</div>
+                    </div>
+                    <div>${getTestScore(t)}</div>
                   </div>
                 `).join('')}
-              ${trainingRecords.length > 5 ? `<div class="empty" style="padding:10px;font-size:13px;">외 ${trainingRecords.length - 5}건</div>` : ''}
+              ${trainingRecords.length > 5 ? `<div style="padding:8px;font-size:13px;color:#6b7280;text-align:center;">외 ${trainingRecords.length - 5}건 더 있음</div>` : ''}
             </div>
           </div>
           
@@ -2686,6 +2985,74 @@
     function closeModal() {
       const modal = document.querySelector('.modal-overlay');
       if (modal) modal.remove();
+    }
+    
+    // 특정 사용자의 검사 기록 전체 보기
+    async function showUserTests(userId, userName) {
+      const data = await fetchApi(`/api/admin/user/${userId}`);
+      if (!data) return;
+      
+      const tests = (data.tests || []).filter(t => t.test_type !== 'training');
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width:600px;max-height:80vh;overflow-y:auto;">
+          <h2>${userName}님의 검사 기록 (${tests.length}건)</h2>
+          <div class="test-list" style="max-height:50vh;overflow-y:auto;">
+            ${tests.length === 0 ? '<div class="empty" style="padding:20px;">검사 기록이 없습니다.</div>' : 
+              tests.map(t => `
+                <div class="test-item" style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="flex:1;">
+                    <strong>${getTestTypeName(t.test_type)}</strong>
+                    <div class="date">${toKoreanTime(t.created_at)}</div>
+                  </div>
+                  <div>${getTestScore(t)}</div>
+                </div>
+              `).join('')}
+          </div>
+          <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn" onclick="closeModal();showUserDetail(${userId})">← 상세 정보</button>
+            <button class="btn" onclick="closeModal()">닫기</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+    }
+    
+    // 특정 사용자의 관리 기록 전체 보기
+    async function showUserTrainings(userId, userName) {
+      const data = await fetchApi(`/api/admin/user/${userId}`);
+      if (!data) return;
+      
+      const trainings = (data.tests || []).filter(t => t.test_type === 'training');
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width:600px;max-height:80vh;overflow-y:auto;">
+          <h2>${userName}님의 관리 기록 (${trainings.length}건)</h2>
+          <div class="test-list" style="max-height:50vh;overflow-y:auto;">
+            ${trainings.length === 0 ? '<div class="empty" style="padding:20px;">관리 기록이 없습니다.</div>' : 
+              trainings.map(t => `
+                <div class="test-item" style="background:#f0fdf4;display:flex;justify-content:space-between;align-items:center;">
+                  <div style="flex:1;">
+                    <strong style="color:#16a34a;">두뇌 관리</strong>
+                    <div class="date">${toKoreanTime(t.created_at)}</div>
+                  </div>
+                  <div>${getTestScore(t)}</div>
+                </div>
+              `).join('')}
+          </div>
+          <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn" onclick="closeModal();showUserDetail(${userId})">← 상세 정보</button>
+            <button class="btn" onclick="closeModal()">닫기</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) closeModal(); };
     }
     
     async function confirmDeleteUser(userId, userName) {

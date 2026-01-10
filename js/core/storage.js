@@ -12,6 +12,9 @@ export const LS_KEYS = {
   digitspanTrainingHistory: "bc_digitspan_training_history_v1",
   spatialHistory: "bc_spatial_history_v1",
   spatialBaseline: "bc_spatial_baseline_v1",
+  guestTrainingDone: "bc_guest_training_done_v1",
+  guestTestDone: "bc_guest_test_done_v1",
+  serverStatus: "bc_server_status_v1",
 };
 
 export function getAnonId() {
@@ -85,12 +88,12 @@ export function getDateKey(date = new Date()) {
 
 // ========== 서버 동기화 상태 (로그인 사용자) ==========
 
-const SERVER_STATUS_KEY = "bc_server_status_v1";
+// SERVER_STATUS_KEY는 LS_KEYS.serverStatus 사용
 
 // 서버 동기화 상태 저장
 export function saveServerStatus(status) {
   const today = getDateKey();
-  localStorage.setItem(SERVER_STATUS_KEY, JSON.stringify({
+  localStorage.setItem(LS_KEYS.serverStatus, JSON.stringify({
     ...status,
     dateKey: today,
     savedAt: Date.now()
@@ -100,7 +103,7 @@ export function saveServerStatus(status) {
 // 서버 동기화 상태 가져오기
 export function getServerStatus() {
   try {
-    const saved = JSON.parse(localStorage.getItem(SERVER_STATUS_KEY) || "null");
+    const saved = JSON.parse(localStorage.getItem(LS_KEYS.serverStatus) || "null");
     if (!saved) return null;
     
     // 오늘 날짜가 아니면 무효 (매일 새로 확인 필요)
@@ -117,7 +120,7 @@ export function getServerStatus() {
 
 // 서버 상태 삭제 (로그아웃 시)
 export function clearServerStatus() {
-  localStorage.removeItem(SERVER_STATUS_KEY);
+  localStorage.removeItem(LS_KEYS.serverStatus);
 }
 
 // 오늘 관리 완료로 마킹 (관리 완료 시 호출)
@@ -351,14 +354,6 @@ export function loadSessionState() {
   try {
     const saved = JSON.parse(localStorage.getItem(SESSION_STATE_KEY) || "null");
     if (!saved) return null;
-    
-    // 10분 이상 지났으면 무효
-    const tenMinutes = 10 * 60 * 1000;
-    if (Date.now() - saved.savedAt > tenMinutes) {
-      clearSessionState();
-      return null;
-    }
-    
     return saved;
   } catch {
     return null;
@@ -372,25 +367,22 @@ export function clearSessionState() {
 
 // ========== 비로그인 1회 체험 ==========
 
-const GUEST_TEST_KEY = "bc_guest_test_done_v1";
-const GUEST_TRAINING_KEY = "bc_guest_training_done_v1";
-
 // 비로그인 검사 1회 완료 여부
 export function hasGuestTestedOnce() {
-  return localStorage.getItem(GUEST_TEST_KEY) === "true";
+  return localStorage.getItem(LS_KEYS.guestTestDone) === "true";
 }
 
 // 비로그인 검사 완료 기록
 export function markGuestTestDone() {
-  localStorage.setItem(GUEST_TEST_KEY, "true");
+  localStorage.setItem(LS_KEYS.guestTestDone, "true");
 }
 
 // 비로그인 관리 1회 완료 여부
 export function hasGuestTrainedOnce() {
-  return localStorage.getItem(GUEST_TRAINING_KEY) === "true";
+  return localStorage.getItem(LS_KEYS.guestTrainingDone) === "true";
 }
 
 // 비로그인 관리 완료 기록
 export function markGuestTrainingDone() {
-  localStorage.setItem(GUEST_TRAINING_KEY, "true");
+  localStorage.setItem(LS_KEYS.guestTrainingDone, "true");
 }

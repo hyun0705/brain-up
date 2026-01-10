@@ -145,12 +145,24 @@ export async function getMe() {
   return data.user;
 }
 
-// 결과 저장
+// 결과 저장 (baseline도 함께 반환)
 export async function saveResults(testType, summary) {
   return apiRequest('/api/results', {
     method: 'POST',
     body: JSON.stringify({ testType, summary }),
   });
+}
+
+// Baseline 조회 (특정 테스트 타입)
+export async function getBaseline(testType) {
+  const data = await apiRequest(`/api/baseline?testType=${testType}`, { method: 'GET' });
+  return data.baseline;
+}
+
+// 모든 Baseline 조회
+export async function getAllBaselines() {
+  const data = await apiRequest('/api/baseline/all', { method: 'GET' });
+  return data.baselines;
 }
 
 // 결제 요청 (입금 확인 요청)
@@ -209,6 +221,13 @@ export async function deleteAccount() {
   return data;
 }
 
+// UTC를 한국 시간으로 변환 (서버 데이터용)
+function toKoreaTime(dateStr) {
+  if (!dateStr) return new Date();
+  const utcDate = new Date(dateStr + (dateStr.includes('Z') || dateStr.includes('+') ? '' : 'Z'));
+  return new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+}
+
 // 오늘/이번 주 기록 동기화 (로그인 후 호출)
 // 기존 API를 활용하여 직접 계산
 export async function syncTodayStatus() {
@@ -216,7 +235,7 @@ export async function syncTodayStatus() {
     // 검사 결과를 가져와서 확인 (training 타입도 test_results에 저장됨)
     const testResults = await apiRequest('/api/results', { method: 'GET' }).then(d => d.results || []).catch(() => []);
     
-    // 오늘 날짜 확인
+    // 오늘 날짜 확인 (로컬 시간 기준)
     const today = new Date();
     const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     
@@ -229,18 +248,18 @@ export async function syncTodayStatus() {
     saturday.setDate(sunday.getDate() + 6);
     saturday.setHours(23, 59, 59, 999);
     
-    // 오늘 관리 여부 확인 (training 타입)
+    // 오늘 관리 여부 확인 (training 타입) - 서버 데이터는 한국 시간으로 변환
     const trainedToday = testResults.some(r => {
       if (r.test_type !== 'training') return false;
-      const tDate = new Date(r.date || r.created_at);
+      const tDate = toKoreaTime(r.date || r.created_at);
       const tDateKey = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}-${String(tDate.getDate()).padStart(2, '0')}`;
       return tDateKey === todayKey;
     });
     
-    // 이번 주 검사 여부 확인 (pattern 검사 기준)
+    // 이번 주 검사 여부 확인 (pattern 검사 기준) - 서버 데이터는 한국 시간으로 변환
     const testedThisWeek = testResults.some(r => {
       if (r.test_type !== 'pattern') return false;
-      const rDate = new Date(r.date || r.created_at);
+      const rDate = toKoreaTime(r.date || r.created_at);
       return rDate >= sunday && rDate <= saturday;
     });
     

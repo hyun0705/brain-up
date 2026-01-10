@@ -1,16 +1,24 @@
 // ui/home.js
 import { $ } from '../core/utils.js';
 import { state, resetState, restoreTestProgress, clearTestProgress } from '../core/state.js';
-import { LS_KEYS, loadHistory, loadBaseline, getUserProfile, getTrialDaysLeft, canAccessPremium, hasTestedThisWeek, loadSessionState, hasGuestTestedOnce, hasGuestTrainedOnce, refreshSubscription, isSubscribedSync } from '../core/storage.js';
-import { computeIndexFromBaseline } from '../core/scoring.js';
+import { LS_KEYS, loadHistory, getUserProfile, getTrialDaysLeft, canAccessPremium, hasTestedThisWeek, loadSessionState, hasGuestTestedOnce, hasGuestTrainedOnce, refreshSubscription, isSubscribedSync } from '../core/storage.js';
 import { playClick } from '../core/sound.js';
 import { startDigitSpanTraining, hasTrainedToday, getStreak } from '../training/digitspan-training.js';
-import { renderPastResults } from './intro.js';
+import { renderTrainingSelect } from './training-select.js';
+// renderHistory는 순환참조 방지를 위해 동적 import 사용
+let renderHistory = null;
+async function getHistoryRenderer() {
+  if (!renderHistory) {
+    const module = await import('./history.js');
+    renderHistory = module.renderHistory;
+  }
+  return renderHistory;
+}
 import { renderCalendar, renderUpgradePrompt } from './calendar.js';
 import { renderSettings } from './settings.js';
 import { renderWeeklyReport } from './report.js';
-import { isLoggedIn, renderLogin, checkLoginForFeature } from './auth.js';
-import { getUserName, getNotices } from '../core/api.js';
+import { renderLogin, checkLoginForFeature } from './auth.js';
+import { isLoggedIn, getUserName, getNotices, getResults } from '../core/api.js';
 
 const app = $("#app");
 
@@ -76,19 +84,18 @@ function getWeakestArea() {
   
   if (digitspanHist.length === 0) return { area: 'digitspan', name: '작업기억', index: 50 };
   
-  const getLatestIndex = (hist, baselineKey, scoreKey = 'raw') => {
+  const getLatestScore = (hist) => {
     if (hist.length === 0) return 50;
     const last = hist[hist.length - 1];
-    const baseline = loadBaseline(baselineKey);
-    const result = computeIndexFromBaseline(last.summary[scoreKey], baseline);
-    return result.index;
+    // raw가 정확도 % (0-100)
+    return last.summary.raw;
   };
   
   const areas = [
-    { area: 'pattern', name: '처리속도', index: getLatestIndex(patternHist, LS_KEYS.patternBaseline) },
-    { area: 'gonogo', name: '주의·억제', index: getLatestIndex(gonogoHist, LS_KEYS.gonogoBaseline) },
-    { area: 'digitspan', name: '작업기억', index: getLatestIndex(digitspanHist, LS_KEYS.digitspanBaseline, 'totalSpan') },
-    { area: 'spatial', name: '공간기억', index: getLatestIndex(spatialHist, LS_KEYS.spatialBaseline) },
+    { area: 'pattern', name: '처리속도', index: getLatestScore(patternHist) },
+    { area: 'gonogo', name: '주의·억제', index: getLatestScore(gonogoHist) },
+    { area: 'digitspan', name: '작업기억', index: getLatestScore(digitspanHist) },
+    { area: 'spatial', name: '위치기억', index: getLatestScore(spatialHist) },
   ];
   
   return areas.reduce((min, curr) => curr.index < min.index ? curr : min);
@@ -99,6 +106,113 @@ function getLastTestDate() {
   const patternHist = loadHistory(LS_KEYS.patternHistory);
   if (patternHist.length === 0) return null;
   return new Date(patternHist[patternHist.length - 1].ended_at);
+}
+
+// UTC를 한국 시간으로 변환 (서버 데이터용)
+function toKoreaTime(dateStr) {
+  if (!dateStr) return new Date();
+  const utcDate = new Date(dateStr + (dateStr.includes('Z') || dateStr.includes('+') ? '' : 'Z'));
+  return new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+}
+
+// 이번 주 범위 (일~토)
+function getCurrentWeekRange() {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - dayOfWeek);
+  sunday.setHours(0, 0, 0, 0);
+  
+  const saturday = new Date(sunday);
+  saturday.setDate(sunday.getDate() + 6);
+  saturday.setHours(23, 59, 59, 999);
+  
+  return { sunday, saturday };
+}
+
+// 서버 데이터 기반 오늘 관리 완료 여부 확인 (캐시된 결과 사용)
+function checkTrainedTodayFromCache(results) {
+  // 오늘 날짜 (로컬 시간 기준)
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  
+  // 서버 기록 확인
+  if (results && results.length > 0) {
+    const serverDone = results
+      .filter(r => r.test_type === 'training')
+      .some(r => {
+        const entryDate = toKoreaTime(r.date || r.created_at);
+        const entryKey = `${entryDate.getFullYear()}-${String(entryDate.getMonth() + 1).padStart(2, '0')}-${String(entryDate.getDate()).padStart(2, '0')}`;
+        return entryKey === todayKey;
+      });
+    if (serverDone) return true;
+  }
+  
+  // 로컬 확인
+  return hasTrainedToday();
+}
+
+// 서버 데이터 기반 이번 주 검사 완료 여부 (캐시된 결과 사용)
+function checkWeeklyTestFromCache(results) {
+  const { sunday, saturday } = getCurrentWeekRange();
+  
+  // 서버 기록 확인
+  if (results && results.length > 0) {
+    const serverDone = results
+      .filter(r => r.test_type !== 'training')
+      .some(r => {
+        const entryDate = toKoreaTime(r.date || r.created_at);
+        return entryDate >= sunday && entryDate <= saturday;
+      });
+    if (serverDone) return true;
+  }
+  
+  // 로컬 확인
+  return hasTestedThisWeek();
+}
+
+// 서버 데이터 기반 연속 기록(streak) 계산 (캐시된 결과 사용)
+function getStreakFromCache(results) {
+  // 날짜별로 유니크하게 추출 (한국 시간 기준)
+  const uniqueDates = new Set();
+  
+  // 서버 기록
+  if (results && results.length > 0) {
+    results
+      .filter(r => r.test_type === 'training')
+      .forEach(r => {
+        const entryDate = toKoreaTime(r.date || r.created_at);
+        const dateKey = `${entryDate.getFullYear()}-${String(entryDate.getMonth() + 1).padStart(2, '0')}-${String(entryDate.getDate()).padStart(2, '0')}`;
+        uniqueDates.add(dateKey);
+      });
+  }
+  
+  // 로컬 기록도 합산
+  const localHistory = loadHistory(LS_KEYS.digitspanTrainingHistory);
+  localHistory.forEach(entry => {
+    if (entry.date_key) uniqueDates.add(entry.date_key);
+  });
+  
+  if (uniqueDates.size === 0) return 0;
+  
+  // 오늘부터 거꾸로 연속 일수 계산 (로컬 시간 기준)
+  const now = new Date();
+  
+  let streak = 0;
+  for (let i = 0; i < 100; i++) {
+    const checkDate = new Date(now);
+    checkDate.setDate(now.getDate() - i);
+    const checkKey = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+    
+    if (uniqueDates.has(checkKey)) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+  }
+  
+  return streak;
 }
 
 // 시간대별 인사말
@@ -181,13 +295,9 @@ export async function renderHome() {
   state.phase = "home";
   document.querySelector(".progress").textContent = "홈";
   
-  // 로그인 상태면 서버에서 구독 상태 확인 (비동기, 기다리지 않음)
   const loggedIn = isLoggedIn();
-  if (loggedIn) {
-    refreshSubscription(); // 백그라운드에서 업데이트
-  }
   
-  const profile = getUserProfile();
+  // 로컬 데이터로 먼저 빠르게 렌더링
   const streak = getStreak();
   const todayDone = hasTrainedToday();
   const weeklyTestDone = hasTestedThisWeek();
@@ -215,9 +325,7 @@ export async function renderHome() {
     }
   }
   
-  // 공지사항 로드
-  const notices = await getNotices();
-  const latestNotice = notices.length > 0 ? notices[0] : null;
+
   
   // 권한 체크: 기능 사용 가능 여부
   // 비로그인: 1회만 / 로그인+무료체험중: 무제한 / 로그인+체험끝: 차단
@@ -319,18 +427,12 @@ export async function renderHome() {
     // 진행 중인 검사가 있는 경우
     const completedCount = [savedSession.patternResult, savedSession.gonogoResult, savedSession.digitspanResult, savedSession.spatialResult].filter(Boolean).length;
     
-    // 남은 시간 계산
-    const tenMinutes = 10 * 60 * 1000;
-    const elapsed = Date.now() - savedSession.savedAt;
-    const remaining = tenMinutes - elapsed;
-    const remainingMins = Math.ceil(remaining / 60000);
-    
     testSection = `
       <div class="weeklyStatus inprogress">
         <div class="weeklyStatusIcon"><i class="fa-solid fa-pause-circle"></i></div>
         <div class="weeklyStatusText">
           <div class="weeklyStatusTitle">검사 진행 중 (${completedCount}/4 완료)</div>
-          <div class="weeklyStatusDesc"><i class="fa-solid fa-clock"></i> ${remainingMins}분 남음 · 정확한 검사를 위해 이어서 해주세요</div>
+          <div class="weeklyStatusDesc">중단한 검사를 이어서 진행하세요</div>
         </div>
       </div>
       <button class="primaryBtn danger" id="resumeTest">
@@ -502,25 +604,8 @@ export async function renderHome() {
     `;
   }
   
-  // 공지사항 배너
-  let noticeBanner = '';
-  if (latestNotice) {
-    // 7일 이내 공지가 있는지 확인
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const hasRecent = notices.some(n => new Date(n.created_at) > sevenDaysAgo);
-    
-    noticeBanner = `
-      <div class="noticeBanner" id="noticeBanner">
-        <div class="noticeBannerIcon"><i class="fa-solid fa-bullhorn"></i></div>
-        <div class="noticeBannerText">
-          <span class="noticeBannerTitle">공지사항</span>
-          <span class="noticeBannerDesc">${latestNotice.title}</span>
-        </div>
-        ${hasRecent ? '<span class="newBadge">NEW</span>' : ''}
-        <div class="noticeBannerArrow"><i class="fa-solid fa-chevron-right"></i></div>
-      </div>
-    `;
-  }
+  // 공지사항 배너 (백그라운드에서 로드 후 추가됨)
+  const noticeBanner = '';
   
   // 검사 결과 카드 (비로그인이면 로그인 필요, 로그인이면 프리미엄 체크)
   let historyCard = '';
@@ -530,7 +615,7 @@ export async function renderHome() {
       <div class="homeCard locked" id="viewHistoryLogin">
         <div class="homeCardIcon"><i class="fa-solid fa-lock"></i></div>
         <div class="homeCardContent">
-          <div class="homeCardTitle">검사 결과</div>
+          <div class="homeCardTitle">검사 기록</div>
           <div class="homeCardDesc">로그인 후 이용 가능</div>
         </div>
         <div class="homeCardArrow"><i class="fa-solid fa-chevron-right"></i></div>
@@ -541,8 +626,8 @@ export async function renderHome() {
       <div class="homeCard" id="viewHistory">
         <div class="homeCardIcon"><i class="fa-solid fa-chart-line"></i></div>
         <div class="homeCardContent">
-          <div class="homeCardTitle">검사 결과</div>
-          <div class="homeCardDesc">점수와 변화 추이 그래프</div>
+          <div class="homeCardTitle">검사 기록</div>
+          <div class="homeCardDesc">전체 검사 히스토리</div>
         </div>
         <div class="homeCardArrow"><i class="fa-solid fa-chevron-right"></i></div>
       </div>
@@ -552,7 +637,7 @@ export async function renderHome() {
       <div class="homeCard locked" id="viewHistoryLocked">
         <div class="homeCardIcon"><i class="fa-solid fa-lock"></i></div>
         <div class="homeCardContent">
-          <div class="homeCardTitle">검사 결과 <span class="premiumBadge">PRO</span></div>
+          <div class="homeCardTitle">검사 기록 <span class="premiumBadge">PRO</span></div>
           <div class="homeCardDesc">구독 후 이용 가능</div>
         </div>
         <div class="homeCardArrow"><i class="fa-solid fa-chevron-right"></i></div>
@@ -605,9 +690,9 @@ export async function renderHome() {
   
   // 관리 시작 버튼
   if ($("#startTraining")) {
-    $("#startTraining").onclick = () => { 
+    $("#startTraining").onclick = async () => { 
       playClick(); 
-      startDigitSpanTraining(); 
+      await renderTrainingSelect(); 
     };
   }
   
@@ -659,7 +744,13 @@ export async function renderHome() {
       $("#viewReportLogin").onclick = () => { playClick(); renderLogin(); };
     }
   } else if (hasPremium) {
-    if ($("#viewHistory")) $("#viewHistory").onclick = () => { playClick(); renderPastResults(); };
+    if ($("#viewHistory")) {
+      $("#viewHistory").onclick = async () => { 
+        playClick(); 
+        const historyRenderer = await getHistoryRenderer();
+        historyRenderer();
+      };
+    }
     if ($("#viewCalendar")) $("#viewCalendar").onclick = () => { playClick(); renderCalendar(); };
     if ($("#viewReport")) $("#viewReport").onclick = () => { playClick(); renderWeeklyReport(); };
   } else {
@@ -688,6 +779,45 @@ export async function renderHome() {
   
   // 설정
   $("#openSettings").onclick = () => { playClick(); renderSettings(); };
+  
+  // 백그라운드에서 서버 데이터 로드 후 필요시 화면 업데이트
+  if (loggedIn) {
+    refreshSubscription();
+  }
+  
+  // 공지사항 백그라운드 로드
+  getNotices().then(notices => {
+    if (state.phase !== 'home' || !notices || notices.length === 0) return;
+    
+    const banner = $("#noticeBanner");
+    if (banner) return; // 이미 표시됨
+    
+    // 공지 배너 추가
+    const card = document.querySelector('.card');
+    if (card && notices.length > 0) {
+      const notice = notices[0];
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const hasRecent = notices.some(n => new Date(n.created_at) > sevenDaysAgo);
+      
+      const bannerHtml = `
+        <div class="noticeBanner" id="noticeBanner">
+          <div class="noticeBannerIcon"><i class="fa-solid fa-bullhorn"></i></div>
+          <div class="noticeBannerText">
+            <span class="noticeBannerTitle">공지사항</span>
+            <span class="noticeBannerDesc">${notice.title}</span>
+          </div>
+          ${hasRecent ? '<span class="newBadge">NEW</span>' : ''}
+          <div class="noticeBannerArrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </div>
+      `;
+      card.insertAdjacentHTML('afterbegin', bannerHtml);
+      
+      $("#noticeBanner").onclick = () => {
+        playClick();
+        renderNotices();
+      };
+    }
+  }).catch(() => {});
 }
 
 // 공지사항 목록 페이지

@@ -1,11 +1,22 @@
 // ui/calendar.js
-import { $ } from '../core/utils.js';
+import { $, showConfirmModal, showAlertModal } from '../core/utils.js';
 import { LS_KEYS, loadHistory, getDateKey, getTrialDaysLeft, isSubscribedSync, getSubscriptionCache, clearSubscription } from '../core/storage.js';
 import { playClick } from '../core/sound.js';
 import { renderHome } from './home.js';
-import { isLoggedIn, requestPayment, cancelPayment, getPendingPayment } from '../core/api.js';
+import { isLoggedIn, requestPayment, cancelPayment, getPendingPayment, getResults } from '../core/api.js';
+import { state } from '../core/state.js';
 
 const app = $("#app");
+
+// 서버에서 가져온 결과 캐시
+let cachedServerResults = null;
+
+// UTC를 한국 시간으로 변환 (서버 데이터용)
+function toKoreaTime(dateStr) {
+  if (!dateStr) return new Date();
+  const utcDate = new Date(dateStr + (dateStr.includes('Z') || dateStr.includes('+') ? '' : 'Z'));
+  return new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+}
 
 // ========== 업그레이드 안내 화면 ==========
 
@@ -188,7 +199,11 @@ function renderPaymentInfo(plan) {
         $("#copyAccount").innerHTML = '<i class="fa-solid fa-copy"></i>';
       }, 1500);
     } catch {
-      alert('복사 실패. 직접 복사해주세요.');
+      showAlertModal({
+        title: '복사 실패',
+        message: '직접 복사해주세요.',
+        type: 'warning'
+      });
     }
   };
   
@@ -196,18 +211,31 @@ function renderPaymentInfo(plan) {
     playClick();
     
     if (!isLoggedIn()) {
-      alert('로그인이 필요해요.');
+      showAlertModal({
+        title: '로그인 필요',
+        message: '로그인이 필요해요.',
+        type: 'info'
+      });
       return;
     }
     
-    const confirmed = confirm(`정말 ${amount.toLocaleString()}원을 입금하셨나요?\n\n입금하지 않았다면 '취소'를 눌러주세요.`);
+    const confirmed = await showConfirmModal({
+      title: '입금 확인',
+      message: `${amount.toLocaleString()}원을 입금하셨나요?<br><br>입금하지 않았다면 '취소'를 눌러주세요.`,
+      confirmText: '입금했어요',
+      cancelText: '취소'
+    });
     if (!confirmed) return;
     
     try {
       await requestPayment(plan, amount);
       renderPaymentComplete();
     } catch (e) {
-      alert('오류: ' + e.message);
+      showAlertModal({
+        title: '오류',
+        message: e.message,
+        type: 'error'
+      });
     }
   };
   
@@ -243,15 +271,29 @@ function renderPaymentComplete(paymentId) {
   
   $("#cancelPayment").onclick = async () => {
     playClick();
-    const confirmed = confirm('결제 요청을 취소할까요?');
+    const confirmed = await showConfirmModal({
+      title: '결제 취소',
+      message: '결제 요청을 취소할까요?',
+      confirmText: '취소할게요',
+      cancelText: '아니요',
+      danger: true
+    });
     if (!confirmed) return;
     
     try {
       await cancelPayment();
-      alert('취소되었습니다.');
+      await showAlertModal({
+        title: '취소 완료',
+        message: '결제 요청이 취소되었습니다.',
+        type: 'success'
+      });
       renderUpgradePrompt();
     } catch (e) {
-      alert('오류: ' + e.message);
+      showAlertModal({
+        title: '오류',
+        message: e.message,
+        type: 'error'
+      });
     }
   };
 }
@@ -385,39 +427,85 @@ function renderCancelSubscription() {
   $("#confirmCancel").onclick = async () => {
     playClick();
     
-    const confirmed = confirm('정말 구독을 해지할까요?\n\n현재 구독 기간이 끝날 때까지는 계속 이용할 수 있어요.');
+    const confirmed = await showConfirmModal({
+      title: '구독 해지',
+      message: '정말 구독을 해지할까요?<br><br>현재 구독 기간이 끝날 때까지는<br>계속 이용할 수 있어요.',
+      confirmText: '해지할게요',
+      cancelText: '취소',
+      danger: true
+    });
     if (!confirmed) return;
     
     // 로컬에서 구독 상태 삭제 (실제 해지는 서버에서 자동 만료)
     // 나중에 서버 API로 해지 요청 추가 가능
-    alert('구독이 해지되었어요.\n현재 구독 기간이 끝날 때까지는 계속 이용할 수 있어요.');
+    await showAlertModal({
+      title: '해지 완료',
+      message: '구독이 해지되었어요.<br>현재 구독 기간이 끝날 때까지는<br>계속 이용할 수 있어요.',
+      type: 'success'
+    });
     renderHome();
   };
 }
 
 // ========== 유틸 함수 ==========
 
-// 관리 완료 날짜 Set
+// 관리 완료 날짜 Set (로그인: 서버, 비로그인: 로컬)
 function getTrainingCompletedSet() {
+  const dates = new Set();
+  
   try {
+    // 로그인 사용자: 서버 데이터 사용
+    if (isLoggedIn() && cachedServerResults) {
+      cachedServerResults
+        .filter(r => r.test_type === 'training')
+        .forEach(r => {
+          const koreaDate = toKoreaTime(r.date || r.created_at);
+          const dateKey = getDateKey(koreaDate);
+          dates.add(dateKey);
+        });
+    }
+    
+    // 로컬 데이터도 합산 (비로그인이거나, 로그인이어도 로컬에 있을 수 있음)
     const history = loadHistory(LS_KEYS.digitspanTrainingHistory);
-    return new Set(history.map(e => e.date_key));
+    history.forEach(e => {
+      if (e.date_key) dates.add(e.date_key);
+    });
   } catch {
-    return new Set();
+    // 무시
   }
+  
+  return dates;
 }
 
-// 검사 완료 날짜 Set
+// 검사 완료 날짜 Set (로그인: 서버, 비로그인: 로컬)
 function getTestCompletedSet() {
+  const dates = new Set();
+  
   try {
+    // 로그인 사용자: 서버 데이터 사용
+    if (isLoggedIn() && cachedServerResults) {
+      cachedServerResults
+        .filter(r => r.test_type !== 'training')
+        .forEach(r => {
+          const koreaDate = toKoreaTime(r.date || r.created_at);
+          const dateKey = getDateKey(koreaDate);
+          dates.add(dateKey);
+        });
+    }
+    
+    // 로컬 데이터도 합산 (비로그인용)
     const history = loadHistory(LS_KEYS.patternHistory);
-    return new Set(history.map(e => getDateKey(new Date(e.ended_at))));
+    history.forEach(e => {
+      dates.add(getDateKey(new Date(e.ended_at)));
+    });
   } catch {
-    return new Set();
+    // 무시
   }
+  
+  return dates;
 }
 
-// 주간 범위 (월요일 시작)
+// 주간 범위 (일요일 시작)
 function getWeekRange(date = new Date()) {
   const d = new Date(date);
   const dayOfWeek = d.getDay(); // 0=일, 1=월, ..., 6=토
@@ -473,12 +561,32 @@ function getDaysInMonth(year, month) {
 
 // ========== 렌더링 ==========
 
-export function renderCalendar(year = null, month = null) {
+export async function renderCalendar(year = null, month = null) {
+  state.phase = 'calendar';
   const now = new Date();
   if (year === null) year = now.getFullYear();
   if (month === null) month = now.getMonth();
   
   document.querySelector(".progress").textContent = "달력";
+  
+  // 로그인 사용자: 서버 데이터 로드
+  if (isLoggedIn() && !cachedServerResults) {
+    app.innerHTML = `
+      <section class="card">
+        <div style="text-align:center;padding:60px 40px;">
+          <div class="loadingSpinner"></div>
+          <p style="margin-top:20px;color:var(--muted);font-size:14px;">데이터를 불러오는 중...</p>
+        </div>
+      </section>
+    `;
+    
+    try {
+      cachedServerResults = await getResults();
+    } catch (e) {
+      console.error('검사 결과 로드 실패:', e);
+      cachedServerResults = [];
+    }
+  }
   
   const trainingSet = getTrainingCompletedSet();
   const testSet = getTestCompletedSet();

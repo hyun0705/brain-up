@@ -83,39 +83,39 @@ function renderOnboardingStep2() {
       
       <div class="testIntroList">
         <div class="testIntroItem">
-          <div class="testIntroIcon" style="background: #E3F2FD;">
-            <i class="fa-solid fa-grip" style="color: #1976D2;"></i>
+          <div class="testIntroIcon" style="background: #dbeafe;">
+            <i class="fa-solid fa-bolt" style="color: #2563eb;"></i>
           </div>
           <div class="testIntroText">
-            <strong>패턴 비교</strong>
-            <span>시각적 패턴 인식 능력</span>
+            <strong>처리속도</strong>
+            <span>빠르게 패턴 비교하기</span>
           </div>
         </div>
         <div class="testIntroItem">
-          <div class="testIntroIcon" style="background: #E8F5E9;">
-            <i class="fa-solid fa-hand" style="color: #388E3C;"></i>
+          <div class="testIntroIcon" style="background: #dcfce7;">
+            <i class="fa-solid fa-hand" style="color: #16a34a;"></i>
           </div>
           <div class="testIntroText">
-            <strong>Go/No-Go</strong>
-            <span>반응 억제 및 집중력</span>
+            <strong>주의·억제</strong>
+            <span>Go/No-Go 반응 훈련</span>
           </div>
         </div>
         <div class="testIntroItem">
-          <div class="testIntroIcon" style="background: #FFF3E0;">
-            <i class="fa-solid fa-list-ol" style="color: #F57C00;"></i>
+          <div class="testIntroIcon" style="background: #ffedd5;">
+            <i class="fa-solid fa-list-ol" style="color: #ea580c;"></i>
           </div>
           <div class="testIntroText">
-            <strong>숫자 기억</strong>
-            <span>작업 기억력</span>
+            <strong>작업기억</strong>
+            <span>숫자를 순서대로 기억하기</span>
           </div>
         </div>
         <div class="testIntroItem">
-          <div class="testIntroIcon" style="background: #F3E5F5;">
-            <i class="fa-solid fa-border-all" style="color: #7B1FA2;"></i>
+          <div class="testIntroIcon" style="background: #fee2e2;">
+            <i class="fa-solid fa-grip" style="color: #dc2626;"></i>
           </div>
           <div class="testIntroText">
-            <strong>공간 기억</strong>
-            <span>공간 기억력</span>
+            <strong>위치기억</strong>
+            <span>위치 패턴을 기억하기</span>
           </div>
         </div>
       </div>
@@ -237,9 +237,10 @@ function renderOnboardingStep4() {
   if (mobile) {
     const maxDate = new Date(maxBirthYear, today.getMonth(), today.getDate());
     const maxDateStr = maxDate.toISOString().split('T')[0];
+    const defaultDate = '1970-01-01';
     birthInputHtml = `
       <input type="date" id="birthDate" class="formInput dateInput" 
-        min="1920-01-01" max="${maxDateStr}">
+        min="1920-01-01" max="${maxDateStr}" value="${defaultDate}">
     `;
   } else {
     // 연도 옵션

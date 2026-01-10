@@ -50,11 +50,9 @@ export async function unlinkKakao() {
     window.Kakao.API.request({
       url: '/v1/user/unlink',
       success: function(res) {
-        console.log('카카오 연결 끊기 성공:', res);
         resolve(true);
       },
       fail: function(error) {
-        console.error('카카오 연결 끊기 실패:', error);
         // 실패해도 탈퇴는 진행
         resolve(false);
       }
@@ -110,11 +108,9 @@ function doKakaoLogin() {
       window.Kakao.API.request({
         url: '/v2/user/me',
         success: async function(res) {
-          console.log('카카오 사용자 정보:', res);
           const kakaoId = String(res.id);
           const email = res.kakao_account?.email || '';
           const name = res.kakao_account?.profile?.nickname || res.properties?.nickname || '사용자';
-          console.log('가져온 이름:', name);
           
           try {
             await kakaoLogin({ kakaoId, email, name });
@@ -123,7 +119,6 @@ function doKakaoLogin() {
             try {
               const status = await syncTodayStatus();
               saveServerStatus(status);
-              console.log('서버 상태 동기화 완료:', status);
             } catch (syncErr) {
               console.error('서버 상태 동기화 실패:', syncErr);
             }
@@ -206,5 +201,5 @@ export async function checkLoginForFeature(featureName, callback) {
   }
 }
 
-// 현재 로그인 상태 반환 및 API 재export
-export { isLoggedIn, logout, getMe };
+// API 재export (logout, getMe는 auth 관련이라 여기서 export 유지)
+export { logout, getMe };

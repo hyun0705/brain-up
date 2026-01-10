@@ -29,7 +29,7 @@ export function startDigitSpanTest() {
 }
 
 function renderDigitSpanIntro() {
-  document.querySelector(".progress").textContent = "검사 3/4 · 숫자기억";
+  document.querySelector(".progress").textContent = "검사 3/4 · 작업기억";
   
   app.innerHTML = `
     <section class="card">
@@ -40,30 +40,88 @@ function renderDigitSpanIntro() {
         <b>정순</b>: 본 순서대로 입력<br/>
         <b>역순</b>: 거꾸로 입력
       </p>
-      <div class="notice">숫자를 잘 기억한 뒤, 순서대로 또는 거꾸로 입력하세요.</div>
+      <div class="notice" style="color:var(--muted);">
+        제한 시간이 있지만, 빠르기보다 정확하게 푸는 게 중요해요.
+      </div>
       <div class="controls" style="grid-template-columns:1fr;">
-        <button class="big" id="startPractice">연습 시작</button>
+        <button class="big" id="startPractice">연습하기</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="skipPractice">바로 검사 시작</button>
       </div>
     </section>
   `;
   $("#startPractice").onclick = () => { playClick(); runDigitSpanPractice(); };
+  $("#skipPractice").onclick = () => { playClick(); renderDigitSpanReady(); };
 }
 
 async function runDigitSpanPractice() {
+  state.practiceCorrect = 0;
+  state.practiceTotal = 0;
+  
+  // 정순 연습
   app.innerHTML = `<section class="card"><div class="pill">연습 · 정순</div><h1 class="title">정순 연습</h1><p class="desc">숫자를 <b>본 순서대로</b> 입력하세요.</p><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="start">시작</button></div></section>`;
   await new Promise(r => { $("#start").onclick = () => { playClick(); r(); }; });
-  await runSingleDigitSpanTrial(generateDigitSequence(state.rng, 3), "forward", true, 1, 1);
+  const forwardResult = await runSingleDigitSpanTrial(generateDigitSequence(state.rng, 3), "forward", true, 1, 2);
+  state.practiceTotal++;
+  if (forwardResult.correct) state.practiceCorrect++;
+  
+  // 역순 연습
   app.innerHTML = `<section class="card"><div class="pill">연습 · 역순</div><h1 class="title">역순 연습</h1><p class="desc">숫자를 <b>거꾸로</b> 입력하세요.</p><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="start">시작</button></div></section>`;
   await new Promise(r => { $("#start").onclick = () => { playClick(); r(); }; });
-  await runSingleDigitSpanTrial(generateDigitSequence(state.rng, 2), "backward", true, 1, 1);
-  renderDigitSpanReady();
+  const backwardResult = await runSingleDigitSpanTrial(generateDigitSequence(state.rng, 2), "backward", true, 2, 2);
+  state.practiceTotal++;
+  if (backwardResult.correct) state.practiceCorrect++;
+  
+  renderDigitSpanPracticeComplete();
 }
 
-async function showDigitSequence(digits) {
-  // 먼저 카드 틀을 한 번만 그림
+function renderDigitSpanPracticeComplete() {
+  const accuracy = state.practiceTotal > 0 ? Math.round(state.practiceCorrect / state.practiceTotal * 100) : 0;
   app.innerHTML = `
     <section class="card">
-      <div class="pill">숫자 기억</div>
+      <div class="pill">연습 완료</div>
+      <h1 class="title">연습 완료!</h1>
+      <p class="desc">정확도: <b>${accuracy}%</b> (${state.practiceCorrect}/${state.practiceTotal})</p>
+      <div class="controls" style="grid-template-columns:1fr;">
+        <button class="big primary" id="startTestBtn">본 검사 시작</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="morePractice">더 연습하기</button>
+      </div>
+    </section>
+  `;
+  $("#startTestBtn").onclick = () => { playClick(); renderDigitSpanReady(); };
+  $("#morePractice").onclick = () => { playClick(); runDigitSpanPractice(); };
+}
+
+async function showDigitSequence(digits, mode, isPractice, currentNum, totalNum) {
+  const modeText = mode === "forward" ? "정순" : "역순";
+  const modeHint = mode === "forward" ? "순서대로 입력하세요" : "거꾸로 입력하세요";
+  const pillText = isPractice ? `연습 ${currentNum}/${totalNum} · ${modeText}` : `작업기억 ${currentNum}/${totalNum} · ${modeText}`;
+  
+  // 준비 화면 표시
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">${pillText}</div>
+      <div class="stimulusArea">
+        <div style="text-align:center;">
+          <div style="font-size:48px;color:var(--accent);margin-bottom:12px;">
+            <i class="fa-solid fa-eye"></i>
+          </div>
+          <div style="font-size:20px;font-weight:700;color:var(--text);">곧 숫자가 나타납니다</div>
+          <div style="font-size:15px;color:var(--muted);margin-top:8px;">${modeHint}</div>
+        </div>
+      </div>
+    </section>
+  `;
+  
+  await sleep(2000);
+  
+  // 숫자 표시 화면
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">${pillText}</div>
       <div class="stimulusArea">
         <div id="digitDisplay" style="font-size:120px;font-weight:900;color:var(--accent);"></div>
       </div>
@@ -82,15 +140,17 @@ async function showDigitSequence(digits) {
 function runSingleDigitSpanTrial(digits, mode, isPractice, currentNum, totalNum) {
   return new Promise(async (resolve) => {
     const expectedAnswer = mode === "forward" ? digits : [...digits].reverse();
-    await showDigitSequence(digits);
+    await showDigitSequence(digits, mode, isPractice, currentNum, totalNum);
     let userInput = [];
     const inputLength = digits.length;
     
     const modeText = mode === "forward" ? "정순" : "역순";
     
+    const pillText = isPractice ? `연습 ${currentNum}/${totalNum} · ${modeText}` : `작업기억 ${currentNum}/${totalNum} · ${modeText}`;
+    
     app.innerHTML = `
       <section class="card">
-        <div class="pill">${isPractice ? `연습 ${currentNum}/${totalNum}` : '본 검사'} · ${modeText}</div>
+        <div class="pill">${pillText}</div>
         <div style="text-align:center;margin:20px 0;">
           <div style="font-size:15px;color:var(--muted);margin-bottom:8px;">${digits.length}자리</div>
           <div id="inputDisplay" style="font-size:32px;font-weight:700;min-height:50px;"></div>
@@ -139,6 +199,11 @@ function runSingleDigitSpanTrial(digits, mode, isPractice, currentNum, totalNum)
     
     submitBtn.onclick = () => { playClick(); finishTrial(); };
     
+    // 이전 키 핸들러 제거
+    if (state.keyHandler) {
+      window.removeEventListener('keydown', state.keyHandler);
+    }
+    
     const keyHandler = (e) => {
       if (e.key >= '0' && e.key <= '9' && userInput.length < inputLength) {
         userInput.push(parseInt(e.key));
@@ -150,10 +215,12 @@ function runSingleDigitSpanTrial(digits, mode, isPractice, currentNum, totalNum)
         finishTrial();
       }
     };
+    state.keyHandler = keyHandler;
     window.addEventListener('keydown', keyHandler);
     
     const finishTrial = () => {
       window.removeEventListener('keydown', keyHandler);
+      state.keyHandler = null;
       const correct = userInput.length === expectedAnswer.length && userInput.every((d, i) => d === expectedAnswer[i]);
       if (correct) playCorrect(); else playWrong();
       if (isPractice) {
@@ -223,32 +290,47 @@ async function runDigitSpanTest() {
   finishDigitSpanTest();
 }
 
-function finishDigitSpanTest() {
+async function finishDigitSpanTest() {
+  const forwardCorrect = state.digitSpan.forwardTrials.filter(t => t.correct).length;
+  const backwardCorrect = state.digitSpan.backwardTrials.filter(t => t.correct).length;
+  const totalTrials = state.digitSpan.forwardTrials.length + state.digitSpan.backwardTrials.length;
+  const totalCorrect = forwardCorrect + backwardCorrect;
+  const accuracy = totalTrials > 0 ? totalCorrect / totalTrials : 0;
+  
   const summary = {
     forwardSpan: state.digitSpan.forwardSpan,
     backwardSpan: state.digitSpan.backwardSpan,
     totalSpan: state.digitSpan.forwardSpan + state.digitSpan.backwardSpan,
     forwardTrials: state.digitSpan.forwardTrials.length,
     backwardTrials: state.digitSpan.backwardTrials.length,
-    raw: (state.digitSpan.forwardSpan + state.digitSpan.backwardSpan) / 14 * 100,
+    forwardCorrect,
+    backwardCorrect,
+    accuracy: Number(accuracy.toFixed(3)),
+    raw: Math.round(accuracy * 100), // 정확도 %
   };
   
-  // 비로그인일 때만 로컬스토리지에 저장
-  if (!isLoggedIn()) {
+  let baseline = null;
+  let saveError = null;
+  
+  if (isLoggedIn()) {
+    // 로그인 사용자: 서버에 저장하고 서버 baseline 사용
+    try {
+      const result = await saveResults('digitspan', summary);
+      baseline = result.baseline;
+    } catch (e) {
+      console.error('결과 저장 실패:', e);
+      saveError = e;
+    }
+  } else {
+    // 비로그인: 로컬스토리지에 저장하고 로컬 baseline 사용
     const history = loadHistory(LS_KEYS.digitspanHistory);
     history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
     saveHistory(LS_KEYS.digitspanHistory, history);
+    baseline = tryUpdateBaseline(history, LS_KEYS.digitspanBaseline) || loadBaseline(LS_KEYS.digitspanBaseline);
   }
   
-  const history = loadHistory(LS_KEYS.digitspanHistory);
-  const baseline = tryUpdateBaseline(history, LS_KEYS.digitspanBaseline) || loadBaseline(LS_KEYS.digitspanBaseline);
-  state.digitspanResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  state.digitspanResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline, saveError };
   saveTestProgress(); // 진행 상태 저장
-  
-  // 로그인 사용자는 서버에만 저장
-  if (isLoggedIn()) {
-    saveResults('digitspan', summary).catch(e => console.error('결과 저장 실패:', e));
-  }
   
   playComplete();
   renderDigitSpanDone();
@@ -272,7 +354,7 @@ function renderDigitSpanDone() {
 
 // 검사 이어하기
 export function resumeDigitSpanTest() {
-  document.querySelector(".progress").textContent = "검사 3/4 · 숫자기억";
+  document.querySelector(".progress").textContent = "검사 3/4 · 작업기억";
   
   // 이미 완료된 경우 다음 검사로
   if (state.digitspanResult) {

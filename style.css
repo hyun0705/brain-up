@@ -30,6 +30,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -1481,7 +1485,13 @@ button.big.ghost:hover {
   background: var(--bg);
   border-radius: 14px;
   text-align: center;
+  border-left: 4px solid var(--border);
 }
+
+.reportItem.pattern { border-left-color: #2563eb; }
+.reportItem.gonogo { border-left-color: #16a34a; }
+.reportItem.digitspan { border-left-color: #ea580c; }
+.reportItem.spatial { border-left-color: #dc2626; }
 
 .reportItemHeader {
   display: flex;
@@ -3098,6 +3108,11 @@ button.big.ghost:hover {
   }
 }
 
+.confirm-modal-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
 .confirm-modal-title {
   font-size: 18px;
   font-weight: 700;
@@ -3186,12 +3201,15 @@ button.big.ghost:hover {
   color: white;
   padding: 14px 24px;
   border-radius: 25px;
-  font-size: 16px;
+  font-size: calc(0.9rem * var(--font-scale));
   font-weight: 500;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 9999;
   opacity: 0;
   transition: all 0.2s ease;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+  word-break: keep-all;
 }
 
 .toast-message.show {
@@ -3570,8 +3588,15 @@ button.big.ghost:hover {
 }
 
 [data-theme="dark"] .reportItem {
-  background: #374151;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-left-width: 4px;
 }
+
+[data-theme="dark"] .reportItem.pattern { border-left-color: #2563eb; }
+[data-theme="dark"] .reportItem.gonogo { border-left-color: #15803d; }
+[data-theme="dark"] .reportItem.digitspan { border-left-color: #c2410c; }
+[data-theme="dark"] .reportItem.spatial { border-left-color: #b91c1c; }
 
 [data-theme="dark"] .reportTip {
   background: #374151;
@@ -3724,4 +3749,2267 @@ button.big.ghost:hover {
 
 [data-theme="dark"] .interpretItem.spatial {
   border-left-color: #ef4444;
+}
+
+/* ========== 검사 기록 (히스토리) ========== */
+
+.historyStats {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 20px;
+  background: var(--bg);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.historyStatItem {
+  text-align: center;
+}
+
+.historyStatValue {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.historyStatLabel {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.historyItem:hover {
+  background: var(--border);
+}
+
+.historyItemLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.historyItemDate {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.historyItemTests {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.historyItemRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.historyItemScore {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.historyItemScore small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* 검사 상세 */
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.detailHeader .backBtn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--bg);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-size: 16px;
+  transition: background 0.2s;
+}
+
+.detailHeader .backBtn:hover {
+  background: var(--border);
+}
+
+.detailTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detailCard {
+  padding: 18px;
+  background: var(--bg);
+  border-radius: 16px;
+  border-left: 4px solid var(--accent);
+}
+
+.detailCard.pattern { border-left-color: #1976D2; }
+.detailCard.gonogo { border-left-color: #388E3C; }
+.detailCard.digitspan { border-left-color: #F57C00; }
+.detailCard.spatial { border-left-color: #7B1FA2; }
+
+.detailCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.detailCardHeader i {
+  font-size: 16px;
+}
+
+.detailCard.pattern .detailCardHeader i { color: #1976D2; }
+.detailCard.gonogo .detailCardHeader i { color: #388E3C; }
+.detailCard.digitspan .detailCardHeader i { color: #F57C00; }
+.detailCard.spatial .detailCardHeader i { color: #7B1FA2; }
+
+.detailCardScore {
+  margin-bottom: 8px;
+}
+
+.detailCardScore .scoreValue {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.detailCardScore .scoreMax {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.detailCardStatus {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+.detailCardStatus.good { color: var(--good); }
+.detailCardStatus.warn { color: var(--warn); }
+
+.detailCardInfo {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 다크모드 대응 */
+[data-theme="dark"] .historyItem {
+  background: #374151;
+}
+
+[data-theme="dark"] .historyItem:hover {
+  background: #4b5563;
+}
+
+[data-theme="dark"] .historyStats {
+  background: #374151;
+}
+
+[data-theme="dark"] .detailCard {
+  background: #374151;
+}
+
+[data-theme="dark"] .detailHeader .backBtn {
+  background: #374151;
+}
+
+[data-theme="dark"] .detailHeader .backBtn:hover {
+  background: #4b5563;
+}
+
+/* ========== 검사 기록 (전문 버전) ========== */
+
+.historyCard {
+  padding-bottom: 16px;
+}
+
+.historyHeader {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.historyTitle {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+}
+
+.historyMeta {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* 기간 필터 */
+.periodFilter {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.filterBtn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filterBtn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* 탭 메뉴 */
+.historyTabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.historyTab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.historyTab i {
+  font-size: 16px;
+}
+
+.historyTab:hover {
+  color: var(--text);
+}
+
+.historyTab.active {
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* 통계 그리드 */
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.statCard.primary {
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  color: white;
+}
+
+.statCard.primary .statLabel {
+  color: rgba(255,255,255,0.8);
+}
+
+.statCard.primary .statExtra {
+  color: rgba(255,255,255,0.7);
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.statValue small {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.6;
+}
+
+.statCard.primary .statValue {
+  color: white;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.statExtra {
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* 섹션 헤더 */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sectionSub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 영역별 점수 */
+.areaScoresSection {
+  margin-top: 20px;
+}
+
+.areaScoresList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.areaScoreItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.areaScoreLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 160px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.areaScoreName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.areaTag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.areaTag.strong {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--good);
+}
+
+.areaTag.weak {
+  background: rgba(234, 88, 12, 0.1);
+  color: var(--warn);
+}
+
+.areaScoreRight {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.areaScoreBar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.areaScoreBarFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.areaScoreBarFill.pattern { background: #1976D2; }
+.areaScoreBarFill.gonogo { background: #388E3C; }
+.areaScoreBarFill.digitspan { background: #F57C00; }
+.areaScoreBarFill.spatial { background: #7B1FA2; }
+
+.areaScoreValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* 인사이트 카드 */
+.insightCard {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 14px;
+  margin-top: 20px;
+}
+
+.insightIcon {
+  font-size: 20px;
+  color: #d97706;
+}
+
+.insightTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.insightDesc {
+  font-size: 13px;
+  color: #a16207;
+  line-height: 1.5;
+}
+
+/* 히스토리 리스트 (새 버전) */
+.historyListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 10px;
+}
+
+.historyListItem:last-child {
+  margin-bottom: 0;
+}
+
+.historyListItem:hover {
+  background: var(--border);
+  transform: translateX(4px);
+}
+
+.historyListLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.historyListDate {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.historyListMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.historyListCount {
+  margin-left: 4px;
+}
+
+.historyListRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.historyListScore {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.historyListScore small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.historyListArrow {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* 분석 탭 */
+.analysisSection {
+  margin-bottom: 24px;
+}
+
+.timeAnalysis {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeSlotItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timeSlotItem.best {
+  background: rgba(37, 99, 235, 0.05);
+  margin: -8px;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.timeSlotLabel {
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 100px;
+}
+
+.timeSlotBar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timeSlotBarFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.timeSlotValue {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+}
+
+.bestBadge {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.analysisInsight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--accent-light);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.detailStatsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detailStatItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.detailStatLabel {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.detailStatValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* 영역별 상세 분석 */
+.areaDetailList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.areaDetailItem {
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 14px;
+  border-left: 4px solid var(--accent);
+}
+
+.areaDetailItem.pattern { border-left-color: #1976D2; }
+.areaDetailItem.gonogo { border-left-color: #388E3C; }
+.areaDetailItem.digitspan { border-left-color: #F57C00; }
+.areaDetailItem.spatial { border-left-color: #7B1FA2; }
+
+.areaDetailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.areaDetailName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.areaDetailScore {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.areaDetailDesc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.areaDetailTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.areaDetailTag.strong {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--good);
+}
+
+.areaDetailTag.weak {
+  background: rgba(234, 88, 12, 0.1);
+  color: var(--warn);
+}
+
+/* 추천 카드 */
+.recommendationCard {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+  border-radius: 16px;
+  margin-top: 20px;
+}
+
+.recommendationIcon {
+  font-size: 24px;
+  color: #7c3aed;
+}
+
+.recommendationTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #5b21b6;
+  margin-bottom: 4px;
+}
+
+.recommendationText {
+  font-size: 13px;
+  color: #6d28d9;
+  line-height: 1.5;
+}
+
+/* 빈 상태 */
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.emptyState > i {
+  font-size: 48px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: block;
+}
+
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.emptyDesc {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.emptyTab {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+
+.emptyTab i {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+/* 상세 페이지 */
+.detailPageHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.detailPageHeader .backBtn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--bg);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-size: 16px;
+  transition: background 0.2s;
+}
+
+.detailPageHeader .backBtn:hover {
+  background: var(--border);
+}
+
+.detailPageTitle {
+  flex: 1;
+}
+
+.detailPageDate {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.detailPageMeta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.detailSummary {
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  border-radius: 18px;
+  margin-bottom: 20px;
+}
+
+.summaryScoreNum {
+  font-size: 56px;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.summaryScoreLabel {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  margin-top: 8px;
+}
+
+.detailResultsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detailResultCard {
+  padding: 18px;
+  background: var(--bg);
+  border-radius: 16px;
+  border-left: 5px solid var(--accent);
+}
+
+.detailResultCard.pattern { border-left-color: #2563eb; }
+.detailResultCard.gonogo { border-left-color: #16a34a; }
+.detailResultCard.digitspan { border-left-color: #ea580c; }
+.detailResultCard.spatial { border-left-color: #dc2626; }
+
+.detailResultHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.detailResultIcon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.detailResultCard.pattern .detailResultIcon { background: #dbeafe; color: #2563eb; }
+.detailResultCard.gonogo .detailResultIcon { background: #dcfce7; color: #16a34a; }
+.detailResultCard.digitspan .detailResultIcon { background: #ffedd5; color: #ea580c; }
+.detailResultCard.spatial .detailResultIcon { background: #fee2e2; color: #dc2626; }
+
+.detailResultName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.detailResultBody {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.detailResultScore .scoreNum {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--accent);
+}
+
+.detailResultScore .scoreMax {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.detailResultStatus {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  background: var(--card);
+  border-radius: 20px;
+  color: var(--muted);
+}
+
+.detailResultStatus.good {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--good);
+}
+
+.detailResultStatus.warn {
+  background: rgba(234, 88, 12, 0.1);
+  color: var(--warn);
+}
+
+.detailResultInfo {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.detailResultInterp {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  padding: 10px 12px;
+  background: var(--card);
+  border-radius: 10px;
+}
+
+/* 다크모드 */
+[data-theme="dark"] .insightCard {
+  background: linear-gradient(135deg, #422006, #451a03);
+  border: 1px solid #713f12;
+}
+
+[data-theme="dark"] .insightIcon { color: #d97706; }
+[data-theme="dark"] .insightTitle { color: #fbbf24; }
+[data-theme="dark"] .insightDesc { color: #a3a3a3; }
+
+[data-theme="dark"] .recommendationCard {
+  background: linear-gradient(135deg, #4c1d95, #5b21b6);
+}
+
+[data-theme="dark"] .recommendationIcon { color: #c4b5fd; }
+[data-theme="dark"] .recommendationTitle { color: #ede9fe; }
+[data-theme="dark"] .recommendationText { color: #ddd6fe; }
+
+[data-theme="dark"] .historyTabs {
+  background: #1f2937;
+}
+
+[data-theme="dark"] .filterBtn {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .filterBtn:hover {
+  background: #374151;
+}
+
+[data-theme="dark"] .filterBtn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+[data-theme="dark"] .historyTab.active {
+  background: #374151;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+[data-theme="dark"] .historyListItem {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+[data-theme="dark"] .historyListItem:hover {
+  background: #374151;
+  border-color: var(--accent);
+}
+
+[data-theme="dark"] .statCard {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+[data-theme="dark"] .statCard.primary {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  border: none;
+}
+
+[data-theme="dark"] .areaScoreBar,
+[data-theme="dark"] .timeSlotBar {
+  background: #1f2937;
+}
+
+[data-theme="dark"] .areaScoreBarFill.pattern { background: #1d4ed8; }
+[data-theme="dark"] .areaScoreBarFill.gonogo { background: #15803d; }
+[data-theme="dark"] .areaScoreBarFill.digitspan { background: #c2410c; }
+[data-theme="dark"] .areaScoreBarFill.spatial { background: #b91c1c; }
+
+[data-theme="dark"] .detailResultCard {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+[data-theme="dark"] .detailResultCard.pattern .detailResultIcon { background: rgba(37, 99, 235, 0.2); }
+[data-theme="dark"] .detailResultCard.gonogo .detailResultIcon { background: rgba(22, 163, 74, 0.2); }
+[data-theme="dark"] .detailResultCard.digitspan .detailResultIcon { background: rgba(234, 88, 12, 0.2); }
+[data-theme="dark"] .detailResultCard.spatial .detailResultIcon { background: rgba(220, 38, 38, 0.2); }
+
+[data-theme="dark"] .detailResultInterp {
+  background: #374151;
+}
+
+[data-theme="dark"] .detailSummary {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
+[data-theme="dark"] .detailResultStatus {
+  background: #374151;
+}
+
+[data-theme="dark"] .detailResultStatus.good {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="dark"] .detailResultStatus.warn {
+  background: rgba(249, 115, 22, 0.15);
+}
+
+[data-theme="dark"] .detailStatItem,
+[data-theme="dark"] .areaDetailItem {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+[data-theme="dark"] .analysisInsight {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="dark"] .areaTag.strong {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="dark"] .areaTag.weak {
+  background: rgba(249, 115, 22, 0.15);
+}
+
+[data-theme="dark"] .areaDetailTag.strong {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="dark"] .areaDetailTag.weak {
+  background: rgba(249, 115, 22, 0.15);
+}
+
+[data-theme="dark"] .detailPageHeader .backBtn {
+  background: #374151;
+}
+
+[data-theme="dark"] .detailPageHeader .backBtn:hover {
+  background: #4b5563;
+}
+
+/* 로딩 스피너 */
+.loadingSpinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin: 0 auto;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 글씨 크기 설정 */
+:root {
+  --font-scale: 1;
+}
+
+body {
+  font-size: calc(16px * var(--font-scale));
+}
+
+/* 제목 및 설명 */
+.title {
+  font-size: calc(1.25rem * var(--font-scale));
+}
+
+.desc {
+  font-size: calc(0.95rem * var(--font-scale));
+}
+
+/* 버튼 */
+.big {
+  font-size: calc(1rem * var(--font-scale));
+}
+
+.primaryBtn {
+  font-size: calc(1rem * var(--font-scale));
+}
+
+.ghost {
+  font-size: calc(1rem * var(--font-scale));
+}
+
+/* 알림/안내 */
+.notice {
+  font-size: calc(0.9rem * var(--font-scale));
+}
+
+/* 홈 화면 */
+.greetingText {
+  font-size: calc(1.25rem * var(--font-scale)) !important;
+}
+
+.greetingSub {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.greetingCardDate {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.homeSectionTitle {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.homeCardTitle {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.homeCardDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.todayStatusTitle, .weeklyStatusTitle {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.todayStatusDesc, .weeklyStatusDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.streakBadge {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.trialBannerTitle {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.trialBannerDesc {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.noticeBannerTitle {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.noticeBannerDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.guideTitle {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.guideText {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 설정 화면 */
+.settingsSectionTitle {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.settingLabel span {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.settingValue {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.settingHint {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+/* 검사 화면 */
+.testTitle {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+.testDesc {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.testInstruction {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+/* 결과 화면 */
+.resultScore {
+  font-size: calc(3rem * var(--font-scale)) !important;
+}
+
+.resultLabel {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.resultDesc {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 검사 기록 */
+.historyTab span {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.statValue {
+  font-size: calc(1.5rem * var(--font-scale)) !important;
+}
+
+.statLabel {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.historyListDate {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.historyListScore {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+.areaScoreName {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.insightCard {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 주간 리포트 */
+.reportTitle {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.reportValue {
+  font-size: calc(1.5rem * var(--font-scale)) !important;
+}
+
+.reportDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 달력 */
+.calendarDayName {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.calendarDay {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 폼 요소 */
+.formLabel {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.formInput {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.formSelect {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.formOption {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 토스트 */
+.toast {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 모달 */
+.modalTitle {
+  font-size: calc(1.25rem * var(--font-scale)) !important;
+}
+
+.modalDesc {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.confirmModalTitle {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+.confirmModalDesc {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 구독 화면 */
+.upgradeFeatureTitle {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.upgradeFeatureDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.upgradePrice {
+  font-size: calc(1.3rem * var(--font-scale)) !important;
+}
+
+/* 상세 통계 */
+.detailStatLabel {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.detailStatValue {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 영역별 분석 */
+.areaDetailName {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.areaDetailScore {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.areaDetailDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 추천 카드 */
+.recommendationTitle {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.recommendationText {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 기간 필터 */
+.filterBtn {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 탭 메뉴 */
+.historyTab {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 섹션 제목 */
+.sectionTitle {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 시간대 분석 */
+.timeSlotLabel {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.timeSlotValue {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.analysisInsight {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 공지사항 */
+.noticeItemTitle {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.noticeItemDate {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.pageTitle {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+/* 검사 화면 */
+.countdown {
+  font-size: calc(4rem * var(--font-scale)) !important;
+}
+
+.digitDisplay {
+  font-size: calc(3rem * var(--font-scale)) !important;
+}
+
+/* 결과 화면 */
+.scoreDisplay {
+  font-size: calc(3.5rem * var(--font-scale)) !important;
+}
+
+.resultItem {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 텍스트 버튼 */
+.textBtn {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.linkBtn {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 상세 페이지 */
+.detailDate {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.detailResultScore {
+  font-size: calc(2rem * var(--font-scale)) !important;
+}
+
+.detailResultTitle {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.detailResultValue {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 카드 내 추가 요소 */
+.cardTitle {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.cardDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 글씨 크기 선택 옵션 */
+.fontSizeOptions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.fontSizeOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--card);
+}
+
+.fontSizeOption:hover {
+  border-color: var(--accent);
+}
+
+.fontSizeOption.selected {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.fontSizePreview {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.fontSizeLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.fontSizeOption.selected .fontSizeLabel {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.fontSizePreviewBox {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.previewText {
+  color: var(--text);
+  line-height: 1.6;
+  transition: font-size 0.2s;
+}
+
+[data-theme="dark"] .fontSizeOption.selected {
+  background: rgba(96, 165, 250, 0.15);
+}
+
+/* 주간 리포트 */
+.reportOverallTitle {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+.reportOverallDesc {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.reportItemLabel {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.reportItemValue {
+  font-size: calc(1.5rem * var(--font-scale)) !important;
+}
+
+.reportItemStatus {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.weekNavLabel {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.thisWeekBadge {
+  font-size: calc(0.75rem * var(--font-scale)) !important;
+}
+
+.changeUp, .changeDown, .changeNeutral {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 검사 기록 */
+.historyTitle {
+  font-size: calc(1.15rem * var(--font-scale)) !important;
+}
+
+.historyMeta {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.statCard .statValue {
+  font-size: calc(1.5rem * var(--font-scale)) !important;
+}
+
+.statCard .statLabel {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.statCard .statExtra {
+  font-size: calc(0.75rem * var(--font-scale)) !important;
+}
+
+.areaScoreName {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.areaScoreValue {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.areaTag {
+  font-size: calc(0.7rem * var(--font-scale)) !important;
+}
+
+.insightTitle {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.insightText {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.sectionSub {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.historyListMeta {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.historyListCount {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.emptyTitle {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.emptyDesc {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 달력 */
+.calendarTitle {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+.calendarTodayBtn {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.calendarLegend {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.calendarLegendItem {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.dayNum {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 구독/결제 화면 */
+.upgradePriceLabel {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.upgradePriceSub {
+  font-size: calc(0.75rem * var(--font-scale)) !important;
+}
+
+.upgradeNote {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.upgradePopularBadge {
+  font-size: calc(0.7rem * var(--font-scale)) !important;
+}
+
+.paymentInfoLabel {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.paymentInfoValue {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.subscriptionInfoLabel {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.subscriptionInfoValue {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.subscriptionBenefitTitle {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.subscriptionBenefitItem {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 주간 리포트 팁 */
+.reportTip {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 온보딩 */
+.onboardingTip {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.trainingIntroContent {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.firstTestContent {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 검사 기록 상세 */
+.detailPageDate {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+.detailPageMeta {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.detailSummaryScore {
+  font-size: calc(2.5rem * var(--font-scale)) !important;
+}
+
+.detailResultCard .detailResultName {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.detailResultCard .detailResultScore {
+  font-size: calc(1.5rem * var(--font-scale)) !important;
+}
+
+.detailResultCard .detailResultStatus {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.detailResultCard .detailResultInfo {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.detailResultCard .detailResultInterp {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.areaDetailTag {
+  font-size: calc(0.75rem * var(--font-scale)) !important;
+}
+
+/* 결과 화면 */
+.resultSummary {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.resultItemLabel {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.resultItemValue {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 검사 안내 */
+.testInfoBox {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.testTipBox {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.tipList {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 버튼 추가 */
+.kakaoBtn {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.copyBtn {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 배지 */
+.premiumBadge {
+  font-size: calc(0.65rem * var(--font-scale)) !important;
+}
+
+.newBadge {
+  font-size: calc(0.7rem * var(--font-scale)) !important;
+}
+
+.bestBadge {
+  font-size: calc(0.7rem * var(--font-scale)) !important;
+}
+
+/* 차트 범례 */
+.chartLegend {
+  font-size: calc(0.75rem * var(--font-scale)) !important;
+}
+
+.chartLegendItem {
+  font-size: calc(0.75rem * var(--font-scale)) !important;
+}
+
+/* 통계 섹션 */
+.weekStatsText {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 공유 화면 */
+.shareInfoItem {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.shareInfoList {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.shareLinkBox {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 상단 바 */
+.brand {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.progress {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.timer {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+/* 알림 설정 */
+.reminderOption {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 결과 화면 추가 */
+.resultGrid .label {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.resultGrid .value {
+  font-size: calc(1.5rem * var(--font-scale)) !important;
+}
+
+.resultGrid .status {
+  font-size: calc(0.75rem * var(--font-scale)) !important;
+}
+
+.resultGrid .detail {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.interpMain {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.interpSub {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.interpText {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 온보딩 추가 */
+.onboardingFeatureItem {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.testIntroText {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.compareLabel {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+.compareDesc {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.compareVs {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 공지사항 상세 */
+.noticeDetailTitle {
+  font-size: calc(1.1rem * var(--font-scale)) !important;
+}
+
+.noticeDetailDate {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.noticeDetailBody {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 달력 범례 */
+.legendItem {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.weekStats {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 검사 기록 추가 */
+.summaryScoreNum {
+  font-size: calc(2.5rem * var(--font-scale)) !important;
+}
+
+.summaryScoreLabel {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.scoreNum {
+  font-size: calc(1.3rem * var(--font-scale)) !important;
+}
+
+.scoreMax {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.insightDesc {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 버튼 및 필 */
+.pill {
+  font-size: calc(0.8rem * var(--font-scale)) !important;
+}
+
+.secondaryBtn {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+.backBtn {
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+/* 라디오 그룹 */
+.radioText {
+  font-size: calc(0.95rem * var(--font-scale)) !important;
+}
+
+/* 로딩 텍스트 */
+.loadingText {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.emptyText {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 시간대 분석 */
+.timeSlotLabel {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+.timeSlotValue {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+.analysisInsight {
+  font-size: calc(0.85rem * var(--font-scale)) !important;
+}
+
+/* 인증 화면 */
+.authLinks {
+  font-size: calc(0.9rem * var(--font-scale)) !important;
+}
+
+/* 관리 선택 화면 */
+.trainingAreaList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trainingAreaItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.trainingAreaItem:hover {
+  border-color: var(--accent);
+}
+
+.trainingAreaItem.selected {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.trainingAreaCheck {
+  flex-shrink: 0;
+}
+
+.trainingAreaCheck input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.trainingAreaIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.trainingAreaInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.trainingAreaName {
+  font-size: calc(0.95rem * var(--font-scale));
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.trainingAreaDesc {
+  font-size: calc(0.8rem * var(--font-scale));
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.trainingAreaTime {
+  flex-shrink: 0;
+}
+
+.trainingAreaTime select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font-size: calc(0.9rem * var(--font-scale));
+  cursor: pointer;
+}
+
+.trainingAreaTime.disabled select {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.recommendBadge {
+  font-size: calc(0.65rem * var(--font-scale));
+  padding: 2px 6px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--accent);
+  border-radius: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* 모바일 관리 영역 선택 */
+@media (max-width: 400px) {
+  .trainingAreaIcon {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+  
+  .trainingAreaName {
+    font-size: calc(0.85rem * var(--font-scale));
+  }
+  
+  .trainingAreaDesc {
+    font-size: calc(0.7rem * var(--font-scale));
+  }
+  
+  .trainingAreaTime select {
+    padding: 6px 8px;
+    font-size: calc(0.8rem * var(--font-scale));
+  }
+  
+  .trainingAreaCheck input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.trainingTotalTime {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 12px;
+  margin-top: 16px;
+  font-size: calc(0.95rem * var(--font-scale));
+  color: var(--muted);
+}
+
+.trainingTotalTime i {
+  color: var(--accent);
+}
+
+.trainingTotalTime b {
+  color: var(--text);
+}
+
+[data-theme="dark"] .trainingAreaItem.selected {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* 다크모드 관리 영역 아이콘 색상 */
+[data-theme="dark"] .trainingAreaItem[data-area="pattern"] .trainingAreaIcon {
+  background: rgba(37, 99, 235, 0.2) !important;
+  color: #3b82f6 !important;
+}
+
+[data-theme="dark"] .trainingAreaItem[data-area="gonogo"] .trainingAreaIcon {
+  background: rgba(22, 163, 74, 0.2) !important;
+  color: #22c55e !important;
+}
+
+[data-theme="dark"] .trainingAreaItem[data-area="digitspan"] .trainingAreaIcon {
+  background: rgba(234, 88, 12, 0.2) !important;
+  color: #f97316 !important;
+}
+
+[data-theme="dark"] .trainingAreaItem[data-area="spatial"] .trainingAreaIcon {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #ef4444 !important;
+}
+
+/* 관리 선택 가이드 */
+.trainingGuide {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.guideHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: calc(0.9rem * var(--font-scale));
+  color: var(--muted);
+  transition: background 0.2s;
+}
+
+.guideHeader:hover {
+  background: var(--card);
+}
+
+.guideArrow {
+  margin-left: auto;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.guideContent {
+  padding: 4px 16px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+}
+
+.guideItem {
+  padding: 10px 0;
+  font-size: calc(0.85rem * var(--font-scale));
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.guideItem:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.guideItem b {
+  color: var(--accent);
+}
+
+/* 플로팅 위로가기 버튼 */
+.scrollTopBtn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: opacity 0.3s, visibility 0.3s, transform 0.3s, background 0.2s;
+  z-index: 999;
+}
+
+.scrollTopBtn.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.scrollTopBtn:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.scrollTopBtn:active {
+  transform: translateY(0);
+}
+
+[data-theme="dark"] .scrollTopBtn {
+  background: #3b82f6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .scrollTopBtn:hover {
+  background: #60a5fa;
+}
+
+@media (max-width: 480px) {
+  .scrollTopBtn {
+    bottom: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
 }

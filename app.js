@@ -1376,7 +1376,7 @@
     const datasets = [
       { name: '처리속도', color: '#2563eb', data: normalize(patternHist, 'raw', 50) },
       { name: '주의·억제', color: '#16a34a', data: normalize(gonogoHist, 'raw', 100) },
-      { name: '숫자기억', color: '#ea580c', data: normalize(digitspanHist, 'totalSpan', 14) },
+      { name: '작업기억', color: '#ea580c', data: normalize(digitspanHist, 'totalSpan', 14) },
       { name: '위치기억', color: '#dc2626', data: normalize(spatialHist, 'raw', 100) },
     ];
     
@@ -1459,7 +1459,7 @@
       <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
         <span style="font-size:12px;"><span style="color:#2563eb;">●</span> 처리속도</span>
         <span style="font-size:12px;"><span style="color:#16a34a;">●</span> 주의·억제</span>
-        <span style="font-size:12px;"><span style="color:#ea580c;">●</span> 숫자기억</span>
+        <span style="font-size:12px;"><span style="color:#ea580c;">●</span> 작업기억</span>
         <span style="font-size:12px;"><span style="color:#dc2626;">●</span> 위치기억</span>
       </div>
     `;

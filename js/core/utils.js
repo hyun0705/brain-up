@@ -103,6 +103,50 @@ export function showConfirmModal(options) {
   });
 }
 
+// 단순 알림 모달 (alert 대체)
+export function showAlertModal(options) {
+  return new Promise((resolve) => {
+    const { title, message, buttonText = '확인', type = 'info' } = options;
+    
+    // 타입별 아이콘
+    const icons = {
+      info: '<i class="fa-solid fa-circle-info" style="color:var(--accent);"></i>',
+      success: '<i class="fa-solid fa-circle-check" style="color:var(--good);"></i>',
+      warning: '<i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>',
+      error: '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;"></i>'
+    };
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-modal-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-modal">
+        <div class="confirm-modal-icon">${icons[type] || icons.info}</div>
+        <div class="confirm-modal-title">${title}</div>
+        <div class="confirm-modal-message">${message}</div>
+        <div class="confirm-modal-buttons" style="grid-template-columns:1fr;">
+          <button class="confirm-modal-btn confirm">${buttonText}</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // 배경 클릭 시 닫기
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        resolve();
+      }
+    };
+    
+    // 확인 버튼
+    overlay.querySelector('.confirm-modal-btn.confirm').onclick = () => {
+      overlay.remove();
+      resolve();
+    };
+  });
+}
+
 // 토스트 메시지
 export function showToast(message, type = 'success', duration = 2000) {
   // 기존 토스트 제거

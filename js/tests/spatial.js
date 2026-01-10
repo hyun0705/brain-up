@@ -50,39 +50,74 @@ export function startSpatialTest() {
 }
 
 function renderSpatialIntro() {
-  document.querySelector(".progress").textContent = "검사 4/4 · 공간기억";
+  document.querySelector(".progress").textContent = "검사 4/4 · 위치기억";
   
   app.innerHTML = `
     <section class="card">
-      <div class="pill">검사 4 · 공간기억</div>
+      <div class="pill">검사 4 · 위치기억</div>
       <h1 class="title">위치 기억 검사</h1>
       <p class="desc">
         파란색으로 표시된 칸의 <b>위치</b>를 기억하세요.<br/>
         사라진 후, 같은 위치를 클릭해주세요.
       </p>
-      <div class="notice">칸 수가 점점 늘어납니다. 집중해서 위치를 기억하세요!</div>
+      <div class="notice" style="color:var(--muted);">
+        제한 시간이 있지만, 빠르기보다 정확하게 푸는 게 중요해요.
+      </div>
       <div class="controls" style="grid-template-columns:1fr;">
-        <button class="big" id="startPractice">연습 시작</button>
+        <button class="big" id="startPractice">연습하기</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="skipPractice">바로 검사 시작</button>
       </div>
     </section>
   `;
   $("#startPractice").onclick = () => { playClick(); runSpatialPractice(); };
+  $("#skipPractice").onclick = () => { playClick(); renderSpatialReady(); };
 }
 
 async function runSpatialPractice() {
-  const trial = generateSpatialTrial(state.rng, 4, 3);
-  await runSingleSpatialTrial(trial, true, 1, 1);
-  renderSpatialReady();
+  state.practiceCorrect = 0;
+  state.practiceTotal = 0;
+  
+  // 2개 연습 (3칸, 4칸)
+  const difficulties = [3, 4];
+  for (let i = 0; i < difficulties.length; i++) {
+    const trial = generateSpatialTrial(state.rng, 4, difficulties[i]);
+    const result = await runSingleSpatialTrial(trial, true, i + 1, difficulties.length);
+    state.practiceTotal++;
+    if (result.correct) state.practiceCorrect++;
+  }
+  
+  renderSpatialPracticeComplete();
+}
+
+function renderSpatialPracticeComplete() {
+  const accuracy = state.practiceTotal > 0 ? Math.round(state.practiceCorrect / state.practiceTotal * 100) : 0;
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">연습 완료</div>
+      <h1 class="title">연습 완료!</h1>
+      <p class="desc">정확도: <b>${accuracy}%</b> (${state.practiceCorrect}/${state.practiceTotal})</p>
+      <div class="controls" style="grid-template-columns:1fr;">
+        <button class="big primary" id="startTestBtn">본 검사 시작</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="morePractice">더 연습하기</button>
+      </div>
+    </section>
+  `;
+  $("#startTestBtn").onclick = () => { playClick(); renderSpatialReady(); };
+  $("#morePractice").onclick = () => { playClick(); runSpatialPractice(); };
 }
 
 function renderSpatialReady() {
   app.innerHTML = `
     <section class="card">
-      <div class="pill">연습 완료</div>
+      <div class="pill">본 검사</div>
       <h1 class="title">본 검사 시작</h1>
       <p class="desc">총 6회 진행됩니다. 3칸 → 4칸 → 5칸으로 늘어납니다.</p>
       <div class="controls" style="grid-template-columns:1fr;">
-        <button class="big" id="startTestBtn">본 검사 시작</button>
+        <button class="big" id="startTestBtn">시작</button>
       </div>
     </section>
   `;
@@ -210,37 +245,43 @@ function runSingleSpatialTrial(trial, isPractice, currentNum, totalNum) {
   });
 }
 
-function finishSpatialTest() {
+async function finishSpatialTest() {
   const trials = state.spatialTrials;
   const correctTrials = trials.filter(t => t.correct).length;
   const avgAccuracy = trials.reduce((sum, t) => sum + t.accuracy, 0) / trials.length;
   const avgRt = Math.round(trials.reduce((sum, t) => sum + t.rt, 0) / trials.length);
-  const raw = avgAccuracy * 100;
+  const raw = Math.round(avgAccuracy * 100); // 정확도 %
   
   const summary = {
     totalTrials: trials.length,
     correctTrials,
     avgAccuracy: Number(avgAccuracy.toFixed(3)),
     avgRtMs: avgRt,
-    raw: Number(raw.toFixed(3))
+    raw
   };
   
-  // 비로그인일 때만 로컬스토리지에 저장
-  if (!isLoggedIn()) {
+  let baseline = null;
+  let saveError = null;
+  
+  if (isLoggedIn()) {
+    // 로그인 사용자: 서버에 저장하고 서버 baseline 사용
+    try {
+      const result = await saveResults('spatial', summary);
+      baseline = result.baseline;
+    } catch (e) {
+      console.error('결과 저장 실패:', e);
+      saveError = e;
+    }
+  } else {
+    // 비로그인: 로컬스토리지에 저장하고 로컬 baseline 사용
     const history = loadHistory(LS_KEYS.spatialHistory);
     history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
     saveHistory(LS_KEYS.spatialHistory, history);
+    baseline = tryUpdateBaseline(history, LS_KEYS.spatialBaseline) || loadBaseline(LS_KEYS.spatialBaseline);
   }
   
-  const history = loadHistory(LS_KEYS.spatialHistory);
-  const baseline = tryUpdateBaseline(history, LS_KEYS.spatialBaseline) || loadBaseline(LS_KEYS.spatialBaseline);
-  state.spatialResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  state.spatialResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline, saveError };
   clearTestProgress(); // 모든 검사 완료 - 진행 상태 삭제
-  
-  // 로그인 사용자는 서버에만 저장
-  if (isLoggedIn()) {
-    saveResults('spatial', summary).catch(e => console.error('결과 저장 실패:', e));
-  }
   
   playComplete();
   renderFinalResult();

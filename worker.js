@@ -166,7 +166,14 @@ export default {
         }
         const { testType, summary } = await request.json();
         await env.DB.prepare('INSERT INTO test_results (user_id, test_type, summary) VALUES (?, ?, ?)').bind(session.user_id, testType, JSON.stringify(summary)).run();
-        return Response.json({ success: true }, { headers: corsHeaders });
+        
+        // 검사 타입이면 baseline 자동 계산 (training 제외)
+        let baseline = null;
+        if (testType !== 'training' && summary.raw !== undefined) {
+          baseline = await calculateAndSaveBaseline(env, session.user_id, testType);
+        }
+        
+        return Response.json({ success: true, baseline }, { headers: corsHeaders });
       }
 
       if (path === '/api/results' && request.method === 'GET') {
@@ -647,6 +654,105 @@ export default {
         }, { headers: corsHeaders });
       }
 
+      // 오늘의 검사/관리 현황
+      if (path === '/api/admin/today-activity' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        // 오늘 검사 수 (타입별)
+        const todayTests = await env.DB.prepare(`
+          SELECT test_type, COUNT(*) as count 
+          FROM test_results 
+          WHERE created_at >= datetime('now', '-1 day')
+          GROUP BY test_type
+        `).all();
+        
+        // 어제 검사 수 (비교용)
+        const yesterdayTests = await env.DB.prepare(`
+          SELECT COUNT(*) as count 
+          FROM test_results 
+          WHERE created_at >= datetime('now', '-2 day') AND created_at < datetime('now', '-1 day')
+        `).first();
+        
+        const tests = { pattern: 0, gonogo: 0, digitspan: 0, spatial: 0, training: 0 };
+        for (const t of todayTests.results) {
+          tests[t.test_type] = t.count;
+        }
+        
+        const totalTests = tests.pattern + tests.gonogo + tests.digitspan + tests.spatial;
+        const totalTraining = tests.training;
+        
+        return Response.json({
+          tests,
+          totalTests,
+          totalTraining,
+          yesterdayTotal: yesterdayTests?.count || 0
+        }, { headers: corsHeaders });
+      }
+
+      // 최근 활동 피드
+      if (path === '/api/admin/recent-activity' && request.method === 'GET') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        // 최근 검사/관리 (30개)
+        const recentTests = await env.DB.prepare(`
+          SELECT t.test_type, t.created_at, u.name as user_name, u.id as user_id
+          FROM test_results t
+          JOIN users u ON t.user_id = u.id
+          ORDER BY t.created_at DESC
+          LIMIT 30
+        `).all();
+        
+        // 최근 결제 요청 (15개)
+        const recentPayments = await env.DB.prepare(`
+          SELECT p.plan, p.status, p.created_at, p.confirmed_at, u.name as user_name, u.id as user_id
+          FROM payments p
+          JOIN users u ON p.user_id = u.id
+          ORDER BY p.created_at DESC
+          LIMIT 15
+        `).all();
+        
+        // 최근 가입 (15개)
+        const recentSignups = await env.DB.prepare(`
+          SELECT id as user_id, name as user_name, created_at
+          FROM users
+          ORDER BY created_at DESC
+          LIMIT 15
+        `).all();
+        
+        // 모든 활동 합쳐서 시간순 정렬
+        const activities = [
+          ...recentTests.results.map(t => ({
+            type: t.test_type === 'training' ? 'training' : 'test',
+            testType: t.test_type,
+            userName: t.user_name,
+            userId: t.user_id,
+            createdAt: t.created_at
+          })),
+          ...recentPayments.results.map(p => ({
+            type: 'payment',
+            status: p.status,
+            plan: p.plan,
+            userName: p.user_name,
+            userId: p.user_id,
+            createdAt: p.status === 'confirmed' ? p.confirmed_at : p.created_at
+          })),
+          ...recentSignups.results.map(s => ({
+            type: 'signup',
+            userName: s.user_name,
+            userId: s.user_id,
+            createdAt: s.created_at
+          }))
+        ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 30);
+        
+        return Response.json({ activities }, { headers: corsHeaders });
+      }
+
       if (path === '/api/admin/all-tests' && request.method === 'GET') {
         const adminKey = request.headers.get('X-Admin-Key');
         if (adminKey !== ADMIN_KEY) {
@@ -951,6 +1057,49 @@ export default {
         return Response.json({ success: true }, { headers: corsHeaders });
       }
 
+      // ========== Baseline API ==========
+
+      if (path === '/api/baseline' && request.method === 'GET') {
+        const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+        if (!token) {
+          return Response.json({ error: '로그인이 필요합니다.' }, { status: 401, headers: corsHeaders });
+        }
+        const session = await env.DB.prepare('SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime("now")').bind(token).first();
+        if (!session) {
+          return Response.json({ error: '세션이 만료되었습니다.' }, { status: 401, headers: corsHeaders });
+        }
+        
+        const testType = url.searchParams.get('testType');
+        if (!testType) {
+          return Response.json({ error: 'testType 파라미터가 필요합니다.' }, { status: 400, headers: corsHeaders });
+        }
+        
+        const baseline = await env.DB.prepare('SELECT mean, sd, n, updated_at FROM user_baselines WHERE user_id = ? AND test_type = ?').bind(session.user_id, testType).first();
+        
+        return Response.json({ baseline: baseline || null }, { headers: corsHeaders });
+      }
+
+      if (path === '/api/baseline/all' && request.method === 'GET') {
+        const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+        if (!token) {
+          return Response.json({ error: '로그인이 필요합니다.' }, { status: 401, headers: corsHeaders });
+        }
+        const session = await env.DB.prepare('SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime("now")').bind(token).first();
+        if (!session) {
+          return Response.json({ error: '세션이 만료되었습니다.' }, { status: 401, headers: corsHeaders });
+        }
+        
+        const baselines = await env.DB.prepare('SELECT test_type, mean, sd, n, updated_at FROM user_baselines WHERE user_id = ?').bind(session.user_id).all();
+        
+        // test_type을 키로 하는 객체로 변환
+        const baselineMap = {};
+        for (const b of baselines.results) {
+          baselineMap[b.test_type] = { mean: b.mean, sd: b.sd, n: b.n };
+        }
+        
+        return Response.json({ baselines: baselineMap }, { headers: corsHeaders });
+      }
+
       return Response.json({ message: 'Brainup API' }, { headers: corsHeaders });
 
     } catch (error) {
@@ -975,4 +1124,47 @@ async function hashPassword(password) {
 async function verifyPassword(password, hash) {
   const newHash = await hashPassword(password);
   return newHash === hash;
+}
+
+// Baseline 계산 및 저장
+async function calculateAndSaveBaseline(env, userId, testType) {
+  // 해당 사용자의 해당 테스트 결과 조회 (최근 순)
+  const results = await env.DB.prepare(
+    'SELECT summary FROM test_results WHERE user_id = ? AND test_type = ? ORDER BY created_at ASC'
+  ).bind(userId, testType).all();
+  
+  if (results.results.length < 3) {
+    // 3회 미만이면 baseline 없음
+    return null;
+  }
+  
+  // 기존 baseline 확인
+  const existing = await env.DB.prepare(
+    'SELECT mean, sd, n FROM user_baselines WHERE user_id = ? AND test_type = ?'
+  ).bind(userId, testType).first();
+  
+  if (existing) {
+    // 이미 baseline이 있으면 반환
+    return { mean: existing.mean, sd: existing.sd, n: existing.n };
+  }
+  
+  // 처음 3개 결과로 baseline 계산
+  const first3 = results.results.slice(0, 3).map(r => {
+    const summary = JSON.parse(r.summary || '{}');
+    return summary.raw || 0;
+  });
+  
+  const mean = first3.reduce((a, b) => a + b, 0) / first3.length;
+  const variance = first3.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / first3.length;
+  const sd = Math.sqrt(variance);
+  
+  const roundedMean = Number(mean.toFixed(3));
+  const roundedSd = Number(sd.toFixed(3));
+  
+  // baseline 저장
+  await env.DB.prepare(
+    'INSERT OR REPLACE INTO user_baselines (user_id, test_type, mean, sd, n, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"))'
+  ).bind(userId, testType, roundedMean, roundedSd, 3).run();
+  
+  return { mean: roundedMean, sd: roundedSd, n: 3 };
 }

@@ -34,20 +34,53 @@ state.rng = mulberry32(state.seed);
 
 export function resetState() {
   if (state.timerHandle) clearInterval(state.timerHandle);
+  state.timerHandle = null;
   if (state.gonogoTimeout) clearTimeout(state.gonogoTimeout);
+  state.gonogoTimeout = null;
+  
+  // 키 핸들러 제거
+  if (state.keyHandler) {
+    window.removeEventListener("keydown", state.keyHandler);
+    state.keyHandler = null;
+  }
+  
+  // 모든 키 핸들러 강제 제거 (훈련 모듈에서 별도로 등록한 것들)
+  // 새 핸들러를 추가하기 전 이전 것을 제거하도록 함
   
   state.sessionId = `s_${Date.now()}`;
   state.seed = genSeed();
   state.rng = mulberry32(state.seed);
   state.currentTest = null;
-  state.phase = "intro";
+  state.phase = "home";
   state.difficulty = 2;
   state.trialIndex = 0;
   state.trials = [];
+  state.current = null;
+  state.trialStartMs = 0;
+  state.practiceCorrect = 0;
+  state.practiceTotal = 0;
+  state.testStartMs = 0;
+  state.testEndMs = 0;
   state.patternResult = null;
   state.gonogoResult = null;
   state.digitspanResult = null;
   state.spatialResult = null;
+  state.digitSpan = { forwardSpan: 0, backwardSpan: 0, forwardTrials: [], backwardTrials: [] };
+  state.spatialTrials = [];
+  
+  // 관리 관련 상태 초기화
+  state.trainingQueue = null;
+  state.trainingQueueIndex = undefined;
+  state.trainingSpan = null;
+  state.trainingTrials = [];
+  state.trainingIndex = 0;
+  state.trainingTotal = 0;
+  state.trainingForwardCount = 0;
+  state.trainingCorrect = 0;
+  state.trainingOnComplete = null;
+  state.spatialTraining = null;
+  state.patternTraining = null;
+  state.gonogoTraining = null;
 }
 
 export function detachKeyHandler() {

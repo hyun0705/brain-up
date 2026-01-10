@@ -3,6 +3,24 @@
 
 let audioCtx = null;
 
+// 음소거 상태 관리
+const SOUND_KEY = 'brainup_sound_enabled';
+
+export function isSoundEnabled() {
+  const saved = localStorage.getItem(SOUND_KEY);
+  return saved !== 'false'; // 기본값 true
+}
+
+export function setSoundEnabled(enabled) {
+  localStorage.setItem(SOUND_KEY, enabled ? 'true' : 'false');
+}
+
+export function toggleSound() {
+  const current = isSoundEnabled();
+  setSoundEnabled(!current);
+  return !current;
+}
+
 function getAudioContext() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -12,6 +30,9 @@ function getAudioContext() {
 
 // 비프음 생성
 function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+  // 음소거 상태면 재생 안 함
+  if (!isSoundEnabled()) return;
+  
   try {
     const ctx = getAudioContext();
     const oscillator = ctx.createOscillator();

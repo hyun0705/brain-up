@@ -1,5 +1,5 @@
 // ui/result.js
-import { $ } from '../core/utils.js';
+import { $, showAlertModal } from '../core/utils.js';
 import { state, resetState, clearTestProgress } from '../core/state.js';
 import { LS_KEYS, loadHistory, getUserProfile, markGuestTestDone, markTestedThisWeekLocal } from '../core/storage.js';
 import { getInterpretation, getOverallInterpretation, getTrendInterpretation } from '../core/scoring.js';
@@ -7,11 +7,12 @@ import { renderMainIntro } from './intro.js';
 import { renderHome } from './home.js';
 import { playClick } from '../core/sound.js';
 import { startDigitSpanTraining, hasTrainedToday } from '../training/digitspan-training.js';
-import { isLoggedIn, showSignupPrompt } from './auth.js';
+import { showSignupPrompt } from './auth.js';
+import { isLoggedIn, saveResults } from '../core/api.js';
 
 const app = $("#app");
 
-export function drawHistoryChart(canvasId) {
+export function drawHistoryChart(canvasId, limit = 10) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   
@@ -29,10 +30,10 @@ export function drawHistoryChart(canvasId) {
   const chartW = w - pad.left - pad.right;
   const chartH = h - pad.top - pad.bottom;
   
-  const patternHist = loadHistory(LS_KEYS.patternHistory).slice(-10);
-  const gonogoHist = loadHistory(LS_KEYS.gonogoHistory).slice(-10);
-  const digitspanHist = loadHistory(LS_KEYS.digitspanHistory).slice(-10);
-  const spatialHist = loadHistory(LS_KEYS.spatialHistory).slice(-10);
+  const patternHist = loadHistory(LS_KEYS.patternHistory).slice(-limit);
+  const gonogoHist = loadHistory(LS_KEYS.gonogoHistory).slice(-limit);
+  const digitspanHist = loadHistory(LS_KEYS.digitspanHistory).slice(-limit);
+  const spatialHist = loadHistory(LS_KEYS.spatialHistory).slice(-limit);
   
   const normalize = (hist, key = 'raw', max = 100) => {
     return hist.map((x, i) => ({
@@ -43,9 +44,9 @@ export function drawHistoryChart(canvasId) {
   };
   
   const datasets = [
-    { name: '처리속도', color: '#2563eb', data: normalize(patternHist, 'raw', 50) },
+    { name: '처리속도', color: '#2563eb', data: normalize(patternHist, 'raw', 100) },
     { name: '주의·억제', color: '#16a34a', data: normalize(gonogoHist, 'raw', 100) },
-    { name: '숫자기억', color: '#ea580c', data: normalize(digitspanHist, 'totalSpan', 14) },
+    { name: '작업기억', color: '#ea580c', data: normalize(digitspanHist, 'raw', 100) },
     { name: '위치기억', color: '#dc2626', data: normalize(spatialHist, 'raw', 100) },
   ];
   
@@ -120,7 +121,7 @@ export function renderChartLegend() {
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
       <span style="font-size:13px;"><span style="color:#2563eb;">●</span> 처리속도</span>
       <span style="font-size:13px;"><span style="color:#16a34a;">●</span> 주의·억제</span>
-      <span style="font-size:13px;"><span style="color:#ea580c;">●</span> 숫자기억</span>
+      <span style="font-size:13px;"><span style="color:#ea580c;">●</span> 작업기억</span>
       <span style="font-size:13px;"><span style="color:#dc2626;">●</span> 위치기억</span>
     </div>
   `;
@@ -143,6 +144,9 @@ export function renderFinalResult() {
   const d = state.digitspanResult;
   const s = state.spatialResult;
   const profile = getUserProfile();
+  
+  // 저장 실패 여부 확인
+  const hasSaveError = isLoggedIn() && (p.saveError || g.saveError || d.saveError || s.saveError);
 
   const getStatusClass = (label) => {
     if (label === "좋아지는 중") return "good";
@@ -165,8 +169,23 @@ export function renderFinalResult() {
     profileInfo = `<span style="color:var(--muted);font-size:14px;margin-left:8px;">${profile.age} ${profile.gender === 'male' ? '남성' : profile.gender === 'female' ? '여성' : ''}</span>`;
   }
 
+  // 저장 실패 배너
+  const saveErrorBanner = hasSaveError ? `
+    <div class="saveErrorBanner" style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+      <i class="fa-solid fa-exclamation-triangle" style="color:#dc2626;font-size:18px;"></i>
+      <div style="flex:1;">
+        <div style="font-weight:600;color:#dc2626;font-size:14px;">결과 저장 실패</div>
+        <div style="color:#7f1d1d;font-size:13px;">네트워크 문제로 저장되지 않았어요</div>
+      </div>
+      <button id="retrySave" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;">
+        재시도
+      </button>
+    </div>
+  ` : '';
+
   app.innerHTML = `
     <section class="card">
+      ${saveErrorBanner}
       <div class="pill">검사 완료${profileInfo}</div>
       <h1 class="title">오늘의 인지기능 결과</h1>
 
@@ -178,30 +197,26 @@ export function renderFinalResult() {
       <div class="resultGrid">
         <div class="stat pattern">
           <div class="label">처리속도</div>
-          <div class="value">${p.index.index}<small>/100</small></div>
-          <div class="statusLabel ${getStatusClass(p.index.label)}">${p.index.label}</div>
-          <div class="detail">${p.summary.answered}문제 · ${Math.round(p.summary.accuracy * 100)}%</div>
+          <div class="value">${p.summary.raw}<small>%</small></div>
+          <div class="detail">정답 ${p.summary.correctN || 0}/${p.summary.answered}</div>
         </div>
 
         <div class="stat gonogo">
           <div class="label">주의·억제</div>
-          <div class="value">${g.index.index}<small>/100</small></div>
-          <div class="statusLabel ${getStatusClass(g.index.label)}">${g.index.label}</div>
-          <div class="detail">Go ${Math.round(g.summary.goAcc * 100)}% · NoGo ${Math.round(g.summary.nogoAcc * 100)}%</div>
+          <div class="value">${g.summary.raw}<small>%</small></div>
+          <div class="detail">Go ${g.summary.goCorrect || Math.round((g.summary.goAcc || 0) * (g.summary.goTrials || 0))}/${g.summary.goTrials || 0} · NoGo ${g.summary.nogoCorrect || Math.round((g.summary.nogoAcc || 0) * (g.summary.nogoTrials || 0))}/${g.summary.nogoTrials || 0}</div>
         </div>
 
         <div class="stat digitspan">
-          <div class="label">숫자 기억</div>
-          <div class="value">${d.index.index}<small>/100</small></div>
-          <div class="statusLabel ${getStatusClass(d.index.label)}">${d.index.label}</div>
-          <div class="detail">정순 ${d.summary.forwardSpan} · 역순 ${d.summary.backwardSpan}</div>
+          <div class="label">작업기억</div>
+          <div class="value">${d.summary.raw}<small>%</small></div>
+          <div class="detail">정순 ${d.summary.forwardCorrect || 0}/${d.summary.forwardTrials || 0} · 역순 ${d.summary.backwardCorrect || 0}/${d.summary.backwardTrials || 0}</div>
         </div>
 
         <div class="stat spatial">
-          <div class="label">위치 기억</div>
-          <div class="value">${s.index.index}<small>/100</small></div>
-          <div class="statusLabel ${getStatusClass(s.index.label)}">${s.index.label}</div>
-          <div class="detail">${s.summary.correctTrials}/6 정답 · ${Math.round(s.summary.avgAccuracy * 100)}%</div>
+          <div class="label">위치기억</div>
+          <div class="value">${s.summary.raw}<small>%</small></div>
+          <div class="detail">정답 ${s.summary.correctTrials}/${s.summary.totalTrials}</div>
         </div>
       </div>
 
@@ -213,7 +228,7 @@ export function renderFinalResult() {
           <span class="interpText"><b>주의·억제</b> ${gInterp}</span>
         </div>
         <div class="interpretItem digitspan">
-          <span class="interpText"><b>숫자기억</b> ${dInterp}</span>
+          <span class="interpText"><b>작업기억</b> ${dInterp}</span>
         </div>
         <div class="interpretItem spatial">
           <span class="interpText"><b>위치기억</b> ${sInterp}</span>
@@ -263,7 +278,11 @@ export function renderFinalResult() {
       playClick();
       // 로그인 체크
       if (!isLoggedIn()) {
-        alert('관리 기능은 로그인 후 이용할 수 있어요.');
+        await showAlertModal({
+          title: '로그인 필요',
+          message: '관리 기능은 로그인 후 이용할 수 있어요.',
+          type: 'info'
+        });
         const { renderLogin } = await import('./auth.js');
         renderLogin();
         return;
@@ -277,6 +296,49 @@ export function renderFinalResult() {
     clearTestProgress(); // 검사 진행 상태 삭제
     renderHome();
   };
+  
+  // 재시도 버튼
+  if ($("#retrySave")) {
+    $("#retrySave").onclick = async () => {
+      const btn = $("#retrySave");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      
+      try {
+        // 실패한 결과들 재시도
+        const retryPromises = [];
+        if (p.saveError) retryPromises.push(saveResults('pattern', p.summary).then(() => { p.saveError = null; }));
+        if (g.saveError) retryPromises.push(saveResults('gonogo', g.summary).then(() => { g.saveError = null; }));
+        if (d.saveError) retryPromises.push(saveResults('digitspan', d.summary).then(() => { d.saveError = null; }));
+        if (s.saveError) retryPromises.push(saveResults('spatial', s.summary).then(() => { s.saveError = null; }));
+        
+        await Promise.all(retryPromises);
+        
+        // 성공하면 배너 숨기기
+        const banner = document.querySelector('.saveErrorBanner');
+        if (banner) {
+          banner.style.background = '#f0fdf4';
+          banner.style.borderColor = '#bbf7d0';
+          banner.innerHTML = `
+            <i class="fa-solid fa-check-circle" style="color:#16a34a;font-size:18px;"></i>
+            <div style="flex:1;">
+              <div style="font-weight:600;color:#16a34a;font-size:14px;">저장 완료!</div>
+              <div style="color:#166534;font-size:13px;">결과가 정상적으로 저장되었어요</div>
+            </div>
+          `;
+          setTimeout(() => banner.remove(), 2000);
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '재시도';
+        showAlertModal({
+          title: '저장 실패',
+          message: '저장에 실패했어요. 잠시 후 다시 시도해주세요.',
+          type: 'error'
+        });
+      }
+    };
+  }
 }
 
 function showHistory() {

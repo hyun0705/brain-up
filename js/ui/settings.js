@@ -1,20 +1,46 @@
 // ui/settings.js
 import { $, showToast, showConfirmModal } from '../core/utils.js';
-import { getUserProfile, saveUserProfile, getTrialDaysLeft, isSubscribedSync, LS_KEYS } from '../core/storage.js';
-import { playClick } from '../core/sound.js';
+import { getUserProfile, saveUserProfile, getTrialDaysLeft, isSubscribedSync, LS_KEYS, clearSessionState } from '../core/storage.js';
+import { playClick, isSoundEnabled, toggleSound } from '../core/sound.js';
 import { renderHome } from './home.js';
+import { state } from '../core/state.js';
+
+// 글씨 크기 관리
+const FONT_SIZE_KEY = 'brainup_font_size';
+const FONT_SIZES = {
+  small: { label: '작게', scale: 0.9 },
+  medium: { label: '보통', scale: 1.0 },
+  large: { label: '크게', scale: 1.15 },
+  xlarge: { label: '아주 크게', scale: 1.3 }
+};
+
+export function getFontSize() {
+  return localStorage.getItem(FONT_SIZE_KEY) || 'medium';
+}
+
+export function setFontSize(size) {
+  localStorage.setItem(FONT_SIZE_KEY, size);
+  applyFontSize(size);
+}
+
+export function applyFontSize(size = null) {
+  const currentSize = size || getFontSize();
+  const scale = FONT_SIZES[currentSize]?.scale || 1.0;
+  document.documentElement.style.setProperty('--font-scale', scale);
+}
 import { renderUpgradePrompt } from './calendar.js';
 import { createGuardianUrl } from '../core/guardian.js';
-import { isLoggedIn, logout, renderLogin, unlinkKakao } from './auth.js';
-import { getUserName, updateUserName, getUserBirthDate, getUserGender, updateUserProfile, deleteAccount } from '../core/api.js';
+import { logout, renderLogin, unlinkKakao } from './auth.js';
+import { isLoggedIn, getUserName, updateUserName, getUserBirthDate, getUserGender, updateUserProfile, deleteAccount } from '../core/api.js';
 
 const app = $("#app");
 const API_URL = 'https://brainup-api.stardog0705.workers.dev';
 
-// 다크모드 초기화
+// 다크모드 및 글씨 크기 초기화
 export function initTheme() {
   const savedTheme = localStorage.getItem('brainup_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
+  applyFontSize();
 }
 
 // 다크모드 토글
@@ -55,7 +81,7 @@ function renderInquiry() {
   app.innerHTML = `
     <section class="card">
       <h1 class="title" style="margin-bottom:20px;">문의하기</h1>
-      <p class="desc" style="margin-bottom:20px;">겁금한 점이나 개선 요청사항을 남겨주세요.</p>
+      <p class="desc" style="margin-bottom:20px;">궁금한 점이나 개선 요청사항을 남겨주세요.</p>
       
       <div class="formGroup">
         <label class="formLabel">문의 유형</label>
@@ -142,6 +168,7 @@ function formatBirthDate(dateStr) {
 }
 
 export function renderSettings() {
+  state.phase = 'settings';
   document.querySelector(".progress").textContent = "설정";
   
   const profile = getUserProfile() || {};
@@ -298,6 +325,25 @@ export function renderSettings() {
             <div class="themeToggleKnob"></div>
           </div>
         </div>
+        
+        <div class="settingItem" id="soundSetting">
+          <div class="settingLabel">
+            <i class="fa-solid fa-${isSoundEnabled() ? 'volume-high' : 'volume-xmark'}"></i>
+            <span>효과음</span>
+          </div>
+          <div class="themeToggle ${isSoundEnabled() ? 'active' : ''}" id="soundToggle">
+            <div class="themeToggleKnob"></div>
+          </div>
+        </div>
+        
+        <div class="settingItem" id="fontSizeSetting">
+          <div class="settingLabel">
+            <i class="fa-solid fa-text-height"></i>
+            <span>글씨 크기</span>
+          </div>
+          <div class="settingValue">${FONT_SIZES[getFontSize()].label}</div>
+          <i class="fa-solid fa-chevron-right settingArrow"></i>
+        </div>
       </div>
       
       ${!isLoggedIn() ? `
@@ -393,6 +439,20 @@ export function renderSettings() {
     $("#themeSetting .fa-solid").className = `fa-solid fa-${newTheme === 'dark' ? 'moon' : 'sun'}`;
   };
   
+  // 효과음 토글
+  $("#soundSetting").onclick = () => {
+    const newState = toggleSound();
+    if (newState) playClick(); // 켤 때만 소리
+    $("#soundToggle").classList.toggle('active', newState);
+    $("#soundSetting .fa-solid").className = `fa-solid fa-${newState ? 'volume-high' : 'volume-xmark'}`;
+  };
+  
+  // 글씨 크기 설정
+  $("#fontSizeSetting").onclick = () => {
+    playClick();
+    renderFontSizeSettings();
+  };
+  
   // 비로그인일 때만 데이터 삭제
   if (!isLoggedIn() && $("#clearData")) {
     $("#clearData").onclick = () => { playClick(); confirmClearData(); };
@@ -430,6 +490,58 @@ export function renderSettings() {
   
   // 앱 버전 로드
   loadAppVersion();
+}
+
+// 글씨 크기 설정 화면
+function renderFontSizeSettings() {
+  document.querySelector(".progress").textContent = "글씨 크기";
+  
+  const currentSize = getFontSize();
+  
+  app.innerHTML = `
+    <section class="card">
+      <h1 class="title" style="margin-bottom:20px;">글씨 크기</h1>
+      <p class="desc" style="margin-bottom:24px;">보기 편한 크기를 선택하세요.</p>
+      
+      <div class="fontSizeOptions">
+        ${Object.entries(FONT_SIZES).map(([key, { label }]) => `
+          <div class="fontSizeOption ${currentSize === key ? 'selected' : ''}" data-size="${key}">
+            <div class="fontSizePreview" style="font-size:${key === 'small' ? '14px' : key === 'medium' ? '16px' : key === 'large' ? '18px' : '21px'};">가나다</div>
+            <div class="fontSizeLabel">${label}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="fontSizePreviewBox">
+        <p class="previewText">미리보기: 오늘도 두뇌 관리를 시작해볼까요?</p>
+      </div>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
+        <button class="big" id="backSettings">완료</button>
+      </div>
+    </section>
+  `;
+  
+  document.querySelectorAll('.fontSizeOption').forEach(opt => {
+    opt.onclick = () => {
+      playClick();
+      document.querySelectorAll('.fontSizeOption').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      
+      const size = opt.dataset.size;
+      setFontSize(size);
+      
+      // 미리보기 텍스트 크기 업데이트
+      const scale = FONT_SIZES[size].scale;
+      $(".previewText").style.fontSize = `${16 * scale}px`;
+    };
+  });
+  
+  $("#backSettings").onclick = () => { 
+    playClick(); 
+    showToast('글씨 크기가 변경되었어요', 'success');
+    renderSettings(); 
+  };
 }
 
 // 자녀 공유 화면
@@ -761,6 +873,7 @@ function renderGenderSettings() {
       
       const newProfile = { ...profile, gender: btn.dataset.value };
       saveUserProfile(newProfile);
+      showToast('성별이 변경되었어요', 'success');
     };
   });
   
@@ -851,6 +964,7 @@ async function confirmClearData() {
   
   if (confirmed) {
     Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
+    clearSessionState(); // 진행 중인 검사 상태도 삭제
     showToast('모든 데이터가 삭제되었어요', 'success');
     setTimeout(() => location.reload(), 500);
   }
@@ -874,6 +988,7 @@ async function confirmDeleteAccount() {
       await deleteAccount();
       // 로컬 데이터도 삭제
       Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
+      clearSessionState(); // 진행 중인 검사 상태도 삭제
       showToast('탈퇴가 완료되었어요', 'success');
       setTimeout(() => location.reload(), 500);
     } catch (e) {

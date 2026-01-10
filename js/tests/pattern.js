@@ -6,6 +6,7 @@ import { computeIndexFromBaseline } from '../core/scoring.js';
 import { startGoNoGoTest } from './gonogo.js';
 import { playCorrect, playWrong, playStart, playComplete, playClick } from '../core/sound.js';
 import { isLoggedIn, saveResults } from '../core/api.js';
+import { renderHome } from '../ui/home.js';
 
 const app = $("#app");
 
@@ -121,14 +122,14 @@ function computePatternSummary() {
   const meanRt = rts.length ? (rts.reduce((a, b) => a + b, 0) / rts.length) : null;
   const durationSec = TEST_DURATION_MS / 1000;
   const speed = answered / (durationSec / 60);
-  const raw = speed * Math.pow(accuracy, 2);
+  const raw = Math.round(accuracy * 100); // 정확도 %
   return {
     answered,
     correctN,
     accuracy,
     meanRtMs: meanRt ? Math.round(meanRt) : null,
     speedApm: Number(speed.toFixed(2)),
-    raw: Number(raw.toFixed(3)),
+    raw,
   };
 }
 
@@ -140,7 +141,7 @@ export function startPatternTest() {
   state.trials = [];
   state.practiceCorrect = 0;
   state.practiceTotal = 0;
-  state.practiceTarget = 6;
+  state.practiceTarget = 4;
   renderTestOverview();
 }
 
@@ -164,28 +165,28 @@ function renderTestOverview() {
           <div style="display:flex;align-items:center;gap:12px;">
             <div style="width:28px;height:28px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">1</div>
             <div>
-              <div style="font-size:14px;font-weight:600;color:var(--text);">패턴 비교</div>
-              <div style="font-size:12px;color:var(--muted);">처리속도 · 1분</div>
+              <div style="font-size:14px;font-weight:600;color:var(--text);">처리속도</div>
+              <div style="font-size:12px;color:var(--muted);">패턴 비교 · 1분</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
             <div style="width:28px;height:28px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">2</div>
             <div>
-              <div style="font-size:14px;font-weight:600;color:var(--text);">Go/No-Go</div>
-              <div style="font-size:12px;color:var(--muted);">주의·억제 · 1분</div>
+              <div style="font-size:14px;font-weight:600;color:var(--text);">주의·억제</div>
+              <div style="font-size:12px;color:var(--muted);">Go/No-Go · 1분</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
             <div style="width:28px;height:28px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">3</div>
             <div>
-              <div style="font-size:14px;font-weight:600;color:var(--text);">숫자 기억</div>
-              <div style="font-size:12px;color:var(--muted);">작업기억 · 2~3분</div>
+              <div style="font-size:14px;font-weight:600;color:var(--text);">작업기억</div>
+              <div style="font-size:12px;color:var(--muted);">숫자기억 · 2~3분</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
             <div style="width:28px;height:28px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">4</div>
             <div>
-              <div style="font-size:14px;font-weight:600;color:var(--text);">위치 기억</div>
+              <div style="font-size:14px;font-weight:600;color:var(--text);">위치기억</div>
               <div style="font-size:12px;color:var(--muted);">공간기억 · 2~3분</div>
             </div>
           </div>
@@ -200,7 +201,8 @@ function renderTestOverview() {
             <div class="tipList">
               • 사운드를 켜주세요<br/>
               • 방해받지 않는 환경에서 진행해주세요<br/>
-              • 중간에 중단하면 처음부터 다시 시작해요
+              • 중간에 나가도 이어서 할 수 있지만,<br/>
+              &nbsp;&nbsp;정확한 측정을 위해 한 번에 완료하는 것을 권장해요
             </div>
           </div>
         </div>
@@ -213,6 +215,9 @@ function renderTestOverview() {
       <div class="controls" style="grid-template-columns:1fr;">
         <button class="big primary" id="startTestBtn">검사 시작하기</button>
       </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="backHome">홈으로</button>
+      </div>
     </section>
   `;
   
@@ -220,6 +225,11 @@ function renderTestOverview() {
     playClick(); 
     state.phase = "intro";
     renderPatternIntro(); 
+  };
+  
+  $("#backHome").onclick = () => {
+    playClick();
+    renderHome();
   };
 }
 
@@ -235,12 +245,19 @@ function renderPatternIntro() {
         <b>하나라도 다르면</b> <span class="kbd">다르다</span>를 누르세요.
       </p>
       <div class="notice">키보드: <b>F</b>=같다 · <b>J</b>=다르다</div>
+      <div class="notice" style="margin-top:8px;color:var(--muted);">
+        제한 시간이 있지만, 빠르기보다 정확하게 푸는 게 중요해요.
+      </div>
       <div class="controls" style="grid-template-columns:1fr;">
-        <button class="big" id="startPractice">연습 시작</button>
+        <button class="big" id="startPractice">연습하기</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="skipPractice">바로 검사 시작</button>
       </div>
     </section>
   `;
   $("#startPractice").onclick = () => { playClick(); state.phase = "practice"; startPatternTrial(); };
+  $("#skipPractice").onclick = () => { playClick(); state.phase = "ready"; renderPatternReady(); };
 }
 
 function renderPatternTrialScreen(isPractice) {
@@ -304,8 +321,9 @@ function submitPatternAnswer(ans, isPractice) {
     feedback.style.color = correct ? "var(--good)" : "var(--warn)";
     setTimeout(() => {
       if (state.practiceTotal >= state.practiceTarget) {
-        if (state.practiceCorrect / state.practiceTotal < 0.5) state.practiceTarget += 3;
-        else { state.phase = "ready"; renderPatternReady(); return; }
+        state.phase = "ready";
+        renderPracticeComplete();
+        return;
       }
       state.trialIndex++;
       startPatternTrial();
@@ -327,14 +345,38 @@ function submitPatternAnswer(ans, isPractice) {
   startPatternTrial();
 }
 
-function renderPatternReady() {
+function renderPracticeComplete() {
+  const accuracy = state.practiceTotal > 0 ? Math.round(state.practiceCorrect / state.practiceTotal * 100) : 0;
   app.innerHTML = `
     <section class="card">
       <div class="pill">연습 완료</div>
-      <h1 class="title">본 검사 시작</h1>
-      <p class="desc">가능한 많이, 정확하게 풀어주세요.</p>
+      <h1 class="title">연습 완료!</h1>
+      <p class="desc">정확도: <b>${accuracy}%</b> (${state.practiceCorrect}/${state.practiceTotal})</p>
       <div class="controls" style="grid-template-columns:1fr;">
-        <button class="big" id="startTestBtn">본 검사 시작</button>
+        <button class="big primary" id="startTestBtn">본 검사 시작</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="morePractice">더 연습하기</button>
+      </div>
+    </section>
+  `;
+  $("#startTestBtn").onclick = () => { playClick(); renderPatternReady(); };
+  $("#morePractice").onclick = () => { 
+    playClick(); 
+    state.practiceTarget += 2;
+    state.phase = "practice";
+    startPatternTrial(); 
+  };
+}
+
+function renderPatternReady() {
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">본 검사</div>
+      <h1 class="title">본 검사 시작</h1>
+      <p class="desc">1분 동안 최대한 정확하게 풀어주세요.</p>
+      <div class="controls" style="grid-template-columns:1fr;">
+        <button class="big" id="startTestBtn">시작</button>
       </div>
     </section>
   `;
@@ -358,28 +400,34 @@ function renderPatternReady() {
   };
 }
 
-function finishPatternTest() {
+async function finishPatternTest() {
   if (state.currentTest !== "pattern") return;
   detachKeyHandler();
   if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
   const summary = computePatternSummary();
   
-  // 비로그인일 때만 로컬스토리지에 저장
-  if (!isLoggedIn()) {
+  let baseline = null;
+  let saveError = null;
+  
+  if (isLoggedIn()) {
+    // 로그인 사용자: 서버에 저장하고 서버 baseline 사용
+    try {
+      const result = await saveResults('pattern', summary);
+      baseline = result.baseline; // 서버에서 계산된 baseline
+    } catch (e) {
+      console.error('결과 저장 실패:', e);
+      saveError = e;
+    }
+  } else {
+    // 비로그인: 로컬스토리지에 저장하고 로컬 baseline 사용
     const history = loadHistory(LS_KEYS.patternHistory);
     history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
     saveHistory(LS_KEYS.patternHistory, history);
+    baseline = tryUpdateBaseline(history, LS_KEYS.patternBaseline) || loadBaseline(LS_KEYS.patternBaseline);
   }
   
-  const history = loadHistory(LS_KEYS.patternHistory);
-  const baseline = tryUpdateBaseline(history, LS_KEYS.patternBaseline) || loadBaseline(LS_KEYS.patternBaseline);
-  state.patternResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  state.patternResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline, saveError };
   saveTestProgress(); // 진행 상태 저장
-  
-  // 로그인 사용자는 서버에만 저장
-  if (isLoggedIn()) {
-    saveResults('pattern', summary).catch(e => console.error('결과 저장 실패:', e));
-  }
   
   playComplete();
   renderPatternDone();

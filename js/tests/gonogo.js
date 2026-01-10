@@ -18,18 +18,19 @@ function computeGoNoGoSummary(trials) {
   const nogoAcc = nogoTrials.length ? nogoCorrect / nogoTrials.length : 0;
   const goRts = goTrials.filter(t => t.correct && t.rt_ms > 0).map(t => t.rt_ms);
   const meanRt = goRts.length ? goRts.reduce((a, b) => a + b, 0) / goRts.length : null;
-  const combinedAcc = goAcc * 0.5 + nogoAcc * 0.5;
-  const speedFactor = meanRt ? clamp(1000 / meanRt, 0.5, 2) : 1;
-  const raw = combinedAcc * speedFactor * 50;
+  const combinedAcc = (goAcc + nogoAcc) / 2; // Go + NoGo 평균
+  const raw = Math.round(combinedAcc * 100); // 정확도 %
   return {
     totalTrials: trials.length,
     goTrials: goTrials.length,
     nogoTrials: nogoTrials.length,
+    goCorrect,
+    nogoCorrect,
     goAcc: Number(goAcc.toFixed(3)),
     nogoAcc: Number(nogoAcc.toFixed(3)),
     combinedAcc: Number(combinedAcc.toFixed(3)),
     meanRtMs: meanRt ? Math.round(meanRt) : null,
-    raw: Number(raw.toFixed(3)),
+    raw,
   };
 }
 
@@ -64,13 +65,19 @@ function renderGoNoGoIntro() {
         <span style="color:#16a34a;font-size:28px;">●</span> <b>초록 원</b> → ${inputMethod}<br/>
         <span style="color:#dc2626;font-size:28px;">■</span> <b>빨간 사각형</b> → <span class="kbd">누르지 않기</span>
       </p>
-      <div class="notice">빠르게 반응하되, 빨간 사각형엔 참아야 해요!</div>
+      <div class="notice" style="color:var(--muted);">
+        제한 시간이 있지만, 빠르기보다 정확하게 푸는 게 중요해요.
+      </div>
       <div class="controls" style="grid-template-columns:1fr;">
-        <button class="big" id="startPractice">연습 시작</button>
+        <button class="big" id="startPractice">연습하기</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="skipPractice">바로 검사 시작</button>
       </div>
     </section>
   `;
   $("#startPractice").onclick = () => { playClick(); state.phase = "practice"; runGoNoGoPractice(); };
+  $("#skipPractice").onclick = () => { playClick(); state.phase = "ready"; renderGoNoGoReady(); };
 }
 
 async function runGoNoGoPractice() {
@@ -87,11 +94,30 @@ async function runGoNoGoPractice() {
     const result = await runSingleGoNoGoTrial(practiceTrials[i], true, i + 1, practiceTrials.length);
     if (result.correct) state.practiceCorrect++;
   }
-  if (state.practiceCorrect / state.practiceTarget < 0.5) {
+  renderGoNoGoPracticeComplete();
+}
+
+function renderGoNoGoPracticeComplete() {
+  const accuracy = state.practiceTotal > 0 ? Math.round(state.practiceCorrect / state.practiceTotal * 100) : 0;
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">연습 완료</div>
+      <h1 class="title">연습 완료!</h1>
+      <p class="desc">정확도: <b>${accuracy}%</b> (${state.practiceCorrect}/${state.practiceTotal})</p>
+      <div class="controls" style="grid-template-columns:1fr;">
+        <button class="big primary" id="startTestBtn">본 검사 시작</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr;margin-top:8px;">
+        <button class="big ghost" id="morePractice">더 연습하기</button>
+      </div>
+    </section>
+  `;
+  $("#startTestBtn").onclick = () => { playClick(); renderGoNoGoReady(); };
+  $("#morePractice").onclick = () => { 
+    playClick(); 
     state.practiceTarget += 3;
-    app.innerHTML = `<section class="card"><div class="pill">연습 계속</div><h1 class="title">조금 더 연습해볼까요?</h1><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="retryPractice">연습 계속</button></div></section>`;
-    $("#retryPractice").onclick = () => { playClick(); runGoNoGoPractice(); };
-  } else renderGoNoGoReady();
+    runGoNoGoPractice(); 
+  };
 }
 
 function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
@@ -103,6 +129,12 @@ function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
     app.innerHTML = `<section class="card"><div class="pillRow"><div class="pill">${pillLabel}</div>${timerHtml}</div><div class="stimulusArea"><div style="font-size:48px;color:var(--muted);">+</div></div></section>`;
     const fixationTime = 300 + Math.floor(state.rng() * 200);
     setTimeout(() => {
+      // 검사가 중단된 경우 (홈 버튼 등으로 나감)
+      if (state.currentTest !== 'gonogo') {
+        resolve({ correct: false, responded: false, rt: 0, type, cancelled: true });
+        return;
+      }
+      
       const stimulusHtml = isGo 
         ? `<div style="width:140px;height:140px;background:#16a34a;border-radius:50%;box-shadow:0 4px 20px rgba(22,163,74,0.25);"></div>` 
         : `<div style="width:120px;height:120px;background:#dc2626;border-radius:12px;box-shadow:0 4px 20px rgba(220,38,38,0.25);"></div>`;
@@ -180,7 +212,16 @@ function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
 }
 
 function renderGoNoGoReady() {
-  app.innerHTML = `<section class="card"><div class="pill">연습 완료</div><h1 class="title">본 검사 시작</h1><p class="desc">준비되면 시작하세요.</p><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="startTestBtn">본 검사 시작</button></div></section>`;
+  app.innerHTML = `
+    <section class="card">
+      <div class="pill">본 검사</div>
+      <h1 class="title">본 검사 시작</h1>
+      <p class="desc">1분 동안 최대한 정확하게 반응하세요.</p>
+      <div class="controls" style="grid-template-columns:1fr;">
+        <button class="big" id="startTestBtn">시작</button>
+      </div>
+    </section>
+  `;
   $("#startTestBtn").onclick = async () => {
     playClick();
     await showCountdown(app);
@@ -213,26 +254,32 @@ async function runGoNoGoTest() {
   finishGoNoGoTest();
 }
 
-function finishGoNoGoTest() {
+async function finishGoNoGoTest() {
   if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
   const summary = computeGoNoGoSummary(state.trials);
   
-  // 비로그인일 때만 로컬스토리지에 저장
-  if (!isLoggedIn()) {
+  let baseline = null;
+  let saveError = null;
+  
+  if (isLoggedIn()) {
+    // 로그인 사용자: 서버에 저장하고 서버 baseline 사용
+    try {
+      const result = await saveResults('gonogo', summary);
+      baseline = result.baseline;
+    } catch (e) {
+      console.error('결과 저장 실패:', e);
+      saveError = e;
+    }
+  } else {
+    // 비로그인: 로컬스토리지에 저장하고 로컬 baseline 사용
     const history = loadHistory(LS_KEYS.gonogoHistory);
     history.push({ user_id: state.anonId, session_id: state.sessionId, ended_at: Date.now(), summary });
     saveHistory(LS_KEYS.gonogoHistory, history);
+    baseline = tryUpdateBaseline(history, LS_KEYS.gonogoBaseline) || loadBaseline(LS_KEYS.gonogoBaseline);
   }
   
-  const history = loadHistory(LS_KEYS.gonogoHistory);
-  const baseline = tryUpdateBaseline(history, LS_KEYS.gonogoBaseline) || loadBaseline(LS_KEYS.gonogoBaseline);
-  state.gonogoResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline };
+  state.gonogoResult = { summary, index: computeIndexFromBaseline(summary.raw, baseline), baseline, saveError };
   saveTestProgress(); // 진행 상태 저장
-  
-  // 로그인 사용자는 서버에만 저장
-  if (isLoggedIn()) {
-    saveResults('gonogo', summary).catch(e => console.error('결과 저장 실패:', e));
-  }
   
   playComplete();
   renderGoNoGoDone();
