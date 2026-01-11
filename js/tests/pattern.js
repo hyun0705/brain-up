@@ -382,7 +382,11 @@ function renderPatternReady() {
   `;
   $("#startTestBtn").onclick = async () => {
     playClick();
-    await showCountdown(app);
+    const countdownCompleted = await showCountdown(app, () => state.currentTest !== 'pattern');
+    
+    // 카운트다운 중 중단된 경우
+    if (!countdownCompleted || state.currentTest !== 'pattern') return;
+    
     playStart();
     state.phase = "test";
     state.trials = [];

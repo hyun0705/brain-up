@@ -191,6 +191,45 @@ export function renderFinalResult() {
     </div>
   ` : '';
 
+  // 관리 섹션 (로그인 여부에 따라 다르게 표시)
+  let trainingSection = '';
+  if (!isLoggedIn()) {
+    // 비로그인: 로그인 유도 카드
+    trainingSection = `
+      <div class="homeCard action" id="goLoginForTraining" style="margin-top:16px;">
+        <div class="homeCardIcon"><i class="fa-solid fa-right-to-bracket"></i></div>
+        <div class="homeCardContent">
+          <div class="homeCardTitle">결과 저장 & 관리하기</div>
+          <div class="homeCardDesc">로그인하면 모든 기능을 이용할 수 있어요</div>
+        </div>
+        <div class="homeCardArrow"><i class="fa-solid fa-chevron-right"></i></div>
+      </div>
+    `;
+  } else if (!hasTrainedToday()) {
+    // 로그인 + 오늘 관리 안함
+    trainingSection = `
+      <div class="homeCard action" id="goTraining" style="margin-top:16px;">
+        <div class="homeCardIcon"><i class="fa-solid fa-brain"></i></div>
+        <div class="homeCardContent">
+          <div class="homeCardTitle">오늘의 두뇌 관리</div>
+          <div class="homeCardDesc">작업기억 · 약 3분 소요</div>
+        </div>
+        <div class="homeCardArrow"><i class="fa-solid fa-chevron-right"></i></div>
+      </div>
+    `;
+  } else {
+    // 로그인 + 오늘 관리 완료
+    trainingSection = `
+      <div class="homeCard done" style="margin-top:16px;">
+        <div class="homeCardIcon"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="homeCardContent">
+          <div class="homeCardTitle">오늘 관리 완료</div>
+          <div class="homeCardDesc">잘 하셨어요! 내일 또 만나요</div>
+        </div>
+      </div>
+    `;
+  }
+
   app.innerHTML = `
     <section class="card">
       ${saveErrorBanner}
@@ -249,24 +288,7 @@ export function renderFinalResult() {
         ${renderChartLegend()}
       </div>
 
-      ${!hasTrainedToday() ? `
-      <div class="homeCard action" id="goTraining" style="margin-top:16px;">
-        <div class="homeCardIcon"><i class="fa-solid fa-brain"></i></div>
-        <div class="homeCardContent">
-          <div class="homeCardTitle">오늘의 두뇌 관리</div>
-          <div class="homeCardDesc">작업기억 · 약 3분 소요</div>
-        </div>
-        <div class="homeCardArrow"><i class="fa-solid fa-chevron-right"></i></div>
-      </div>
-      ` : `
-      <div class="homeCard done" style="margin-top:16px;">
-        <div class="homeCardIcon"><i class="fa-solid fa-circle-check"></i></div>
-        <div class="homeCardContent">
-          <div class="homeCardTitle">오늘 관리 완료</div>
-          <div class="homeCardDesc">잘 하셨어요! 내일 또 만나요</div>
-        </div>
-      </div>
-      `}
+      ${trainingSection}
 
       <div class="controls" style="margin-top:14px;grid-template-columns:1fr;">
         <button class="big" id="goHome">홈으로</button>
@@ -276,25 +298,16 @@ export function renderFinalResult() {
 
   setTimeout(() => drawHistoryChart('historyChart'), 50);
 
-  // 비로그인 상태면 회원가입 유도
+  // 비로그인 상태: 로그인 카드 클릭 시 회원가입 팝업
   if (!isLoggedIn()) {
-    setTimeout(() => showSignupPrompt(), 1000);
-  }
-
-  if (!hasTrainedToday()) {
-    $("#goTraining").onclick = async () => {
+    $("#goLoginForTraining").onclick = () => {
       playClick();
-      // 로그인 체크
-      if (!isLoggedIn()) {
-        await showAlertModal({
-          title: '로그인 필요',
-          message: '관리 기능은 로그인 후 이용할 수 있어요.',
-          type: 'info'
-        });
-        const { renderLogin } = await import('./auth.js');
-        renderLogin();
-        return;
-      }
+      showSignupPrompt();
+    };
+  } else if (!hasTrainedToday() && $("#goTraining")) {
+    // 로그인 상태: 관리 시작
+    $("#goTraining").onclick = () => {
+      playClick();
       startDigitSpanTraining();
     };
   }

@@ -148,6 +148,9 @@ function renderTrainingIntro() {
 }
 
 async function showDigitSequence(digits, isBackward = false) {
+  // 훈련이 중단된 경우
+  if (state.trainingTotal === 0) return false;
+  
   const modeText = isBackward ? '역순' : '정순';
   const modeHint = isBackward ? '거꾸로 입력하세요' : '순서대로 입력하세요';
   
@@ -169,6 +172,9 @@ async function showDigitSequence(digits, isBackward = false) {
   
   await sleep(2000);
   
+  // 훈련이 중단된 경우
+  if (state.trainingTotal === 0) return false;
+  
   // 숫자 표시 화면
   app.innerHTML = `
     <section class="card">
@@ -182,17 +188,31 @@ async function showDigitSequence(digits, isBackward = false) {
   const display = $("#digitDisplay");
   
   for (let i = 0; i < digits.length; i++) {
+    // 훈련이 중단된 경우
+    if (state.trainingTotal === 0) return false;
+    
     playTick();
-    display.textContent = digits[i];
+    if (display) display.textContent = digits[i];
     await sleep(800);
+    
+    // sleep 후에도 훈련이 중단된 경우
+    if (state.trainingTotal === 0) return false;
   }
+  
+  return true;
 }
 
 async function runTrainingTrial() {
+  // 훈련이 중단된 경우
+  if (state.trainingTotal === 0) return;
+  
   const digits = generateDigitSequence(state.trainingSpan);
   const expectedAnswer = digits;
   
-  await showDigitSequence(digits);
+  const sequenceCompleted = await showDigitSequence(digits);
+  
+  // 훈련이 중단된 경우
+  if (!sequenceCompleted || state.trainingTotal === 0) return;
   
   let userInput = [];
   const inputLength = digits.length;
@@ -232,6 +252,7 @@ async function runTrainingTrial() {
   
   document.querySelectorAll('.digitBtn').forEach(btn => {
     btn.onclick = () => {
+      if (state.trainingTotal === 0) return;
       if (userInput.length < inputLength) {
         playClick();
         userInput.push(parseInt(btn.dataset.digit));
@@ -241,12 +262,16 @@ async function runTrainingTrial() {
   });
   
   clearBtn.onclick = () => {
+    if (state.trainingTotal === 0) return;
     playClick();
     userInput.pop();
     updateDisplay();
   };
   
   const finishTrial = async () => {
+    // 훈련이 중단된 경우
+    if (state.trainingTotal === 0) return;
+    
     const correct = userInput.length === expectedAnswer.length && 
                     userInput.every((d, i) => d === expectedAnswer[i]);
     
@@ -276,6 +301,9 @@ async function runTrainingTrial() {
     
     await sleep(1000);
     
+    // 훈련이 중단된 경우
+    if (state.trainingTotal === 0) return;
+    
     if (state.trainingIndex < state.trainingTotal) {
       runTrainingTrial();
     } else {
@@ -283,7 +311,11 @@ async function runTrainingTrial() {
     }
   };
   
-  submitBtn.onclick = () => { playClick(); finishTrial(); };
+  submitBtn.onclick = () => { 
+    if (state.trainingTotal === 0) return;
+    playClick(); 
+    finishTrial(); 
+  };
   
   // 이전 키 핸들러 제거
   if (state.keyHandler) {
@@ -292,6 +324,7 @@ async function runTrainingTrial() {
   
   // 키보드 입력
   const keyHandler = (e) => {
+    if (state.trainingTotal === 0) return;
     if (e.key >= '0' && e.key <= '9' && userInput.length < inputLength) {
       playClick();
       userInput.push(parseInt(e.key));
@@ -407,6 +440,9 @@ export function startDigitSpanTrainingWithTrials(trialCount, onComplete) {
 }
 
 async function runTrainingTrialWithCallback() {
+  // 훈련이 중단된 경우
+  if (state.trainingTotal === 0) return;
+  
   const digits = generateDigitSequence(state.trainingSpan);
   
   // 정순/역순 결정 (앞 절반은 정순, 뒤 절반은 역순)
@@ -416,7 +452,10 @@ async function runTrainingTrialWithCallback() {
   const modeHint = isBackward ? '거꾸로 입력하세요' : '순서대로 입력하세요';
   const modeColor = isBackward ? 'var(--warn)' : 'var(--accent)';
   
-  await showDigitSequence(digits, isBackward);
+  const sequenceCompleted = await showDigitSequence(digits, isBackward);
+  
+  // 훈련이 중단된 경우
+  if (!sequenceCompleted || state.trainingTotal === 0) return;
   
   let userInput = [];
   const inputLength = digits.length;
@@ -458,6 +497,7 @@ async function runTrainingTrialWithCallback() {
   
   document.querySelectorAll('.digitBtn').forEach(btn => {
     btn.onclick = () => {
+      if (state.trainingTotal === 0) return;
       if (userInput.length < inputLength) {
         playClick();
         userInput.push(parseInt(btn.dataset.digit));
@@ -467,12 +507,16 @@ async function runTrainingTrialWithCallback() {
   });
   
   clearBtn.onclick = () => {
+    if (state.trainingTotal === 0) return;
     playClick();
     userInput.pop();
     updateDisplay();
   };
   
   const finishTrial = async () => {
+    // 훈련이 중단된 경우
+    if (state.trainingTotal === 0) return;
+    
     const correct = userInput.length === expectedAnswer.length && 
                     userInput.every((d, i) => d === expectedAnswer[i]);
     
@@ -501,6 +545,9 @@ async function runTrainingTrialWithCallback() {
     
     await sleep(1000);
     
+    // 훈련이 중단된 경우
+    if (state.trainingTotal === 0) return;
+    
     if (state.trainingIndex < state.trainingTotal) {
       runTrainingTrialWithCallback();
     } else {
@@ -508,7 +555,11 @@ async function runTrainingTrialWithCallback() {
     }
   };
   
-  submitBtn.onclick = () => { playClick(); finishTrial(); };
+  submitBtn.onclick = () => { 
+    if (state.trainingTotal === 0) return;
+    playClick(); 
+    finishTrial(); 
+  };
   
   // 이전 키 핸들러 제거
   if (state.keyHandler) {
@@ -517,6 +568,7 @@ async function runTrainingTrialWithCallback() {
   
   // 키보드 입력
   const keyHandler = (e) => {
+    if (state.trainingTotal === 0) return;
     if (e.key >= '0' && e.key <= '9' && userInput.length < inputLength) {
       playClick();
       userInput.push(parseInt(e.key));

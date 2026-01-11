@@ -82,11 +82,21 @@ async function runSpatialPractice() {
   // 2개 연습 (3칸, 4칸)
   const difficulties = [3, 4];
   for (let i = 0; i < difficulties.length; i++) {
+    // 검사가 중단된 경우
+    if (state.currentTest !== 'spatial') return;
+    
     const trial = generateSpatialTrial(state.rng, 4, difficulties[i]);
     const result = await runSingleSpatialTrial(trial, true, i + 1, difficulties.length);
+    
+    // 검사가 중단된 경우
+    if (result.cancelled || state.currentTest !== 'spatial') return;
+    
     state.practiceTotal++;
     if (result.correct) state.practiceCorrect++;
   }
+  
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'spatial') return;
   
   renderSpatialPracticeComplete();
 }
@@ -128,15 +138,25 @@ async function runSpatialTest() {
   state.phase = "test";
   state.spatialTrials = [];
   
-  // 테스트용: 2회 (배포시 [3, 3, 4, 4, 5, 5]로 변경)
+  // 베타테스트용: 2회
   const difficulties = [3, 4];
   
   for (let i = 0; i < difficulties.length; i++) {
+    // 검사가 중단된 경우
+    if (state.currentTest !== 'spatial') return;
+    
     const trial = generateSpatialTrial(state.rng, 4, difficulties[i]);
     const result = await runSingleSpatialTrial(trial, false, i + 1, difficulties.length);
+    
+    // 검사가 중단된 경우
+    if (result.cancelled || state.currentTest !== 'spatial') return;
+    
     state.spatialTrials.push(result);
     if (i < difficulties.length - 1) await sleep(500);
   }
+  
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'spatial') return;
   
   finishSpatialTest();
 }
@@ -157,6 +177,12 @@ function runSingleSpatialTrial(trial, isPractice, currentNum, totalNum) {
     `;
     
     await sleep(2000);
+    
+    // 검사가 중단된 경우
+    if (state.currentTest !== 'spatial') {
+      resolve({ correct: false, cancelled: true });
+      return;
+    }
     
     // 입력 받기
     let userClicks = [];

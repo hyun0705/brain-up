@@ -68,6 +68,8 @@ function runGoNoGoTrainingTrial() {
   const waitTime = 500 + Math.random() * 1000;
   
   setTimeout(() => {
+    // 훈련이 중단된 경우
+    if (!state.gonogoTraining) return;
     showStimulus(isGo, mobile, inputMethod);
   }, waitTime);
 }
@@ -100,6 +102,9 @@ function showStimulus(isGo, mobile, inputMethod) {
   
   const handleResponse = async () => {
     if (responded) return;
+    // 훈련이 중단된 경우
+    if (!state.gonogoTraining) return;
+    
     responded = true;
     
     if (timeoutId) clearTimeout(timeoutId);
@@ -125,6 +130,9 @@ function showStimulus(isGo, mobile, inputMethod) {
   
   const handleTimeout = async () => {
     if (responded) return;
+    // 훈련이 중단된 경우
+    if (!state.gonogoTraining) return;
+    
     responded = true;
     
     window.removeEventListener('keydown', keyHandler);
@@ -153,6 +161,7 @@ function showStimulus(isGo, mobile, inputMethod) {
   
   // 키보드 이벤트
   const keyHandler = (e) => {
+    if (!state.gonogoTraining) return;
     if (e.code === 'Space') {
       e.preventDefault();
       handleResponse();
@@ -162,7 +171,10 @@ function showStimulus(isGo, mobile, inputMethod) {
   window.addEventListener('keydown', keyHandler);
   
   // 터치/클릭 이벤트
-  const clickHandler = () => handleResponse();
+  const clickHandler = () => {
+    if (!state.gonogoTraining) return;
+    handleResponse();
+  };
   document.getElementById('stimArea')?.addEventListener('click', clickHandler);
   
   // 타임아웃 (1.5초)
@@ -186,6 +198,9 @@ async function showFeedback(correct, isGo) {
   `;
   
   await sleep(600);
+  
+  // sleep 후 훈련이 중단된 경우
+  if (!state.gonogoTraining) return;
   
   if (t.index < t.total) {
     runGoNoGoTrainingTrial();

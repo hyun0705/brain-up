@@ -128,7 +128,8 @@ function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
     const timerHtml = !isPractice ? `<div class="inTestTimer" id="inTestTimer">${formatMMSS(state.testEndMs - nowMs())}</div>` : '';
     app.innerHTML = `<section class="card"><div class="pillRow"><div class="pill">${pillLabel}</div>${timerHtml}</div><div class="stimulusArea"><div style="font-size:48px;color:var(--muted);">+</div></div></section>`;
     const fixationTime = 300 + Math.floor(state.rng() * 200);
-    setTimeout(() => {
+    
+    const fixationTimeout = setTimeout(() => {
       // 검사가 중단된 경우 (홈 버튼 등으로 나감)
       if (state.currentTest !== 'gonogo') {
         resolve({ correct: false, responded: false, rt: 0, type, cancelled: true });
@@ -175,6 +176,7 @@ function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
       
       const cleanup = () => { 
         window.removeEventListener("keydown", handleKey);
+        state.keyHandler = null;
         const touchBtn = $("#touchBtn");
         if (touchBtn) touchBtn.removeEventListener("touchstart", handleTouch);
         const stimArea = $("#stimArea");
@@ -194,7 +196,13 @@ function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
         } else resolve({ correct, responded, rt: responseRt, type });
       };
       
+      // 이전 키 핸들러 제거
+      if (state.keyHandler) {
+        window.removeEventListener("keydown", state.keyHandler);
+      }
+      
       // 키보드 이벤트
+      state.keyHandler = handleKey;
       window.addEventListener("keydown", handleKey);
       
       // 터치 이벤트 (모바일)
@@ -208,6 +216,9 @@ function runSingleGoNoGoTrial(type, isPractice, currentNum, totalNum) {
       
       state.gonogoTimeout = setTimeout(() => { if (!responded) { cleanup(); finishTrial(); } }, 1000);
     }, fixationTime);
+    
+    // fixationTimeout ID를 state에 저장해서 resetState()에서 정리할 수 있게 함
+    state.gonogoFixationTimeout = fixationTimeout;
   });
 }
 
@@ -224,7 +235,11 @@ function renderGoNoGoReady() {
   `;
   $("#startTestBtn").onclick = async () => {
     playClick();
-    await showCountdown(app);
+    const countdownCompleted = await showCountdown(app, () => state.currentTest !== 'gonogo');
+    
+    // 카운트다운 중 중단된 경우
+    if (!countdownCompleted || state.currentTest !== 'gonogo') return;
+    
     playStart();
     runGoNoGoTest();
   };
@@ -244,8 +259,21 @@ async function runGoNoGoTest() {
   }, 100);
 
   while (nowMs() < state.testEndMs) {
+    // 검사가 중단된 경우 (홈 버튼 등으로 나감)
+    if (state.currentTest !== 'gonogo') {
+      if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
+      return;
+    }
+    
     const type = state.rng() < 0.6 ? "go" : "nogo";
     const result = await runSingleGoNoGoTrial(type, false, 0, 0);
+    
+    // 검사가 중단된 경우 또는 cancelled된 경우
+    if (state.currentTest !== 'gonogo' || result.cancelled) {
+      if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
+      return;
+    }
+    
     state.trials.push({ stimulus_type: type, correct: result.correct, responded: result.responded, rt_ms: result.rt });
     if (nowMs() >= state.testEndMs) break;
     await sleep(200 + Math.floor(state.rng() * 300));

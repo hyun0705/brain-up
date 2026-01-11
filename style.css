@@ -1667,6 +1667,11 @@ button.big.ghost:hover {
   margin: 20px 0;
 }
 
+.onboardingTip.streak {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
 .textBtn {
   background: none;
   border: none;
@@ -3021,6 +3026,31 @@ button.big.ghost:hover {
   line-height: 1.5;
 }
 
+/* 관리 영역 그리드 (온보딩) */
+.trainingAreasGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.trainingAreaMini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.trainingAreaMini i {
+  font-size: 18px;
+}
+
 /* 검사 vs 관리 비교 */
 .onboardingCompare {
   display: flex;
@@ -3030,6 +3060,7 @@ button.big.ghost:hover {
   margin: 20px 0;
   padding: 16px;
   background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 14px;
 }
 
@@ -3039,14 +3070,14 @@ button.big.ghost:hover {
 }
 
 .compareLabel {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 4px;
 }
 
 .compareDesc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -3729,6 +3760,11 @@ button.big.ghost:hover {
   color: #60a5fa;
 }
 
+[data-theme="dark"] .trainingAreaMini {
+  background: #374151;
+  border-color: #4b5563;
+}
+
 [data-theme="dark"] .onboardingCompare {
   background: #374151;
 }
@@ -3744,6 +3780,11 @@ button.big.ghost:hover {
 
 [data-theme="dark"] .onboardingTip {
   background: #1e3a5f;
+}
+
+[data-theme="dark"] .onboardingTip.streak {
+  background: #431407;
+  color: #fb923c;
 }
 
 /* 무료체험 배너 */

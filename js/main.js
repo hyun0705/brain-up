@@ -2,7 +2,7 @@
 import { renderMainIntro } from './ui/intro.js';
 import { renderHome } from './ui/home.js';
 import { $, showConfirmModal } from './core/utils.js';
-import { resetState, saveTestProgress } from './core/state.js';
+import { state, resetState, saveTestProgress } from './core/state.js';
 import { getUserProfile, clearSessionState } from './core/storage.js';
 import { LS_KEYS, loadHistory } from './core/storage.js';
 import { needsOnboarding, startOnboarding } from './ui/onboarding.js';
@@ -53,7 +53,6 @@ boot();
 $("#logo").onclick = async () => {
   playClick();
   const profile = getUserProfile();
-  const { state } = await import('./core/state.js');
   
   // 홈, 설정, 공지사항 등에서는 바로 이동 (검사/관리 중이 아닐 때만)
   const safePhases = ['home', 'settings', 'notices', 'noticeDetail', 'calendar', 'report', 'history'];
@@ -97,13 +96,8 @@ $("#logo").onclick = async () => {
   });
   
   if (confirmed) {
-    // 관리 중단 시에만 세션 클리어 (검사는 이어하기 허용)
-    if (isInTraining) {
-      clearSessionState();
-    } else if (isInTest) {
-      // 검사 중단 시 현재 상태 저장 (이어하기용)
-      saveTestProgress();
-    }
+    // 검사/관리 중단 시 세션 상태 삭제
+    clearSessionState();
     // 상태 초기화
     resetState();
     goToHome(profile);
@@ -111,16 +105,8 @@ $("#logo").onclick = async () => {
 };
 
 function goToHome(profile) {
-  if (profile && profile.onboardingComplete) {
-    renderHome();
-  } else {
-    const hasHistory = loadHistory(LS_KEYS.patternHistory).length > 0;
-    if (hasHistory) {
-      renderHome();
-    } else {
-      renderMainIntro();
-    }
-  }
+  // 로고 클릭 시 항상 홈으로 이동
+  renderHome();
 }
 
 // 플로팅 위로가기 버튼

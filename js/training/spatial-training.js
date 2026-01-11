@@ -78,6 +78,9 @@ export function startSpatialTrainingWithTrials(trialCount, onComplete) {
 }
 
 async function runSpatialTrainingTrial() {
+  // 훈련이 중단된 경우
+  if (!state.spatialTraining) return;
+  
   const t = state.spatialTraining;
   const currentDifficulty = t.baseDifficulty + Math.floor(t.index / 2); // 2문제마다 난이도 증가
   const numTargets = Math.min(currentDifficulty, 6); // 최대 6칸
@@ -96,6 +99,9 @@ async function runSpatialTrainingTrial() {
   `;
   
   await sleep(2000);
+  
+  // 훈련이 중단된 경우
+  if (!state.spatialTraining) return;
   
   // 입력 받기
   let userClicks = [];
@@ -119,6 +125,9 @@ async function runSpatialTrainingTrial() {
   };
   
   const updateGrid = () => {
+    // 훈련이 중단된 경우
+    if (!state.spatialTraining) return;
+    
     const gridContainer = $("#gridContainer");
     const remainCount = $("#remainCount");
     const submitBtn = $("#submitBtn");
@@ -134,6 +143,9 @@ async function runSpatialTrainingTrial() {
   const attachGridEvents = () => {
     document.querySelectorAll('.spatialCell').forEach(cell => {
       cell.onclick = () => {
+        // 훈련이 중단된 경우
+        if (!state.spatialTraining) return;
+        
         const idx = parseInt(cell.dataset.idx);
         if (userClicks.includes(idx)) {
           playClick();
@@ -148,10 +160,17 @@ async function runSpatialTrainingTrial() {
     });
     
     const submitBtn = $("#submitBtn");
-    if (submitBtn) submitBtn.onclick = () => { playClick(); finishTrial(); };
+    if (submitBtn) submitBtn.onclick = () => { 
+      if (!state.spatialTraining) return;
+      playClick(); 
+      finishTrial(); 
+    };
   };
   
   const finishTrial = async () => {
+    // 훈련이 중단된 경우
+    if (!state.spatialTraining) return;
+    
     const correctClicks = userClicks.filter(idx => trial.targets.includes(idx)).length;
     const accuracy = correctClicks / trial.targets.length;
     const correct = accuracy === 1;
@@ -178,6 +197,9 @@ async function runSpatialTrainingTrial() {
     `;
     
     await sleep(1000);
+    
+    // 훈련이 중단된 경우
+    if (!state.spatialTraining) return;
     
     if (t.index < t.total) {
       runSpatialTrainingTrial();

@@ -161,24 +161,38 @@ function renderOnboardingStep3() {
       </div>
       <h1 class="title">매일 관리란?</h1>
       <p class="desc">
-        <b>매일 3분</b>, 두뇌를 훈련해서<br/>
-        인지 기능을 유지하고 향상시켜요.
+        검사 결과를 바탕으로<br/>
+        <b>부족한 영역을 집중 훈련</b>해요.
       </p>
       
-      <div class="trainingIntroBox">
-        <div class="trainingIntroIcon">
-          <i class="fa-solid fa-brain"></i>
+      <div class="trainingAreasGrid">
+        <div class="trainingAreaMini">
+          <i class="fa-solid fa-bolt" style="color:#2563eb;"></i>
+          <span>처리속도</span>
         </div>
-        <div class="trainingIntroContent">
-          <strong>숫자 기억 훈련</strong>
-          <p>점점 길어지는 숫자를 기억하며<br/>작업 기억력을 강화해요</p>
+        <div class="trainingAreaMini">
+          <i class="fa-solid fa-hand" style="color:#16a34a;"></i>
+          <span>주의·억제</span>
         </div>
+        <div class="trainingAreaMini">
+          <i class="fa-solid fa-list-ol" style="color:#ea580c;"></i>
+          <span>작업기억</span>
+        </div>
+        <div class="trainingAreaMini">
+          <i class="fa-solid fa-grip" style="color:#dc2626;"></i>
+          <span>위치기억</span>
+        </div>
+      </div>
+      
+      <div class="onboardingTip" style="margin-top:16px;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>검사 결과 기반 맞춤 추천 제공!</span>
       </div>
       
       <div class="onboardingCompare">
         <div class="compareItem">
           <div class="compareLabel">주간 검사</div>
-          <div class="compareDesc">측정 · 주 1회 · 5분</div>
+          <div class="compareDesc">측정 · 주 1회 · 6분</div>
         </div>
         <div class="compareVs">VS</div>
         <div class="compareItem">
@@ -187,7 +201,7 @@ function renderOnboardingStep3() {
         </div>
       </div>
       
-      <div class="onboardingTip">
+      <div class="onboardingTip streak">
         <i class="fa-solid fa-fire"></i>
         <span>꾸준히 하면 연속 기록이 쌓여요!</span>
       </div>

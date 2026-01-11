@@ -43,6 +43,8 @@ export function resetState() {
   state.timerHandle = null;
   if (state.gonogoTimeout) clearTimeout(state.gonogoTimeout);
   state.gonogoTimeout = null;
+  if (state.gonogoFixationTimeout) clearTimeout(state.gonogoFixationTimeout);
+  state.gonogoFixationTimeout = null;
   
   // 키 핸들러 제거
   if (state.keyHandler) {

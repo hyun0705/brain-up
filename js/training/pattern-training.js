@@ -101,6 +101,9 @@ export function startPatternTrainingWithTrials(trialCount, onComplete) {
 function runPatternTrainingTrial() {
   const t = state.patternTraining;
   
+  // 훈련이 중단된 경우 (홈 버튼 등으로 나감)
+  if (!t) return;
+  
   // 같음/다름 결정
   const isSame = Math.random() < 0.5;
   const toggleK = t.difficulty <= 2 ? 1 : (t.difficulty <= 4 ? 2 : 3);
@@ -130,19 +133,30 @@ function runPatternTrainingTrial() {
   renderPatternToCanvas(left, $("#leftCanvas"));
   renderPatternToCanvas(right, $("#rightCanvas"));
   
+  // 이전 키 핸들러 제거
+  if (state.keyHandler) {
+    window.removeEventListener("keydown", state.keyHandler);
+  }
+  
   // 키보드 핸들러
   const keyHandler = (e) => {
+    if (!state.patternTraining) return;
     if (e.repeat) return;
     if (e.key === "f" || e.key === "F") { handleAnswer(true); }
     if (e.key === "j" || e.key === "J") { handleAnswer(false); }
   };
+  state.keyHandler = keyHandler;
   window.addEventListener("keydown", keyHandler);
   
   let answered = false;
   const handleAnswer = async (userSaidSame) => {
     if (answered) return;
+    // 훈련이 중단된 경우
+    if (!state.patternTraining) return;
+    
     answered = true;
     window.removeEventListener("keydown", keyHandler);
+    state.keyHandler = null;
     const rt = Date.now() - startTime;
     const correct = userSaidSame === isSame;
     
@@ -177,6 +191,9 @@ function runPatternTrainingTrial() {
     
     await sleep(800);
     
+    // 훈련이 중단된 경우
+    if (!state.patternTraining) return;
+    
     if (t.index < t.total) {
       runPatternTrainingTrial();
     } else {
@@ -184,8 +201,16 @@ function runPatternTrainingTrial() {
     }
   };
   
-  $("#sameBtn").onclick = () => { playClick(); handleAnswer(true); };
-  $("#diffBtn").onclick = () => { playClick(); handleAnswer(false); };
+  $("#sameBtn").onclick = () => { 
+    if (!state.patternTraining) return;
+    playClick(); 
+    handleAnswer(true); 
+  };
+  $("#diffBtn").onclick = () => { 
+    if (!state.patternTraining) return;
+    playClick(); 
+    handleAnswer(false); 
+  };
 }
 
 function finishPatternTraining() {

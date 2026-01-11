@@ -1,7 +1,7 @@
 // core/utils.js
 export const $ = (sel) => document.querySelector(sel);
 
-export const TEST_DURATION_MS = 10000; // 테스트용 10초 (배포시 60000으로 변경)
+export const TEST_DURATION_MS = 10000; // 베타테스트용 10초
 
 export function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -36,8 +36,11 @@ export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function showCountdown(app) {
+export async function showCountdown(app, checkCancelled = null) {
   for (let i = 3; i >= 1; i--) {
+    // 중단 체크
+    if (checkCancelled && checkCancelled()) return false;
+    
     app.innerHTML = `
       <section class="card">
         <div class="stimulusArea">
@@ -46,7 +49,14 @@ export async function showCountdown(app) {
       </section>
     `;
     await sleep(800);
+    
+    // sleep 후에도 중단 체크
+    if (checkCancelled && checkCancelled()) return false;
   }
+  
+  // 중단 체크
+  if (checkCancelled && checkCancelled()) return false;
+  
   app.innerHTML = `
     <section class="card">
       <div class="stimulusArea">
@@ -55,6 +65,11 @@ export async function showCountdown(app) {
     </section>
   `;
   await sleep(500);
+  
+  // 최종 중단 체크
+  if (checkCancelled && checkCancelled()) return false;
+  
+  return true;
 }
 
 export function getRandomItem(arr) {

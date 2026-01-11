@@ -62,14 +62,30 @@ async function runDigitSpanPractice() {
   // 정순 연습
   app.innerHTML = `<section class="card"><div class="pill">연습 · 정순</div><h1 class="title">정순 연습</h1><p class="desc">숫자를 <b>본 순서대로</b> 입력하세요.</p><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="start">시작</button></div></section>`;
   await new Promise(r => { $("#start").onclick = () => { playClick(); r(); }; });
+  
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'digitspan') return;
+  
   const forwardResult = await runSingleDigitSpanTrial(generateDigitSequence(state.rng, 3), "forward", true, 1, 2);
+  
+  // 검사가 중단된 경우
+  if (forwardResult.cancelled || state.currentTest !== 'digitspan') return;
+  
   state.practiceTotal++;
   if (forwardResult.correct) state.practiceCorrect++;
   
   // 역순 연습
   app.innerHTML = `<section class="card"><div class="pill">연습 · 역순</div><h1 class="title">역순 연습</h1><p class="desc">숫자를 <b>거꾸로</b> 입력하세요.</p><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="start">시작</button></div></section>`;
   await new Promise(r => { $("#start").onclick = () => { playClick(); r(); }; });
+  
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'digitspan') return;
+  
   const backwardResult = await runSingleDigitSpanTrial(generateDigitSequence(state.rng, 2), "backward", true, 2, 2);
+  
+  // 검사가 중단된 경우
+  if (backwardResult.cancelled || state.currentTest !== 'digitspan') return;
+  
   state.practiceTotal++;
   if (backwardResult.correct) state.practiceCorrect++;
   
@@ -100,6 +116,9 @@ async function showDigitSequence(digits, mode, isPractice, currentNum, totalNum)
   const modeHint = mode === "forward" ? "순서대로 입력하세요" : "거꾸로 입력하세요";
   const pillText = isPractice ? `연습 ${currentNum}/${totalNum} · ${modeText}` : `작업기억 ${currentNum}/${totalNum} · ${modeText}`;
   
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'digitspan') return false;
+  
   // 준비 화면 표시
   app.innerHTML = `
     <section class="card">
@@ -118,6 +137,9 @@ async function showDigitSequence(digits, mode, isPractice, currentNum, totalNum)
   
   await sleep(2000);
   
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'digitspan') return false;
+  
   // 숫자 표시 화면
   app.innerHTML = `
     <section class="card">
@@ -131,16 +153,31 @@ async function showDigitSequence(digits, mode, isPractice, currentNum, totalNum)
   const display = $("#digitDisplay");
   
   for (let i = 0; i < digits.length; i++) {
+    // 검사가 중단된 경우
+    if (state.currentTest !== 'digitspan') return false;
+    
     playTick();
-    display.textContent = digits[i];
+    if (display) display.textContent = digits[i];
     await sleep(800);
+    
+    // sleep 후에도 검사가 중단된 경우
+    if (state.currentTest !== 'digitspan') return false;
   }
+  
+  return true;
 }
 
 function runSingleDigitSpanTrial(digits, mode, isPractice, currentNum, totalNum) {
   return new Promise(async (resolve) => {
     const expectedAnswer = mode === "forward" ? digits : [...digits].reverse();
-    await showDigitSequence(digits, mode, isPractice, currentNum, totalNum);
+    const sequenceCompleted = await showDigitSequence(digits, mode, isPractice, currentNum, totalNum);
+    
+    // 검사가 중단된 경우 (showDigitSequence에서 false 반환 또는 상태 체크)
+    if (!sequenceCompleted || state.currentTest !== 'digitspan') {
+      resolve({ correct: false, cancelled: true });
+      return;
+    }
+    
     let userInput = [];
     const inputLength = digits.length;
     
@@ -183,6 +220,8 @@ function runSingleDigitSpanTrial(digits, mode, isPractice, currentNum, totalNum)
     
     document.querySelectorAll('.digitBtn').forEach(btn => {
       btn.onclick = () => {
+        // 검사가 중단된 경우 클릭 무시
+        if (state.currentTest !== 'digitspan') return;
         if (userInput.length < inputLength) {
           playClick();
           userInput.push(parseInt(btn.dataset.digit));
@@ -192,12 +231,17 @@ function runSingleDigitSpanTrial(digits, mode, isPractice, currentNum, totalNum)
     });
     
     clearBtn.onclick = () => {
+      if (state.currentTest !== 'digitspan') return;
       playClick();
       userInput.pop();
       updateDisplay();
     };
     
-    submitBtn.onclick = () => { playClick(); finishTrial(); };
+    submitBtn.onclick = () => { 
+      if (state.currentTest !== 'digitspan') return;
+      playClick(); 
+      finishTrial(); 
+    };
     
     // 이전 키 핸들러 제거
     if (state.keyHandler) {
@@ -205,6 +249,8 @@ function runSingleDigitSpanTrial(digits, mode, isPractice, currentNum, totalNum)
     }
     
     const keyHandler = (e) => {
+      // 검사가 중단된 경우 키 입력 무시
+      if (state.currentTest !== 'digitspan') return;
       if (e.key >= '0' && e.key <= '9' && userInput.length < inputLength) {
         userInput.push(parseInt(e.key));
         updateDisplay();
@@ -254,8 +300,15 @@ async function runDigitSpanTest() {
   let forwardLength = 3;
   let forwardErrors = 0;
   while (forwardErrors < 2 && forwardLength <= 9) {
+    // 검사가 중단된 경우
+    if (state.currentTest !== 'digitspan') return;
+    
     const digits = generateDigitSequence(state.rng, forwardLength);
     const result = await runSingleDigitSpanTrial(digits, "forward", false, 0, 0);
+    
+    // 검사가 중단된 경우
+    if (result.cancelled || state.currentTest !== 'digitspan') return;
+    
     state.digitSpan.forwardTrials.push({ length: forwardLength, correct: result.correct });
     if (result.correct) {
       state.digitSpan.forwardSpan = forwardLength;
@@ -264,18 +317,35 @@ async function runDigitSpanTest() {
     } else {
       forwardErrors++;
     }
+    saveTestProgress();
     await sleep(500);
   }
+  
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'digitspan') return;
+  
+  // 정순 완료 후 진행 상태 저장
+  saveTestProgress();
   
   // 역순
   app.innerHTML = `<section class="card"><div class="pill">역순 시작</div><h1 class="title">이제 역순입니다</h1><p class="desc">숫자를 <b>거꾸로</b> 입력하세요.</p><div class="controls" style="grid-template-columns:1fr;"><button class="big" id="cont">계속</button></div></section>`;
   await new Promise(r => { $("#cont").onclick = () => { playClick(); r(); }; });
   
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'digitspan') return;
+  
   let backwardLength = 2;
   let backwardErrors = 0;
   while (backwardErrors < 2 && backwardLength <= 8) {
+    // 검사가 중단된 경우
+    if (state.currentTest !== 'digitspan') return;
+    
     const digits = generateDigitSequence(state.rng, backwardLength);
     const result = await runSingleDigitSpanTrial(digits, "backward", false, 0, 0);
+    
+    // 검사가 중단된 경우
+    if (result.cancelled || state.currentTest !== 'digitspan') return;
+    
     state.digitSpan.backwardTrials.push({ length: backwardLength, correct: result.correct });
     if (result.correct) {
       state.digitSpan.backwardSpan = backwardLength;
@@ -284,8 +354,12 @@ async function runDigitSpanTest() {
     } else {
       backwardErrors++;
     }
+    saveTestProgress();
     await sleep(500);
   }
+  
+  // 검사가 중단된 경우
+  if (state.currentTest !== 'digitspan') return;
   
   finishDigitSpanTest();
 }
