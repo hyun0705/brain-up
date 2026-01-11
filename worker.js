@@ -1100,6 +1100,51 @@ export default {
         return Response.json({ baselines: baselineMap }, { headers: corsHeaders });
       }
 
+      // ========== 삭제 API ==========
+
+      // 검사 기록 삭제
+      if (path.match(/^\/api\/admin\/test\/\d+$/) && request.method === 'DELETE') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const testId = path.split('/').pop();
+        await env.DB.prepare('DELETE FROM test_results WHERE id = ?').bind(testId).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 문의 삭제
+      if (path.match(/^\/api\/admin\/inquiry\/\d+$/) && request.method === 'DELETE') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const inquiryId = path.split('/').pop();
+        await env.DB.prepare('DELETE FROM inquiries WHERE id = ?').bind(inquiryId).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 활동 로그 삭제
+      if (path.match(/^\/api\/admin\/log\/\d+$/) && request.method === 'DELETE') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        const logId = path.split('/').pop();
+        await env.DB.prepare('DELETE FROM admin_logs WHERE id = ?').bind(logId).run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // 활동 로그 전체 삭제
+      if (path === '/api/admin/logs/clear' && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== ADMIN_KEY) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        await env.DB.prepare('DELETE FROM admin_logs').run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
       return Response.json({ message: 'Brainup API' }, { headers: corsHeaders });
 
     } catch (error) {

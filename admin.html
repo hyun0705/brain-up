@@ -397,6 +397,20 @@
       background: #fee2e2;
     }
     
+    .btn-danger {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    
+    .btn-danger:hover {
+      background: #fee2e2;
+    }
+    
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    
     .action-btns {
       display: flex;
       gap: 6px;
@@ -1442,9 +1456,14 @@
             <h1 class="page-title">활동 로그</h1>
             <p class="page-subtitle">관리자 활동 기록</p>
           </div>
-          <button class="btn" onclick="renderPage('logs')">
-            <i class="fa-solid fa-refresh"></i> 새로고침
-          </button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-danger" onclick="clearAllLogs()">
+              <i class="fa-solid fa-trash"></i> 전체 삭제
+            </button>
+            <button class="btn" onclick="renderPage('logs')">
+              <i class="fa-solid fa-refresh"></i> 새로고침
+            </button>
+          </div>
         </div>
         
         <div class="card">
@@ -1478,6 +1497,7 @@
                 <th>활동</th>
                 <th>대상</th>
                 <th>상세</th>
+                <th>삭제</th>
               </tr>
             </thead>
             <tbody>
@@ -1487,6 +1507,7 @@
                   <td>${getActionBadge(l.action)}</td>
                   <td>${l.target || '-'}</td>
                   <td style="color:#6b7280;font-size:13px;">${l.details || '-'}</td>
+                  <td><button class="btn btn-danger btn-sm" onclick="deleteLog(${l.id})"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1497,6 +1518,43 @@
       }
     }
     
+    // 로그 개별 삭제
+    async function deleteLog(logId) {
+      if (!confirm('이 로그를 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch(`${API_URL}/api/admin/log/${logId}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        if (res.ok) {
+          renderPage('logs');
+        } else {
+          alert('삭제 실패');
+        }
+      } catch (e) {
+        alert('삭제 실패: ' + e.message);
+      }
+    }
+
+    // 로그 전체 삭제
+    async function clearAllLogs() {
+      if (!confirm('모든 활동 로그를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+      try {
+        const res = await fetch(`${API_URL}/api/admin/logs/clear`, {
+          method: 'POST',
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        if (res.ok) {
+          alert('모든 로그가 삭제되었습니다.');
+          renderPage('logs');
+        } else {
+          alert('삭제 실패');
+        }
+      } catch (e) {
+        alert('삭제 실패: ' + e.message);
+      }
+    }
+
     function getActionBadge(action) {
       const badges = {
         'payment_confirm': '<span class="badge" style="background:#d1fae5;color:#059669;">결제 승인</span>',
@@ -1777,10 +1835,11 @@
                     ? '<span class="badge" style="background:#d1fae5;color:#059669;">완료</span>' 
                     : '<span class="badge" style="background:#fef3c7;color:#d97706;">대기</span>'}
                 </td>
-                <td>
+                <td style="display:flex;gap:4px;">
                   ${inq.status === 'pending' 
                     ? `<button class="btn btn-sm" onclick="resolveInquiry(${inq.id})">완료</button>`
                     : `<button class="btn btn-sm" onclick="reopenInquiry(${inq.id})">재오픈</button>`}
+                  <button class="btn btn-danger btn-sm" onclick="deleteInquiry(${inq.id})"><i class="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
             `).join('')}
@@ -1789,6 +1848,26 @@
       `;
     }
     
+    // 문의 삭제
+    async function deleteInquiry(id) {
+      if (!confirm('이 문의를 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch(`${API_URL}/api/admin/inquiry/${id}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        if (res.ok) {
+          alert('삭제되었습니다.');
+          loadInquiries();
+          fetchInquiryCount();
+        } else {
+          alert('삭제 실패');
+        }
+      } catch (e) {
+        alert('삭제 실패: ' + e.message);
+      }
+    }
+
     async function showInquiryDetail(id) {
       try {
         const res = await fetch(`${API_URL}/api/admin/inquiry/${id}`, {
@@ -2315,16 +2394,18 @@
               <th>검사 종류</th>
               <th>점수</th>
               <th>날짜</th>
+              <th>삭제</th>
             </tr>
           </thead>
           <tbody>
             ${tests.map(t => `
-              <tr onclick="showUserDetail(${t.user_id})" style="cursor:pointer;">
-                <td>${t.user_id}</td>
-                <td>${t.user_name || '-'}</td>
+              <tr>
+                <td onclick="showUserDetail(${t.user_id})" style="cursor:pointer;">${t.user_id}</td>
+                <td onclick="showUserDetail(${t.user_id})" style="cursor:pointer;">${t.user_name || '-'}</td>
                 <td>${getTestTypeBadge(t.test_type)}</td>
                 <td>${getTestScore(t)}</td>
                 <td>${toKoreanTime(t.created_at)}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteTest(${t.id})"><i class="fa-solid fa-trash"></i></button></td>
               </tr>
             `).join('')}
           </tbody>
@@ -2344,6 +2425,25 @@
     }
     
     // 검사 점수 표시
+    // 검사 기록 삭제
+    async function deleteTest(testId) {
+      if (!confirm('이 검사 기록을 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch(`${API_URL}/api/admin/test/${testId}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': ADMIN_PASSWORD }
+        });
+        if (res.ok) {
+          alert('삭제되었습니다.');
+          renderPage('tests');
+        } else {
+          alert('삭제 실패');
+        }
+      } catch (e) {
+        alert('삭제 실패: ' + e.message);
+      }
+    }
+
     function getTestScore(test) {
       try {
         const summary = typeof test.summary === 'string' ? JSON.parse(test.summary) : test.summary;
