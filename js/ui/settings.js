@@ -1255,3 +1255,137 @@ export function renderCompleteProfile() {
   
   $("#skipProfile").onclick = () => { playClick(); renderHome(); };
 }
+
+// 개인정보처리방침
+export function renderPrivacyPolicy() {
+  state.phase = 'privacy';
+  document.querySelector(".progress").textContent = "개인정보처리방침";
+  
+  app.innerHTML = `
+    <section class="card">
+      <div class="pageHeader">
+        <button class="backBtn" id="backSettings"><i class="fa-solid fa-arrow-left"></i></button>
+        <h2 class="pageTitle">개인정보처리방침</h2>
+      </div>
+      
+      <div class="policyContent">
+        <p class="policyDate">시행일: 2025년 1월 1일</p>
+        
+        <h3>1. 수집하는 개인정보</h3>
+        <p>브레인업은 서비스 제공을 위해 다음 정보를 수집합니다.</p>
+        <ul>
+          <li>필수: 이메일, 이름, 생년월일, 성별</li>
+          <li>카카오 로그인 시: 카카오 계정 식별자</li>
+          <li>서비스 이용 기록: 검사 결과, 관리 기록</li>
+        </ul>
+        
+        <h3>2. 개인정보 수집 목적</h3>
+        <ul>
+          <li>회원 식별 및 서비스 제공</li>
+          <li>연령대별 맞춤 분석 제공</li>
+          <li>서비스 개선 및 통계 분석</li>
+        </ul>
+        
+        <h3>3. 개인정보 보유 기간</h3>
+        <p>회원 탈퇴 시 즉시 삭제됩니다. 단, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관됩니다.</p>
+        
+        <h3>4. 개인정보 제3자 제공</h3>
+        <p>브레인업은 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다.</p>
+        
+        <h3>5. 이용자의 권리</h3>
+        <ul>
+          <li>개인정보 열람, 수정, 삭제 요청</li>
+          <li>회원 탈퇴를 통한 정보 삭제</li>
+          <li>설정 메뉴에서 직접 정보 관리 가능</li>
+        </ul>
+        
+        <h3>6. 쿠키 및 로컬 저장소</h3>
+        <p>브레인업은 서비스 제공을 위해 브라우저의 로컬 저장소(Local Storage)를 사용합니다.</p>
+        <ul>
+          <li>로그인 상태 유지</li>
+          <li>검사/관리 기록 임시 저장</li>
+          <li>사용자 설정 저장 (테마, 글씨 크기 등)</li>
+        </ul>
+        
+        <h3>7. 개인정보 보호책임자</h3>
+        <p>개인정보 보호 관련 문의는 설정 > 문의하기를 이용해주세요.</p>
+      </div>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
+        <button class="big" id="backBtn">돌아가기</button>
+      </div>
+    </section>
+  `;
+  
+  $("#backSettings").onclick = () => { playClick(); renderSettings(); };
+  $("#backBtn").onclick = () => { playClick(); renderSettings(); };
+}
+
+// 이용약관
+export function renderTermsOfService() {
+  state.phase = 'terms';
+  document.querySelector(".progress").textContent = "이용약관";
+  
+  app.innerHTML = `
+    <section class="card">
+      <div class="pageHeader">
+        <button class="backBtn" id="backSettings"><i class="fa-solid fa-arrow-left"></i></button>
+        <h2 class="pageTitle">이용약관</h2>
+      </div>
+      
+      <div class="policyContent">
+        <p class="policyDate">시행일: 2025년 1월 1일</p>
+        
+        <h3>1. 서비스 개요</h3>
+        <p>브레인업은 인지건강 활동 기록 서비스로, 의료 진단 서비스가 아닙니다. 검사 결과는 참고용이며 의료적 판단의 근거로 사용될 수 없습니다.</p>
+        
+        <h3>2. 이용 자격</h3>
+        <p>만 19세 이상의 성인만 이용할 수 있습니다.</p>
+        
+        <h3>3. 서비스 이용</h3>
+        <ul>
+          <li>무료체험: 회원가입 후 14일간 모든 기능 이용 가능</li>
+          <li>유료 구독: 월간/연간 구독을 통해 계속 이용 가능</li>
+        </ul>
+        
+        <h3>4. 결제 및 환불</h3>
+        <ul>
+          <li>결제 방식: 무통장입금</li>
+          <li>환불: 결제 후 7일 이내 미사용 시 전액 환불</li>
+          <li>사용 후 환불: 잔여 기간에 대해 일할 계산하여 환불</li>
+        </ul>
+        
+        <h3>5. 면책 조항</h3>
+        <ul>
+          <li>본 서비스는 의료 행위가 아닙니다</li>
+          <li>검사 결과에 따른 의료적 판단은 전문의와 상담하세요</li>
+          <li>서비스 이용 중 발생한 문제에 대해 책임지지 않습니다</li>
+        </ul>
+        
+        <h3>6. 서비스 변경 및 중단</h3>
+        <p>서비스 내용은 사전 공지 후 변경될 수 있으며, 불가피한 경우 서비스가 중단될 수 있습니다.</p>
+        
+        <h3>7. 금지 행위</h3>
+        <ul>
+          <li>타인의 계정을 무단으로 사용하는 행위</li>
+          <li>서비스를 부정한 목적으로 이용하는 행위</li>
+          <li>서비스의 정상적인 운영을 방해하는 행위</li>
+          <li>자동화된 수단으로 서비스에 접근하는 행위</li>
+        </ul>
+        
+        <h3>8. 지적재산권</h3>
+        <p>브레인업의 콘텐츠, 디자인, 로고 등 모든 지적재산권은 브레인업에 귀속됩니다. 무단 복제, 배포, 수정은 금지됩니다.</p>
+        
+        <h3>9. 문의</h3>
+        <p>이용약관 관련 문의는 설정 > 문의하기를 이용해주세요.</p>
+      </div>
+      
+      <div class="controls" style="grid-template-columns:1fr;margin-top:24px;">
+        <button class="big" id="backBtn">돌아가기</button>
+      </div>
+    </section>
+  `;
+  
+  $("#backSettings").onclick = () => { playClick(); renderSettings(); };
+  $("#backBtn").onclick = () => { playClick(); renderSettings(); };
+}

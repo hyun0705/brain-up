@@ -62,6 +62,14 @@ function drawHistoryChartFromData(canvasId, limit = 10) {
   const chartW = w - pad.left - pad.right;
   const chartH = h - pad.top - pad.bottom;
   
+  // 다크모드 체크
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const colors = {
+    bg: isDark ? '#1f2937' : '#ffffff',
+    grid: isDark ? '#374151' : '#e5e7eb',
+    text: isDark ? '#9ca3af' : '#6b7280',
+  };
+  
   // 데이터 소스 선택: 로그인 사용자는 서버 데이터, 아니면 로컬
   let patternData = [], gonogoData = [], digitspanData = [], spatialData = [];
   
@@ -104,26 +112,26 @@ function drawHistoryChartFromData(canvasId, limit = 10) {
   };
   
   const datasets = [
-    { name: '처리속도', color: '#2563eb', data: normalize(patternData) },
-    { name: '주의·억제', color: '#16a34a', data: normalize(gonogoData) },
-    { name: '작업기억', color: '#ea580c', data: normalize(digitspanData) },
-    { name: '위치기억', color: '#dc2626', data: normalize(spatialData) },
+    { name: '처리속도', color: isDark ? '#60a5fa' : '#2563eb', data: normalize(patternData) },
+    { name: '주의·억제', color: isDark ? '#34d399' : '#16a34a', data: normalize(gonogoData) },
+    { name: '작업기억', color: isDark ? '#fb923c' : '#ea580c', data: normalize(digitspanData) },
+    { name: '위치기억', color: isDark ? '#f87171' : '#dc2626', data: normalize(spatialData) },
   ];
   
   const maxLen = Math.max(...datasets.map(d => d.data.length), 1);
   
   if (maxLen < 2) {
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = colors.text;
     ctx.font = '15px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText('기록이 2회 이상 쌓이면 차트가 표시됩니다', w / 2, h / 2);
     return;
   }
   
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = colors.bg;
   ctx.fillRect(0, 0, w, h);
   
-  ctx.strokeStyle = '#e5e7eb';
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = pad.top + (chartH / 4) * i;
@@ -132,13 +140,13 @@ function drawHistoryChartFromData(canvasId, limit = 10) {
     ctx.lineTo(w - pad.right, y);
     ctx.stroke();
     
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = colors.text;
     ctx.font = '12px system-ui';
     ctx.textAlign = 'right';
     ctx.fillText(String(100 - i * 25), pad.left - 8, y + 4);
   }
   
-  ctx.fillStyle = '#6b7280';
+  ctx.fillStyle = colors.text;
   ctx.font = '12px system-ui';
   ctx.textAlign = 'center';
   for (let i = 0; i < maxLen; i++) {
@@ -835,7 +843,7 @@ function renderOverviewTab(groupedRecords, stats, profile) {
     
     <!-- 인사이트 카드 -->
     ${analysis.strongest ? `
-    <div class="insightCard">
+    <div class="insightCard good">
       <div class="insightIcon"><i class="fa-solid fa-star"></i></div>
       <div class="insightContent">
         <div class="insightTitle">${areaNames[analysis.strongest[0]]}${getSubjectParticle(areaNames[analysis.strongest[0]])} 강점이에요</div>

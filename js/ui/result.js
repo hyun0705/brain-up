@@ -30,6 +30,14 @@ export function drawHistoryChart(canvasId, limit = 10) {
   const chartW = w - pad.left - pad.right;
   const chartH = h - pad.top - pad.bottom;
   
+  // 다크모드 체크
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const colors = {
+    bg: isDark ? '#1f2937' : '#ffffff',
+    grid: isDark ? '#374151' : '#e5e7eb',
+    text: isDark ? '#9ca3af' : '#6b7280',
+  };
+  
   const patternHist = loadHistory(LS_KEYS.patternHistory).slice(-limit);
   const gonogoHist = loadHistory(LS_KEYS.gonogoHistory).slice(-limit);
   const digitspanHist = loadHistory(LS_KEYS.digitspanHistory).slice(-limit);
@@ -44,26 +52,26 @@ export function drawHistoryChart(canvasId, limit = 10) {
   };
   
   const datasets = [
-    { name: '처리속도', color: '#2563eb', data: normalize(patternHist, 'raw', 100) },
-    { name: '주의·억제', color: '#16a34a', data: normalize(gonogoHist, 'raw', 100) },
-    { name: '작업기억', color: '#ea580c', data: normalize(digitspanHist, 'raw', 100) },
-    { name: '위치기억', color: '#dc2626', data: normalize(spatialHist, 'raw', 100) },
+    { name: '처리속도', color: isDark ? '#60a5fa' : '#2563eb', data: normalize(patternHist, 'raw', 100) },
+    { name: '주의·억제', color: isDark ? '#34d399' : '#16a34a', data: normalize(gonogoHist, 'raw', 100) },
+    { name: '작업기억', color: isDark ? '#fb923c' : '#ea580c', data: normalize(digitspanHist, 'raw', 100) },
+    { name: '위치기억', color: isDark ? '#f87171' : '#dc2626', data: normalize(spatialHist, 'raw', 100) },
   ];
   
   const maxLen = Math.max(...datasets.map(d => d.data.length), 1);
   
   if (maxLen < 2) {
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = colors.text;
     ctx.font = '15px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText('기록이 2회 이상 쌓이면 차트가 표시됩니다', w / 2, h / 2);
     return;
   }
   
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = colors.bg;
   ctx.fillRect(0, 0, w, h);
   
-  ctx.strokeStyle = '#e5e7eb';
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = pad.top + (chartH / 4) * i;
@@ -72,13 +80,13 @@ export function drawHistoryChart(canvasId, limit = 10) {
     ctx.lineTo(w - pad.right, y);
     ctx.stroke();
     
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = colors.text;
     ctx.font = '12px system-ui';
     ctx.textAlign = 'right';
     ctx.fillText(String(100 - i * 25), pad.left - 8, y + 4);
   }
   
-  ctx.fillStyle = '#6b7280';
+  ctx.fillStyle = colors.text;
   ctx.font = '12px system-ui';
   ctx.textAlign = 'center';
   for (let i = 0; i < maxLen; i++) {

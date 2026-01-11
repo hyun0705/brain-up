@@ -505,6 +505,14 @@ function finishAllTraining() {
   const completedAreas = state.trainingQueue.map(q => TRAINING_AREAS[q.area].name).join(', ');
   const totalTrials = state.trainingQueue.reduce((sum, q) => sum + q.trials, 0);
   
+  // 관리 완료 후 상태 초기화
+  state.trainingQueue = null;
+  state.trainingQueueIndex = undefined;
+  state.gonogoTraining = null;
+  state.patternTraining = null;
+  state.spatialTraining = null;
+  state.phase = 'home';
+  
   document.querySelector(".progress").textContent = "관리 완료";
   
   app.innerHTML = `

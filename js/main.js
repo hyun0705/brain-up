@@ -156,3 +156,18 @@ function initScrollTopButton() {
 }
 
 initScrollTopButton();
+
+// 푸터 링크 이벤트
+$("#footerPrivacy").onclick = async (e) => {
+  e.preventDefault();
+  playClick();
+  const { renderPrivacyPolicy } = await import('./ui/settings.js');
+  renderPrivacyPolicy();
+};
+
+$("#footerTerms").onclick = async (e) => {
+  e.preventDefault();
+  playClick();
+  const { renderTermsOfService } = await import('./ui/settings.js');
+  renderTermsOfService();
+};

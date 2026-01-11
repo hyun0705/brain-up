@@ -428,7 +428,7 @@ export default {
           return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
         }
         const totalUsers = await env.DB.prepare('SELECT COUNT(*) as count FROM users').first();
-        const todaySignups = await env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')").first();
+        const todaySignups = await env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE date(created_at, '+9 hours') = date('now', '+9 hours')").first();
         const totalTests = await env.DB.prepare('SELECT COUNT(*) as count FROM test_results').first();
         const pendingPayments = await env.DB.prepare("SELECT COUNT(*) as count FROM payments WHERE status = 'pending'").first();
         const activeSubscriptions = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as count FROM payments WHERE status = 'confirmed' AND expires_at > datetime('now')").first();
@@ -487,7 +487,7 @@ export default {
         if (adminKey !== ADMIN_KEY) {
           return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
         }
-        const active = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as count FROM sessions WHERE date(created_at) = date('now')").first();
+        const active = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as count FROM sessions WHERE date(created_at, '+9 hours') = date('now', '+9 hours')").first();
         return Response.json({ activeToday: active?.count || 0 }, { headers: corsHeaders });
       }
 
@@ -500,7 +500,7 @@ export default {
           SELECT DISTINCT u.id, u.name, u.email, u.kakao_id, u.created_at 
           FROM users u 
           JOIN sessions s ON u.id = s.user_id 
-          WHERE date(s.created_at) = date('now')
+          WHERE date(s.created_at, '+9 hours') = date('now', '+9 hours')
           ORDER BY s.created_at DESC
         `).all();
         return Response.json({ users: users.results }, { headers: corsHeaders });
@@ -511,7 +511,7 @@ export default {
         if (adminKey !== ADMIN_KEY) {
           return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
         }
-        const users = await env.DB.prepare("SELECT id, name, email, kakao_id, created_at FROM users WHERE date(created_at) = date('now') ORDER BY created_at DESC").all();
+        const users = await env.DB.prepare("SELECT id, name, email, kakao_id, created_at FROM users WHERE date(created_at, '+9 hours') = date('now', '+9 hours') ORDER BY created_at DESC").all();
         return Response.json({ users: users.results }, { headers: corsHeaders });
       }
 

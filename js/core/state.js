@@ -28,6 +28,12 @@ export const state = {
   gonogoResult: null,
   digitspanResult: null,
   spatialResult: null,
+  // 관리(training) 관련 상태
+  trainingQueue: null,
+  trainingQueueIndex: undefined,
+  gonogoTraining: null,
+  patternTraining: null,
+  spatialTraining: null,
 };
 
 state.rng = mulberry32(state.seed);

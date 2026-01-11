@@ -648,8 +648,7 @@ export async function renderCalendar(year = null, month = null) {
   // 이번 주 통계 메시지
   let weekMessage = '';
   if (weekStats.total > 0) {
-    const percent = Math.round((weekStats.completed / weekStats.total) * 100);
-    weekMessage = `이번 주 ${weekStats.completed}/${weekStats.total}일 완료 (${percent}%)`;
+    weekMessage = `이번 주 관리 ${weekStats.completed}/${weekStats.total}일 완료`;
   }
   
   app.innerHTML = `

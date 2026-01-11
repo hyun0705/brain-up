@@ -379,6 +379,29 @@ button.big.ghost:hover {
   line-height: 1.5;
 }
 
+.footerLinks {
+  margin-top: 12px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.footerLinks a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.footerLinks a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.footerLinks span {
+  color: var(--border);
+}
+
 .notice {
   margin-top: 10px;
   padding: 12px 14px;
@@ -1852,6 +1875,79 @@ button.big.ghost:hover {
   color: #d97706;
 }
 
+/* 설정 페이지 푸터 */
+.settingsFooter {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.settingsDisclaimer {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.settingsLinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.settingsLinks a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.settingsLinks a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.settingsLinks .linkDivider {
+  color: var(--border);
+}
+
+/* 정책 페이지 (개인정보처리방침, 이용약관) */
+.policyContent {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.policyContent .policyDate {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.policyContent h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 24px 0 12px;
+}
+
+.policyContent h3:first-of-type {
+  margin-top: 0;
+}
+
+.policyContent p {
+  margin-bottom: 12px;
+}
+
+.policyContent ul {
+  margin: 8px 0 16px 20px;
+}
+
+.policyContent li {
+  margin-bottom: 6px;
+}
+
 /* 관리 모드 스타일 */
 .trainingInfo {
   display: flex;
@@ -3321,6 +3417,18 @@ button.big.ghost:hover {
   background: #1e4076;
 }
 
+[data-theme="dark"] .settingsFooter {
+  border-top-color: #374151;
+}
+
+[data-theme="dark"] .settingsLinks a:hover {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .policyContent h3 {
+  color: #f3f4f6;
+}
+
 /* 홈 화면 상태 박스 */
 [data-theme="dark"] .weeklyStatus.pending {
   background: #172554;
@@ -4224,27 +4332,65 @@ button.big.ghost:hover {
   display: flex;
   gap: 12px;
   padding: 16px;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
   border-radius: 14px;
+  margin-top: 12px;
+}
+
+.insightCard:first-of-type {
   margin-top: 20px;
 }
 
 .insightIcon {
   font-size: 20px;
-  color: #d97706;
+  color: #16a34a;
 }
 
 .insightTitle {
   font-size: 14px;
   font-weight: 700;
-  color: #92400e;
+  color: #166534;
   margin-bottom: 4px;
 }
 
 .insightDesc {
   font-size: 13px;
-  color: #a16207;
+  color: #15803d;
   line-height: 1.5;
+}
+
+/* 강점 카드 (초록) */
+.insightCard.good {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+}
+
+.insightCard.good .insightIcon {
+  color: #16a34a;
+}
+
+.insightCard.good .insightTitle {
+  color: #166534;
+}
+
+.insightCard.good .insightDesc {
+  color: #15803d;
+}
+
+/* 약점 카드 (주황) */
+.insightCard.warn {
+  background: linear-gradient(135deg, #fff7ed, #fed7aa);
+}
+
+.insightCard.warn .insightIcon {
+  color: #ea580c;
+}
+
+.insightCard.warn .insightTitle {
+  color: #9a3412;
+}
+
+.insightCard.warn .insightDesc {
+  color: #c2410c;
 }
 
 /* 히스토리 리스트 (새 버전) */
@@ -4705,15 +4851,29 @@ button.big.ghost:hover {
   border-radius: 10px;
 }
 
-/* 다크모드 */
-[data-theme="dark"] .insightCard {
-  background: linear-gradient(135deg, #422006, #451a03);
-  border: 1px solid #713f12;
+/* 다크모드 - 강점 카드 (초록) */
+[data-theme="dark"] .insightCard,
+[data-theme="dark"] .insightCard.good {
+  background: linear-gradient(135deg, #052e16, #14532d);
+  border: 1px solid #166534;
 }
 
-[data-theme="dark"] .insightIcon { color: #d97706; }
-[data-theme="dark"] .insightTitle { color: #fbbf24; }
-[data-theme="dark"] .insightDesc { color: #a3a3a3; }
+[data-theme="dark"] .insightCard .insightIcon,
+[data-theme="dark"] .insightCard.good .insightIcon { color: #4ade80; }
+[data-theme="dark"] .insightCard .insightTitle,
+[data-theme="dark"] .insightCard.good .insightTitle { color: #86efac; }
+[data-theme="dark"] .insightCard .insightDesc,
+[data-theme="dark"] .insightCard.good .insightDesc { color: #a3a3a3; }
+
+/* 다크모드 - 약점 카드 (주황) */
+[data-theme="dark"] .insightCard.warn {
+  background: linear-gradient(135deg, #431407, #7c2d12);
+  border: 1px solid #9a3412;
+}
+
+[data-theme="dark"] .insightCard.warn .insightIcon { color: #fb923c; }
+[data-theme="dark"] .insightCard.warn .insightTitle { color: #fdba74; }
+[data-theme="dark"] .insightCard.warn .insightDesc { color: #a3a3a3; }
 
 [data-theme="dark"] .recommendationCard {
   background: linear-gradient(135deg, #4c1d95, #5b21b6);
