@@ -591,9 +591,10 @@
 
   <script>
     const API_URL = 'https://brainup-api.stardog0705.workers.dev';
-    const ADMIN_PASSWORD = 'brainup2026!';
     
-    let isLoggedIn = sessionStorage.getItem('admin_logged_in') === 'true';
+    // 비밀번호는 로그인 시 입력받아 세션에 저장
+    let ADMIN_PASSWORD = sessionStorage.getItem('admin_key') || '';
+    let isLoggedIn = sessionStorage.getItem('admin_logged_in') === 'true' && ADMIN_PASSWORD;
     let currentPage = 'dashboard';
     let paymentFilter = 'pending';
     let pendingCount = 0;
@@ -740,19 +741,37 @@
       `;
     }
     
-    function handleLogin() {
+    async function handleLogin() {
       const pw = document.getElementById('passwordInput').value;
-      if (pw === ADMIN_PASSWORD) {
-        sessionStorage.setItem('admin_logged_in', 'true');
-        isLoggedIn = true;
-        renderApp();
-      } else {
-        alert('비밀번호가 틀렸습니다.');
+      if (!pw) {
+        alert('비밀번호를 입력하세요.');
+        return;
+      }
+      
+      // 서버에 비밀번호 검증 요청
+      try {
+        const res = await fetch(`${API_URL}/api/admin/stats`, {
+          headers: { 'X-Admin-Key': pw }
+        });
+        
+        if (res.ok) {
+          ADMIN_PASSWORD = pw;
+          sessionStorage.setItem('admin_key', pw);
+          sessionStorage.setItem('admin_logged_in', 'true');
+          isLoggedIn = true;
+          renderApp();
+        } else {
+          alert('비밀번호가 틀렸습니다.');
+        }
+      } catch (e) {
+        alert('서버 연결에 실패했습니다.');
       }
     }
     
     function handleLogout() {
       sessionStorage.removeItem('admin_logged_in');
+      sessionStorage.removeItem('admin_key');
+      ADMIN_PASSWORD = '';
       isLoggedIn = false;
       renderLogin();
     }

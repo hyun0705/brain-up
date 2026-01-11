@@ -19,7 +19,7 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    const ADMIN_KEY = 'brainup2026!';
+    const ADMIN_KEY = env.ADMIN_KEY || 'CHANGE_ME_IN_ENV';
     
     // DB에서 관리자 비밀번호 확인 함수
     async function getAdminPassword(env) {
@@ -1018,7 +1018,7 @@ export default {
         
         // 현재 비밀번호 확인
         const settings = await env.DB.prepare('SELECT value FROM app_settings WHERE key = ?').bind('admin_password').first();
-        const storedPassword = settings ? settings.value : 'brainup2026!';
+        const storedPassword = settings ? settings.value : (env.ADMIN_KEY || 'CHANGE_ME_IN_ENV');
         
         if (currentPassword !== storedPassword) {
           return Response.json({ error: '현재 비밀번호가 일치하지 않습니다.' }, { status: 400, headers: corsHeaders });

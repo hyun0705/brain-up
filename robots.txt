@@ -1,0 +1,10 @@
+# robots.txt for brainup.p-e.kr
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://brainup.p-e.kr/sitemap.xml
+
+# 관리자 페이지 차단
+Disallow: /admin.html
